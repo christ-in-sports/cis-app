@@ -508,11 +508,38 @@ export default function ScheduleClient({
       }
     });
 
+    // Head-to-head: returns positive if B wins, negative if A wins, 0 if tied
+    const getHeadToHead = (teamA: string, teamB: string, matches: any[]) => {
+      const directMatches = matches.filter(
+        (m) =>
+          (m.home_team_id === teamA && m.away_team_id === teamB) ||
+          (m.home_team_id === teamB && m.away_team_id === teamA)
+      );
+
+      let aWins = 0;
+      let bWins = 0;
+
+      directMatches.forEach((m) => {
+        if (m.winner_team_id === teamA) aWins++;
+        else if (m.winner_team_id === teamB) bWins++;
+      });
+
+      if (bWins > aWins) return 1;  // B is better
+      if (aWins > bWins) return -1; // A is better
+      return 0; // still tied
+    };
+
     const sorted = Object.entries(stats)
       .map(([teamId, s]) => ({ teamId, ...s, points: s.won * 3 + s.drawn, difference: s.scored - s.conceded }))
       .sort((a, b) => {
+        // 1. League points
         if (b.points !== a.points) return b.points - a.points;
+        // 2. Point/goal/set/round difference
         if (b.difference !== a.difference) return b.difference - a.difference;
+        // 3. Head-to-head
+        const h2h = getHeadToHead(a.teamId, b.teamId, completedMatches);
+        if (h2h !== 0) return h2h;
+        // 4. Total scored
         return b.scored - a.scored;
       });
 
@@ -1015,8 +1042,7 @@ export default function ScheduleClient({
       {scoringMatch && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
           <div className="fixed inset-0 bg-black/80" onClick={() => setScoringMatch(null)} />
-          <div className="relative z-50 w-full max-w-md max-h-[90vh] overflow-auto rounded-t-2xl sm:rounded-2xl border bg-background p-6 shadow-lg mx-0 sm:mx-4">
-            <div className="flex items-center justify-between mb-6">
+            <div className="relative z-50 w-full max-w-md max-h-[85vh] overflow-auto rounded-t-2xl sm:rounded-2xl border bg-background p-6 pb-32 shadow-lg mx-0 sm:mx-4">            <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-bold">
                 {getTeamName(scoringMatch.home_team_id)} vs {getTeamName(scoringMatch.away_team_id)}
               </h2>

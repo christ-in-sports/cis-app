@@ -245,19 +245,40 @@ export default function MatchCard({
       }
     });
 
+    // Head-to-head: returns positive if B wins, negative if A wins, 0 if tied
+    const getHeadToHead = (teamA: string, teamB: string, matches: any[]) => {
+      const directMatches = matches.filter(
+        (m) =>
+          (m.home_team_id === teamA && m.away_team_id === teamB) ||
+          (m.home_team_id === teamB && m.away_team_id === teamA)
+      );
+
+      let aWins = 0;
+      let bWins = 0;
+
+      directMatches.forEach((m) => {
+        if (m.winner_team_id === teamA) aWins++;
+        else if (m.winner_team_id === teamB) bWins++;
+      });
+
+      if (bWins > aWins) return 1;  // B is better
+      if (aWins > bWins) return -1; // A is better
+      return 0; // still tied
+    };
+
     // Sort for positions
     const sortedTeams = Object.entries(stats)
-      .map(([teamId, s]) => ({
-        teamId,
-        ...s,
-        points: s.won * 3 + s.drawn * 1,
-        difference: s.scored - s.conceded,
-      }))
+      .map(([teamId, s]) => ({ teamId, ...s, points: s.won * 3 + s.drawn, difference: s.scored - s.conceded }))
       .sort((a, b) => {
+        // 1. League points
         if (b.points !== a.points) return b.points - a.points;
+        // 2. Point/goal/set/round difference
         if (b.difference !== a.difference) return b.difference - a.difference;
-        if (b.scored !== a.scored) return b.scored - a.scored;
-        return 0;
+        // 3. Head-to-head
+        const h2h = getHeadToHead(a.teamId, b.teamId, completedMatches);
+        if (h2h !== 0) return h2h;
+        // 4. Total scored
+        return b.scored - a.scored;
       });
 
     // Update each standing row
