@@ -59,7 +59,7 @@ export default function MatchCard({
     switch (sportType) {
       case 'soccer':
       case 'basketball':
-        return { home_halves: [0, 0], away_halves: [0, 0] };
+        return { home_score: 0, away_score: 0 };
       case 'volleyball': {
         const maxSets = sportSettings?.max_sets || 3;
         return {
@@ -87,9 +87,15 @@ export default function MatchCard({
     switch (sportType) {
       case 'soccer':
       case 'basketball': {
-        const home = (details.home_halves || []).reduce((a: number, b: number) => a + b, 0);
-        const away = (details.away_halves || []).reduce((a: number, b: number) => a + b, 0);
-        return { home, away };
+        let home = details.home_score;
+        let away = details.away_score;
+        // Handle old array format
+        if (Array.isArray(home)) home = home.reduce((a: number, b: number) => a + b, 0);
+        if (Array.isArray(away)) away = away.reduce((a: number, b: number) => a + b, 0);
+        // Handle old halves format
+        if (home === undefined || home === null) home = (details.home_halves || []).reduce((a: number, b: number) => a + b, 0);
+        if (away === undefined || away === null) away = (details.away_halves || []).reduce((a: number, b: number) => a + b, 0);
+        return { home: home || 0, away: away || 0 };
       }
       case 'volleyball': {
         const playedSets = (details.sets || []).filter((s: any) => s.home > 0 || s.away > 0);
@@ -218,14 +224,21 @@ export default function MatchCard({
       stats[m.home_team_id].played++;
       stats[m.away_team_id].played++;
 
-      // Get actual scored values from details
       let homeScored = matchScore.home_score;
       let awayScored = matchScore.away_score;
 
       if ((sportType === 'soccer' || sportType === 'basketball') && matchScore.score_details) {
-        const details = matchScore.score_details;
-        homeScored = (details.home_halves || []).reduce((a: number, b: number) => a + b, 0);
-        awayScored = (details.away_halves || []).reduce((a: number, b: number) => a + b, 0);
+        const d = matchScore.score_details;
+        if (typeof d.home_score === 'number') {
+          homeScored = d.home_score;
+          awayScored = d.away_score;
+        } else if (Array.isArray(d.home_score)) {
+          homeScored = d.home_score.reduce((a: number, b: number) => a + b, 0);
+          awayScored = d.away_score.reduce((a: number, b: number) => a + b, 0);
+        } else if (d.home_halves) {
+          homeScored = d.home_halves.reduce((a: number, b: number) => a + b, 0);
+          awayScored = d.away_halves.reduce((a: number, b: number) => a + b, 0);
+        }
       }
 
       stats[m.home_team_id].scored += homeScored;
@@ -309,101 +322,66 @@ export default function MatchCard({
       case 'soccer':
       case 'basketball':
         return (
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground text-center">
-              {sportType === 'soccer' ? 'Goals' : 'Points'} per half
-            </p>
-            {[0, 1].map((half) => (
-              <div key={half} className="space-y-2">
-                <p className="text-xs text-muted-foreground text-center">
-                  {half === 0 ? '1st Half' : '2nd Half'}
-                </p>
-                <div className="flex items-center justify-between gap-4">
-                  {/* Home */}
-                  <div className="flex-1 flex items-center justify-end gap-2">
-                    <span className="text-sm truncate">{homeTeamName}</span>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-10 w-10"
-                        onClick={() => {
-                          const newState = { ...scoreState };
-                          newState.home_halves = [...(newState.home_halves || [0, 0])];
-                          newState.home_halves[half] = Math.max(0, newState.home_halves[half] - 1);
-                          setScoreState(newState);
-                        }}
-                      >
-                        −
-                      </Button>
-                      <span className="w-8 text-center text-lg font-bold">
-                        {scoreState.home_halves?.[half] || 0}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-10 w-10"
-                        onClick={() => {
-                          const newState = { ...scoreState };
-                          newState.home_halves = [...(newState.home_halves || [0, 0])];
-                          newState.home_halves[half]++;
-                          setScoreState(newState);
-                        }}
-                      >
-                        +
-                      </Button>
-                    </div>
-                  </div>
-
-                  <span className="text-muted-foreground">vs</span>
-
-                  {/* Away */}
-                  <div className="flex-1 flex items-center gap-2">
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-10 w-10"
-                        onClick={() => {
-                          const newState = { ...scoreState };
-                          newState.away_halves = [...(newState.away_halves || [0, 0])];
-                          newState.away_halves[half] = Math.max(0, newState.away_halves[half] - 1);
-                          setScoreState(newState);
-                        }}
-                      >
-                        −
-                      </Button>
-                      <span className="w-8 text-center text-lg font-bold">
-                        {scoreState.away_halves?.[half] || 0}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-10 w-10"
-                        onClick={() => {
-                          const newState = { ...scoreState };
-                          newState.away_halves = [...(newState.away_halves || [0, 0])];
-                          newState.away_halves[half]++;
-                          setScoreState(newState);
-                        }}
-                      >
-                        +
-                      </Button>
-                    </div>
-                    <span className="text-sm truncate">{awayTeamName}</span>
-                  </div>
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              {/* Home */}
+              <div className="flex flex-col items-center gap-3 flex-1">
+                <span className="text-sm font-medium truncate max-w-[100px] text-center">{homeTeamName}</span>
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    className="h-14 w-14 text-xl"
+                    onClick={() => {
+                      const s = { ...scoreState };
+                      s.home_score = Math.max(0, (s.home_score || 0) - 1);
+                      setScoreState(s);
+                    }}
+                  >−</Button>
+                  <span className="text-4xl font-bold w-12 text-center">{scoreState.home_score || 0}</span>
+                  <Button
+                    variant="outline"
+                    className="h-14 w-14 text-xl"
+                    onClick={() => {
+                      const s = { ...scoreState };
+                      s.home_score = (s.home_score || 0) + 1;
+                      setScoreState(s);
+                    }}
+                  >+</Button>
                 </div>
               </div>
-            ))}
 
-            {/* Total */}
-            <div className="border-t border-muted pt-3 flex justify-center items-center gap-4">
-              <span className="font-bold text-xl">
-                {(scoreState.home_halves || [0, 0]).reduce((a: number, b: number) => a + b, 0)}
-              </span>
-              <span className="text-muted-foreground">-</span>
-              <span className="font-bold text-xl">
-                {(scoreState.away_halves || [0, 0]).reduce((a: number, b: number) => a + b, 0)}
+              <span className="text-2xl text-muted-foreground px-2">-</span>
+
+              {/* Away */}
+              <div className="flex flex-col items-center gap-3 flex-1">
+                <span className="text-sm font-medium truncate max-w-[100px] text-center">{awayTeamName}</span>
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    className="h-14 w-14 text-xl"
+                    onClick={() => {
+                      const s = { ...scoreState };
+                      s.away_score = Math.max(0, (s.away_score || 0) - 1);
+                      setScoreState(s);
+                    }}
+                  >−</Button>
+                  <span className="text-4xl font-bold w-12 text-center">{scoreState.away_score || 0}</span>
+                  <Button
+                    variant="outline"
+                    className="h-14 w-14 text-xl"
+                    onClick={() => {
+                      const s = { ...scoreState };
+                      s.away_score = (s.away_score || 0) + 1;
+                      setScoreState(s);
+                    }}
+                  >+</Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-muted pt-4 text-center">
+              <span className="text-5xl font-bold">
+                {scoreState.home_score || 0} - {scoreState.away_score || 0}
               </span>
             </div>
           </div>
@@ -510,7 +488,7 @@ export default function MatchCard({
   const totals = calculateTotals(score?.score_details || {});
 
   return (
-    <Card className={`${match.status === 'completed' ? 'opacity-80' : ''}`}>
+    <Card className={`${match.status === 'completed' ? 'bg-muted/30' : ''}`}>
       <CardContent className="p-3">
         <div className="flex items-center justify-between">
           {/* Home team */}
@@ -565,7 +543,7 @@ export default function MatchCard({
                   {match.status === 'completed' ? 'Edit' : 'Record'}
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-h-[85vh] overflow-y-auto">
+              <DialogContent className="max-h-[85vh] overflow-y-auto fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[100]">
                 <DialogHeader>
                   <DialogTitle className="text-base">
                     {homeTeamName} vs {awayTeamName}

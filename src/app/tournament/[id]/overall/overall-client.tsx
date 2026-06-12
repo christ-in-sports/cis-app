@@ -1,15 +1,20 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/ui/toast';
 
 interface Tournament {
   id: string;
   name: string;
   team_count: number;
   status: string;
+  sport_weights: Record<string, number> | null;
 }
 
 interface Team {
@@ -61,6 +66,13 @@ const SPORTS = [
   { key: 'dodgeball', label: 'Dodgeball', emoji: '🤾' },
 ];
 
+const DEFAULT_WEIGHTS: Record<string, number> = {
+  soccer: 25,
+  basketball: 25,
+  volleyball: 25,
+  dodgeball: 25,
+};
+
 export default function OverallClient({
   tournament,
   teams,
@@ -79,6 +91,14 @@ export default function OverallClient({
   isAdmin: boolean;
 }) {
   const router = useRouter();
+  const supabase = createClient();
+  const { toast } = useToast();
+
+  const [weights, setWeights] = useState<Record<string, number>>(
+    tournament.sport_weights || DEFAULT_WEIGHTS
+  );
+  const [editingWeights, setEditingWeights] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const teamCount = teams.length;
 
@@ -115,7 +135,6 @@ export default function OverallClient({
 
     const positions: Record<string, number> = {};
 
-    // Top/main bracket final
     const topKnockouts = topBracketMatches.filter((m) => m.match_type === 'knockout');
     if (topKnockouts.length > 0) {
       const maxRound = Math.max(...topKnockouts.map((m) => m.round || 0));
@@ -127,7 +146,6 @@ export default function OverallClient({
       }
     }
 
-    // 3rd place match
     const thirdPlace = topBracketMatches.find((m) => m.match_type === 'third_place');
     if (thirdPlace?.status === 'completed' && thirdPlace.winner_team_id) {
       positions[thirdPlace.winner_team_id] = 3;
@@ -135,7 +153,6 @@ export default function OverallClient({
       if (loser) positions[loser] = 4;
     }
 
-    // Bottom bracket
     if (bottomBracketMatches.length > 0) {
       const bottomKnockouts = bottomBracketMatches.filter((m) => m.match_type === 'knockout');
       if (bottomKnockouts.length > 0) {
@@ -159,38 +176,50 @@ export default function OverallClient({
     return positions[teamId] || null;
   };
 
-  const positionToPoints = (position: number | null): number => {
+  // Points based on position: 1st gets teamCount pts, 2nd gets teamCount-1, etc.
+  const positionToRawPoints = (position: number | null): number => {
     if (position === null) return 0;
     return Math.max(0, teamCount - position + 1);
   };
 
+  // Weighted score for a team in a sport
+  const getWeightedScore = (teamId: string, sportKey: string, sport: Sport): number => {
+    const position = getTeamPositionInSport(teamId, sport);
+    const rawPoints = positionToRawPoints(position);
+    const weight = weights[sportKey] || 25;
+    // Normalize: (rawPoints / maxPossiblePoints) * weight
+    const maxPoints = teamCount; // 1st place gets teamCount points
+    return maxPoints > 0 ? (rawPoints / maxPoints) * weight : 0;
+  };
+
   // Build overall standings
   const overallData = teams.map((team) => {
-    const sportResults: Record<string, { position: number | null; points: number }> = {};
-    let totalPoints = 0;
+    const sportResults: Record<string, { position: number | null; rawPoints: number; weightedScore: number }> = {};
+    let totalWeightedScore = 0;
     let sportsCompleted = 0;
 
     SPORTS.forEach((s) => {
       const sport = sports.find((sp) => sp.sport_type === s.key);
       if (!sport) {
-        sportResults[s.key] = { position: null, points: 0 };
+        sportResults[s.key] = { position: null, rawPoints: 0, weightedScore: 0 };
         return;
       }
 
       const position = getTeamPositionInSport(team.id, sport);
-      const points = positionToPoints(position);
-      sportResults[s.key] = { position, points };
-      totalPoints += points;
+      const rawPoints = positionToRawPoints(position);
+      const weightedScore = getWeightedScore(team.id, s.key, sport);
+      sportResults[s.key] = { position, rawPoints, weightedScore };
+      totalWeightedScore += weightedScore;
       if (position !== null) sportsCompleted++;
     });
 
     return {
       team,
       sportResults,
-      totalPoints,
+      totalWeightedScore,
       sportsCompleted,
     };
-  }).sort((a, b) => b.totalPoints - a.totalPoints);
+  }).sort((a, b) => b.totalWeightedScore - a.totalWeightedScore);
 
   const getPositionLabel = (pos: number | null) => {
     if (pos === null) return '—';
@@ -202,7 +231,35 @@ export default function OverallClient({
     }
   };
 
-  const maxPoints = teamCount * 4;
+  // Weight editing
+  const totalWeight = Object.values(weights).reduce((sum, w) => sum + w, 0);
+  const weightsValid = totalWeight === 100;
+
+  const updateWeight = (sport: string, value: string) => {
+    const num = parseInt(value) || 0;
+    setWeights((prev) => ({ ...prev, [sport]: num }));
+  };
+
+  const saveWeights = async () => {
+    if (!weightsValid) {
+      toast({ title: 'Error', description: 'Weights must add up to 100%', variant: 'destructive' });
+      return;
+    }
+
+    setSaving(true);
+    const { error } = await supabase
+      .from('tournaments')
+      .update({ sport_weights: weights })
+      .eq('id', tournament.id);
+
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Weights saved!' });
+      setEditingWeights(false);
+    }
+    setSaving(false);
+  };
 
   return (
     <div className="min-h-screen pb-32 safe-top safe-bottom">
@@ -213,13 +270,83 @@ export default function OverallClient({
             ← Back
           </Button>
           <h1 className="text-xl font-bold mt-1">🏆 Overall Standings</h1>
-          <p className="text-sm text-muted-foreground">{tournament.name} • Each sport = {positionToPoints(1)} max pts</p>
+          <p className="text-sm text-muted-foreground">{tournament.name}</p>
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto p-4">
+        {/* Sport Weights */}
+        <Card className="mb-4">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-sm">Sport Weights</CardTitle>
+              {isAdmin && !editingWeights && (
+                <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setEditingWeights(true)}>
+                  ✏️ Edit
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {editingWeights ? (
+              <div className="space-y-3">
+                {SPORTS.map((s) => (
+                  <div key={s.key} className="flex items-center justify-between gap-3">
+                    <span className="text-sm">{s.emoji} {s.label}</span>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-9 w-9"
+                        onClick={() => updateWeight(s.key, String(Math.max(0, (weights[s.key] || 0) - 1)))}
+                      >−</Button>
+                      <span className="w-12 text-center text-sm font-bold">{weights[s.key] || 0}%</span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-9 w-9"
+                        onClick={() => updateWeight(s.key, String((weights[s.key] || 0) + 1))}
+                      >+</Button>
+                    </div>
+                  </div>
+                ))}
+                <div className={`text-center text-sm font-medium pt-2 ${weightsValid ? 'text-green-400' : 'text-red-400'}`}>
+                  Total: {totalWeight}% {weightsValid ? '✓' : '(must be 100%)'}
+                </div>
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setWeights(tournament.sport_weights || DEFAULT_WEIGHTS);
+                      setEditingWeights(false);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    onClick={saveWeights}
+                    disabled={!weightsValid || saving}
+                  >
+                    {saving ? 'Saving...' : '✓ Save'}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 flex-wrap">
+                {SPORTS.map((s) => (
+                  <Badge key={s.key} variant="outline" className="text-xs">
+                    {s.emoji} {weights[s.key] || 25}%
+                  </Badge>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Podium (top 3) */}
-        {overallData.length >= 3 && overallData[0].totalPoints > 0 && (
+        {overallData.length >= 3 && overallData[0].totalWeightedScore > 0 && (
           <div className="flex items-end justify-center gap-3 mb-8 pt-4">
             {/* 2nd place */}
             <div className="flex flex-col items-center">
@@ -227,7 +354,7 @@ export default function OverallClient({
                 <span className="text-2xl">🥈</span>
               </div>
               <span className="text-sm font-medium text-center max-w-[70px] truncate">{overallData[1].team.name}</span>
-              <span className="text-lg font-bold">{overallData[1].totalPoints}</span>
+              <span className="text-lg font-bold">{overallData[1].totalWeightedScore.toFixed(1)}</span>
               <div className="w-20 bg-gray-400/20 rounded-t-lg mt-1" style={{ height: '60px' }} />
             </div>
             {/* 1st place */}
@@ -236,7 +363,7 @@ export default function OverallClient({
                 <span className="text-3xl">🥇</span>
               </div>
               <span className="text-sm font-bold text-center max-w-[80px] truncate">{overallData[0].team.name}</span>
-              <span className="text-xl font-bold">{overallData[0].totalPoints}</span>
+              <span className="text-xl font-bold">{overallData[0].totalWeightedScore.toFixed(1)}</span>
               <div className="w-20 bg-yellow-400/20 rounded-t-lg mt-1" style={{ height: '90px' }} />
             </div>
             {/* 3rd place */}
@@ -245,7 +372,7 @@ export default function OverallClient({
                 <span className="text-xl">🥉</span>
               </div>
               <span className="text-sm font-medium text-center max-w-[70px] truncate">{overallData[2].team.name}</span>
-              <span className="text-lg font-bold">{overallData[2].totalPoints}</span>
+              <span className="text-lg font-bold">{overallData[2].totalWeightedScore.toFixed(1)}</span>
               <div className="w-20 bg-orange-600/20 rounded-t-lg mt-1" style={{ height: '40px' }} />
             </div>
           </div>
@@ -258,21 +385,21 @@ export default function OverallClient({
           </CardHeader>
           <CardContent className="p-0">
             {/* Table Header */}
-            <div className="grid grid-cols-[40px_1fr_40px_40px_40px_40px_50px] gap-1 px-4 py-2 border-b border-muted text-xs text-muted-foreground font-medium">
+            <div className="grid grid-cols-[40px_1fr_40px_40px_40px_40px_55px] gap-1 px-4 py-2 border-b border-muted text-xs text-muted-foreground font-medium">
               <span>#</span>
               <span>Team</span>
               <span className="text-center">⚽</span>
               <span className="text-center">🏀</span>
               <span className="text-center">🏐</span>
               <span className="text-center">🤾</span>
-              <span className="text-center font-bold">Total</span>
+              <span className="text-center font-bold">Score</span>
             </div>
 
             {/* Rows */}
             {overallData.map((item, i) => (
               <div
                 key={item.team.id}
-                className={`grid grid-cols-[40px_1fr_40px_40px_40px_40px_50px] gap-1 px-4 py-3 border-b border-muted/30 items-center ${
+                className={`grid grid-cols-[40px_1fr_40px_40px_40px_40px_55px] gap-1 px-4 py-3 border-b border-muted/30 items-center ${
                   i < 3 ? 'bg-primary/5' : ''
                 }`}
               >
@@ -282,44 +409,24 @@ export default function OverallClient({
                   <span className="text-sm font-medium truncate">{item.team.name}</span>
                 </div>
                 <span className="text-center text-sm">
-                  {item.sportResults.soccer.position ? getPositionLabel(item.sportResults.soccer.position) : '—'}
+                  {getPositionLabel(item.sportResults.soccer.position)}
                 </span>
                 <span className="text-center text-sm">
-                  {item.sportResults.basketball.position ? getPositionLabel(item.sportResults.basketball.position) : '—'}
+                  {getPositionLabel(item.sportResults.basketball.position)}
                 </span>
                 <span className="text-center text-sm">
-                  {item.sportResults.volleyball.position ? getPositionLabel(item.sportResults.volleyball.position) : '—'}
+                  {getPositionLabel(item.sportResults.volleyball.position)}
                 </span>
                 <span className="text-center text-sm">
-                  {item.sportResults.dodgeball.position ? getPositionLabel(item.sportResults.dodgeball.position) : '—'}
+                  {getPositionLabel(item.sportResults.dodgeball.position)}
                 </span>
-                <span className="text-center text-sm font-bold">{item.totalPoints}</span>
+                <span className="text-center text-sm font-bold">{item.totalWeightedScore.toFixed(1)}</span>
               </div>
             ))}
           </CardContent>
         </Card>
 
-        {/* Points Breakdown */}
-        <Card className="mt-4">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Points System</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-4 gap-2 text-xs text-center">
-              {Array.from({ length: teamCount }, (_, i) => (
-                <div key={i} className="bg-muted rounded-lg p-2">
-                  <p className="font-bold">{getPositionLabel(i + 1)}</p>
-                  <p className="text-muted-foreground">{positionToPoints(i + 1)} pts</p>
-                </div>
-              ))}
-            </div>
-            <p className="text-xs text-muted-foreground text-center mt-3">
-              Each sport contributes equally (25%). Max possible = {maxPoints} pts
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Sport Status */}
+        {/* Sport Progress */}
         <Card className="mt-4">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">Sport Progress</CardTitle>
@@ -335,12 +442,27 @@ export default function OverallClient({
 
                 return (
                   <div key={s.key} className="flex items-center justify-between py-2">
-                    <span className="text-sm">{s.emoji} {s.label}</span>
+                    <span className="text-sm">{s.emoji} {s.label} ({weights[s.key] || 25}%)</span>
                     <Badge variant="outline" className="text-xs">{statusLabel}</Badge>
                   </div>
                 );
               })}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* How scoring works */}
+        <Card className="mt-4">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">How Scoring Works</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground">
+              Each sport awards points based on final position (1st = {teamCount} pts, 2nd = {teamCount - 1} pts, etc.). 
+              These are then multiplied by the sport's weight percentage. 
+              A team that places 1st in a sport with 25% weight gets 25 points. 
+              Maximum possible score = 100.
+            </p>
           </CardContent>
         </Card>
       </div>

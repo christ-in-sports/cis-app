@@ -92,6 +92,7 @@ export default function ScheduleClient({
     initialGameDays.length > 0 ? initialGameDays[initialGameDays.length - 1] : null
   );
   const [loading, setLoading] = useState(false);
+  const [newStartTime, setNewStartTime] = useState('14:00');
 
   // Scoring dialog state
   const [scoringMatch, setScoringMatch] = useState<Match | null>(null);
@@ -140,8 +141,8 @@ export default function ScheduleClient({
       .insert({
         tournament_id: tournament.id,
         date: newDate,
-        start_time: '00:00',
-        duration_min: parseInt(newSlots) * 20,
+        start_time: newStartTime,
+        duration_min: parseInt(newSlots) * 20, // will be recalculated based on sport
         courts_available: parseInt(newCourts),
         sport_type: newSport,
         notes: newNotes || null,
@@ -231,12 +232,23 @@ export default function ScheduleClient({
 
     // Assign slot numbers as scheduled_time (slot 1, 2, 3...)
     const updates: { id: string; court: number; scheduled_date: string; scheduled_time: string }[] = [];
+    // Get game duration from sport settings
+    const gameDuration = sport?.settings?.game_duration_min || 20;
+
+    // Parse start time
+    const [startHours, startMinutes] = gameDay.start_time.split(':').map(Number);
+
     let slotIndex = 0;
 
     for (let i = 0; i < selected.length; i += courts) {
       const slotMatches = selected.slice(i, i + courts);
       slotIndex++;
-      const timeStr = `${slotIndex.toString().padStart(2, '0')}:00:00`; // Use hour as slot number
+
+      // Calculate actual start time for this slot
+      const totalMinutes = startHours * 60 + startMinutes + (slotIndex - 1) * gameDuration;
+      const hours = Math.floor(totalMinutes / 60).toString().padStart(2, '0');
+      const mins = (totalMinutes % 60).toString().padStart(2, '0');
+      const timeStr = `${hours}:${mins}:00`;
 
       slotMatches.forEach((m, courtIdx) => {
         updates.push({
@@ -341,15 +353,15 @@ export default function ScheduleClient({
       switch (sportType) {
         case 'soccer':
         case 'basketball':
-          initial = { home_halves: [0, 0], away_halves: [0, 0] };
+          initial = { home_score: 0, away_score: 0 };
           break;
         case 'volleyball': {
-          const maxSets = sport?.settings?.max_sets || 3;
+          const maxSets = sport?.settings?.max_sets || 5;
           initial = { sets: Array.from({ length: maxSets }, () => ({ home: 0, away: 0 })) };
           break;
         }
         case 'dodgeball': {
-          const maxRounds = sport?.settings?.max_rounds || 3;
+          const maxRounds = sport?.settings?.max_rounds || 5;
           initial = { rounds: Array.from({ length: maxRounds }, () => ({ winner: null })) };
           break;
         }
@@ -371,9 +383,15 @@ export default function ScheduleClient({
     switch (sportType) {
       case 'soccer':
       case 'basketball': {
-        const home = (details.home_halves || []).reduce((a: number, b: number) => a + b, 0);
-        const away = (details.away_halves || []).reduce((a: number, b: number) => a + b, 0);
-        return { home, away };
+        let home = details.home_score;
+        let away = details.away_score;
+        // Handle old array format
+        if (Array.isArray(home)) home = home.reduce((a: number, b: number) => a + b, 0);
+        if (Array.isArray(away)) away = away.reduce((a: number, b: number) => a + b, 0);
+        // Handle old halves format
+        if (home === undefined || home === null) home = (details.home_halves || []).reduce((a: number, b: number) => a + b, 0);
+        if (away === undefined || away === null) away = (details.away_halves || []).reduce((a: number, b: number) => a + b, 0);
+        return { home: home || 0, away: away || 0 };
       }
       case 'volleyball': {
         // Only count sets where at least one team scored
@@ -487,8 +505,17 @@ export default function ScheduleClient({
       let awayScored = matchScore.away_score;
 
       if ((sportType === 'soccer' || sportType === 'basketball') && matchScore.score_details) {
-        homeScored = (matchScore.score_details.home_halves || []).reduce((a: number, b: number) => a + b, 0);
-        awayScored = (matchScore.score_details.away_halves || []).reduce((a: number, b: number) => a + b, 0);
+        const d = matchScore.score_details;
+        if (typeof d.home_score === 'number') {
+          homeScored = d.home_score;
+          awayScored = d.away_score;
+        } else if (Array.isArray(d.home_score)) {
+          homeScored = d.home_score.reduce((a: number, b: number) => a + b, 0);
+          awayScored = d.away_score.reduce((a: number, b: number) => a + b, 0);
+        } else if (d.home_halves) {
+          homeScored = d.home_halves.reduce((a: number, b: number) => a + b, 0);
+          awayScored = d.away_halves.reduce((a: number, b: number) => a + b, 0);
+        }
       }
 
       stats[m.home_team_id].scored += homeScored;
@@ -614,72 +641,65 @@ export default function ScheduleClient({
       case 'basketball':
         return (
           <div className="space-y-6">
-            <p className="text-center text-sm text-muted-foreground">
-              {sportType === 'soccer' ? 'Goals' : 'Points'} per half
-            </p>
-            {[0, 1].map((half) => (
-              <div key={half} className="space-y-3">
-                <p className="text-center text-xs font-medium text-muted-foreground">
-                  {half === 0 ? '1st Half' : '2nd Half'}
-                </p>
-                <div className="flex items-center justify-between">
-                  <div className="flex flex-col items-center gap-2 flex-1">
-                    <span className="text-sm font-medium truncate max-w-[80px]">{homeTeam}</span>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        className="h-14 w-14 text-xl"
-                        onClick={() => {
-                          const s = { ...scoreState, home_halves: [...(scoreState.home_halves || [0, 0])] };
-                          s.home_halves[half] = Math.max(0, s.home_halves[half] - 1);
-                          setScoreState(s);
-                        }}
-                      >−</Button>
-                      <span className="text-3xl font-bold w-10 text-center">{scoreState.home_halves?.[half] || 0}</span>
-                      <Button
-                        variant="outline"
-                        className="h-14 w-14 text-xl"
-                        onClick={() => {
-                          const s = { ...scoreState, home_halves: [...(scoreState.home_halves || [0, 0])] };
-                          s.home_halves[half]++;
-                          setScoreState(s);
-                        }}
-                      >+</Button>
-                    </div>
-                  </div>
-                  <span className="text-muted-foreground text-lg px-2">vs</span>
-                  <div className="flex flex-col items-center gap-2 flex-1">
-                    <span className="text-sm font-medium truncate max-w-[80px]">{awayTeam}</span>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        className="h-14 w-14 text-xl"
-                        onClick={() => {
-                          const s = { ...scoreState, away_halves: [...(scoreState.away_halves || [0, 0])] };
-                          s.away_halves[half] = Math.max(0, s.away_halves[half] - 1);
-                          setScoreState(s);
-                        }}
-                      >−</Button>
-                      <span className="text-3xl font-bold w-10 text-center">{scoreState.away_halves?.[half] || 0}</span>
-                      <Button
-                        variant="outline"
-                        className="h-14 w-14 text-xl"
-                        onClick={() => {
-                          const s = { ...scoreState, away_halves: [...(scoreState.away_halves || [0, 0])] };
-                          s.away_halves[half]++;
-                          setScoreState(s);
-                        }}
-                      >+</Button>
-                    </div>
-                  </div>
+            <div className="flex items-center justify-between">
+              {/* Home */}
+              <div className="flex flex-col items-center gap-3 flex-1">
+                <span className="text-sm font-medium truncate max-w-[100px] text-center">{homeTeam}</span>
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    className="h-14 w-14 text-xl"
+                    onClick={() => {
+                      const s = { ...scoreState };
+                      s.home_score = Math.max(0, (s.home_score || 0) - 1);
+                      setScoreState(s);
+                    }}
+                  >−</Button>
+                  <span className="text-4xl font-bold w-12 text-center">{scoreState.home_score || 0}</span>
+                  <Button
+                    variant="outline"
+                    className="h-14 w-14 text-xl"
+                    onClick={() => {
+                      const s = { ...scoreState };
+                      s.home_score = (s.home_score || 0) + 1;
+                      setScoreState(s);
+                    }}
+                  >+</Button>
                 </div>
               </div>
-            ))}
+
+              <span className="text-2xl text-muted-foreground px-2">-</span>
+
+              {/* Away */}
+              <div className="flex flex-col items-center gap-3 flex-1">
+                <span className="text-sm font-medium truncate max-w-[100px] text-center">{awayTeam}</span>
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    className="h-14 w-14 text-xl"
+                    onClick={() => {
+                      const s = { ...scoreState };
+                      s.away_score = Math.max(0, (s.away_score || 0) - 1);
+                      setScoreState(s);
+                    }}
+                  >−</Button>
+                  <span className="text-4xl font-bold w-12 text-center">{scoreState.away_score || 0}</span>
+                  <Button
+                    variant="outline"
+                    className="h-14 w-14 text-xl"
+                    onClick={() => {
+                      const s = { ...scoreState };
+                      s.away_score = (s.away_score || 0) + 1;
+                      setScoreState(s);
+                    }}
+                  >+</Button>
+                </div>
+              </div>
+            </div>
+
             <div className="border-t border-muted pt-4 text-center">
-              <span className="text-4xl font-bold">
-                {(scoreState.home_halves || [0, 0]).reduce((a: number, b: number) => a + b, 0)}
-                {' - '}
-                {(scoreState.away_halves || [0, 0]).reduce((a: number, b: number) => a + b, 0)}
+              <span className="text-5xl font-bold">
+                {scoreState.home_score || 0} - {scoreState.away_score || 0}
               </span>
             </div>
           </div>
@@ -689,21 +709,19 @@ export default function ScheduleClient({
         return (
           <div className="space-y-5">
             <p className="text-center text-sm text-muted-foreground">Points per set (leave 0-0 for unplayed sets)</p>
-            {Array.from({ length: 5 }, (_, i) => {
-              const set = scoreState.sets?.[i] || { home: 0, away: 0 };
-              return (
+            {(scoreState.sets || []).map((set: any, i: number) => (
                 <div key={i} className="space-y-2">
                   <p className="text-center text-xs font-medium text-muted-foreground">Set {i + 1}</p>
                   <div className="flex items-center justify-center gap-4">
                     <div className="flex items-center gap-2">
                       <Button variant="outline" className="h-12 w-12 text-lg" onClick={() => {
-                        const sets = [...(scoreState.sets || Array.from({ length: 5 }, () => ({ home: 0, away: 0 })))];
+                        const sets = [...(scoreState.sets || [])];
                         sets[i] = { ...sets[i], home: Math.max(0, sets[i].home - 1) };
                         setScoreState({ ...scoreState, sets });
                       }}>−</Button>
                       <span className="text-2xl font-bold w-8 text-center">{set.home}</span>
                       <Button variant="outline" className="h-12 w-12 text-lg" onClick={() => {
-                        const sets = [...(scoreState.sets || Array.from({ length: 5 }, () => ({ home: 0, away: 0 })))];
+                        const sets = [...(scoreState.sets || [])];
                         sets[i] = { ...sets[i], home: sets[i].home + 1 };
                         setScoreState({ ...scoreState, sets });
                       }}>+</Button>
@@ -711,21 +729,20 @@ export default function ScheduleClient({
                     <span className="text-muted-foreground">-</span>
                     <div className="flex items-center gap-2">
                       <Button variant="outline" className="h-12 w-12 text-lg" onClick={() => {
-                        const sets = [...(scoreState.sets || Array.from({ length: 5 }, () => ({ home: 0, away: 0 })))];
+                        const sets = [...(scoreState.sets || [])];
                         sets[i] = { ...sets[i], away: Math.max(0, sets[i].away - 1) };
                         setScoreState({ ...scoreState, sets });
                       }}>−</Button>
                       <span className="text-2xl font-bold w-8 text-center">{set.away}</span>
                       <Button variant="outline" className="h-12 w-12 text-lg" onClick={() => {
-                        const sets = [...(scoreState.sets || Array.from({ length: 5 }, () => ({ home: 0, away: 0 })))];
+                        const sets = [...(scoreState.sets || [])];
                         sets[i] = { ...sets[i], away: sets[i].away + 1 };
                         setScoreState({ ...scoreState, sets });
                       }}>+</Button>
                     </div>
                   </div>
                 </div>
-              );
-            })}
+            ))}
             <div className="border-t border-muted pt-4 text-center">
               <span className="text-sm text-muted-foreground">Sets won: </span>
               <span className="text-2xl font-bold">
@@ -741,15 +758,13 @@ export default function ScheduleClient({
         return (
           <div className="space-y-4">
             <p className="text-center text-sm text-muted-foreground">Tap the winner (leave blank for unplayed rounds)</p>
-            {Array.from({ length: 5 }, (_, i) => {
-              const round = scoreState.rounds?.[i] || { winner: null };
-              return (
+            {(scoreState.rounds || []).map((round: any, i: number) => (
                 <div key={i} className="space-y-2">
                   <p className="text-center text-xs text-muted-foreground">Round {i + 1}</p>
                   <div className="flex gap-3">
                     <button
                       onClick={() => {
-                        const rounds = [...(scoreState.rounds || Array.from({ length: 5 }, () => ({ winner: null })))];
+                        const rounds = [...(scoreState.rounds || [])];
                         rounds[i] = { winner: round.winner === 'home' ? null : 'home' };
                         setScoreState({ ...scoreState, rounds });
                       }}
@@ -763,7 +778,7 @@ export default function ScheduleClient({
                     </button>
                     <button
                       onClick={() => {
-                        const rounds = [...(scoreState.rounds || Array.from({ length: 5 }, () => ({ winner: null })))];
+                        const rounds = [...(scoreState.rounds || [])];
                         rounds[i] = { winner: round.winner === 'away' ? null : 'away' };
                         setScoreState({ ...scoreState, rounds });
                       }}
@@ -777,8 +792,7 @@ export default function ScheduleClient({
                     </button>
                   </div>
                 </div>
-              );
-            })}
+            ))}
             <div className="border-t border-muted pt-4 text-center">
               <span className="text-sm text-muted-foreground">Rounds: </span>
               <span className="text-2xl font-bold">
@@ -819,6 +833,10 @@ export default function ScheduleClient({
                   <div className="space-y-2">
                     <Label>Date</Label>
                     <Input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} required className="h-12 text-base" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Start Time</Label>
+                    <Input type="time" value={newStartTime} onChange={(e) => setNewStartTime(e.target.value)} required className="h-12 text-base" />
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
@@ -888,6 +906,13 @@ export default function ScheduleClient({
         {selectedDay && (() => {
           const grid = getScheduleGrid(selectedDay);
           const totalSlots = Math.floor(selectedDay.duration_min / 20);
+          const formatTime = (time: string) => {
+            const [h, m] = time.split(':');
+            const hour = parseInt(h);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const h12 = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+            return `${h12}:${m} ${ampm}`;
+          };
 
           return (
             <div>
@@ -934,7 +959,12 @@ export default function ScheduleClient({
                           <span className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold">
                             {slot.slotNumber}
                           </span>
-                          Game {slot.slotNumber}
+                          <span>Game {slot.slotNumber}</span>
+                          {slot.matches[0]?.scheduled_time && (
+                            <span className="text-xs text-muted-foreground ml-auto">
+                              {formatTime(slot.matches[0].scheduled_time)}
+                            </span>
+                          )}
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="p-0">

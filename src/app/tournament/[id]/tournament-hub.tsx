@@ -561,6 +561,15 @@ export default function TournamentHub({
                 </Button>
               )}
 
+              {/* Edit Teams */}
+              <Button
+                variant="outline"
+                className="w-full h-12 text-sm"
+                onClick={() => router.push(`/tournament/${tournament.id}/setup`)}
+              >
+                ✏️ Edit Teams & Settings
+              </Button>
+
               {currentSport.status === 'completed' && (
                 <div className="text-center py-2 text-green-400 text-sm font-medium">
                   ✅ {activeSport} is complete!

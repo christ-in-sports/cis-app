@@ -97,10 +97,10 @@ const TEAM_COLORS = [
 ];
 
 const DEFAULT_SETTINGS: Record<string, any> = {
-  soccer: { half_duration_min: 7, final_half_duration_min: 10 },
-  basketball: { half_duration_min: 7, final_half_duration_min: 10 },
-  volleyball: { sets_to_win: 2, max_sets: 5, points_per_set: 25, final_set_points: 15, final_max_sets: 5, final_sets_to_win: 3 },
-  dodgeball: { rounds_to_win: 2, max_rounds: 5, final_max_rounds: 5, final_rounds_to_win: 3 },
+  soccer: { game_duration_min: 20, final_game_duration_min: 25 },
+  basketball: { game_duration_min: 20, final_game_duration_min: 25 },
+  volleyball: { game_duration_min: 20, final_game_duration_min: 25, max_sets: 5 },
+  dodgeball: { game_duration_min: 15, final_game_duration_min: 20, max_rounds: 5 },
 };
 
 export default function SetupClient({
@@ -114,7 +114,8 @@ export default function SetupClient({
   existingSports: Sport[];
   userId: string;
 }) {
-  const [step, setStep] = useState(existingTeams.length > 0 ? 2 : 1);
+  const isEditMode = tournament.status !== 'setup';
+  const [step, setStep] = useState(isEditMode ? 1 : (existingTeams.length > 0 ? 2 : 1));  
   const [colorPickerOpen, setColorPickerOpen] = useState<number | null>(null);
   const [teams, setTeams] = useState<{ name: string; color: string }[]>(
     existingTeams.length > 0
@@ -156,27 +157,66 @@ export default function SetupClient({
 
     setLoading(true);
 
-    // Delete existing teams
-    await supabase.from('teams').delete().eq('tournament_id', tournament.id);
-
-    // Insert new teams with randomized seeds
-    const shuffled = [...teams].sort(() => Math.random() - 0.5);
-    const { error } = await supabase.from('teams').insert(
-      shuffled.map((t, i) => ({
-        tournament_id: tournament.id,
-        name: t.name.trim(),
-        color: t.color,
-        seed: i + 1,
-      }))
-    );
-
-    if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    if (existingTeams.length > 0) {
+      // UPDATE existing teams (preserves IDs, doesn't break matches/standings)
+      for (let i = 0; i < teams.length; i++) {
+        const existingTeam = existingTeams[i];
+        if (existingTeam) {
+          await supabase
+            .from('teams')
+            .update({ name: teams[i].name.trim(), color: teams[i].color })
+            .eq('id', existingTeam.id);
+        }
+      }
+      toast({ title: 'Teams updated!' });
     } else {
+      // First time setup: insert with randomized seeds
+      const shuffled = [...teams].sort(() => Math.random() - 0.5);
+      const { error } = await supabase.from('teams').insert(
+        shuffled.map((t, i) => ({
+          tournament_id: tournament.id,
+          name: t.name.trim(),
+          color: t.color,
+          seed: i + 1,
+        }))
+      );
+
+      if (error) {
+        toast({ title: 'Error', description: error.message, variant: 'destructive' });
+        setLoading(false);
+        return;
+      }
       toast({ title: 'Teams saved!', description: 'Seeds have been randomized' });
-      setStep(2);
     }
+
+    setStep(2);
     setLoading(false);
+  };
+
+  const saveTeamsAndGoBack = async () => {
+    const emptyTeams = teams.filter((t) => !t.name.trim());
+    if (emptyTeams.length > 0) {
+      toast({ title: 'Error', description: 'All team names are required', variant: 'destructive' });
+      return;
+    }
+
+    setLoading(true);
+
+    // Update existing teams in place (preserves IDs)
+    for (let i = 0; i < teams.length; i++) {
+      const existingTeam = existingTeams[i];
+      if (existingTeam) {
+        await supabase
+          .from('teams')
+          .update({ name: teams[i].name.trim(), color: teams[i].color })
+          .eq('id', existingTeam.id);
+      }
+    }
+
+    toast({ title: 'Teams updated!' });
+    setLoading(false);
+    router.push(`/tournament/${tournament.id}`);
+    router.refresh();
   };
 
   // Step 2: Sport Configuration
@@ -219,11 +259,13 @@ export default function SetupClient({
       return;
     }
 
-    // Update tournament status to active
-    await supabase
-      .from('tournaments')
-      .update({ status: 'active', current_sport: 'soccer' })
-      .eq('id', tournament.id);
+    // Update tournament status to active (only if still in setup)
+    if (tournament.status === 'setup') {
+      await supabase
+        .from('tournaments')
+        .update({ status: 'active', current_sport: 'soccer' })
+        .eq('id', tournament.id);
+    }
 
     toast({ title: 'Tournament ready!', description: 'Redirecting to tournament...' });
     router.push(`/tournament/${tournament.id}`);
@@ -234,7 +276,7 @@ export default function SetupClient({
     <div className="min-h-screen p-4 pb-32 safe-top safe-bottom max-w-lg mx-auto">
       {/* Header */}
       <div className="mb-6">
-        <Button variant="ghost" size="sm" onClick={() => router.push('/dashboard')}>
+        <Button variant="ghost" size="sm" onClick={() => router.push(isEditMode ? `/tournament/${tournament.id}` : '/dashboard')}>
           ← Back
         </Button>
         <h1 className="text-2xl font-bold mt-2">{tournament.name}</h1>
@@ -245,10 +287,12 @@ export default function SetupClient({
       </div>
 
       {/* Step Indicator */}
-      <div className="flex items-center gap-2 mb-6">
-        <div className={`flex-1 h-1 rounded ${step >= 1 ? 'bg-primary' : 'bg-muted'}`} />
-        <div className={`flex-1 h-1 rounded ${step >= 2 ? 'bg-primary' : 'bg-muted'}`} />
-      </div>
+      {!isEditMode && (
+        <div className="flex items-center gap-2 mb-6">
+          <div className={`flex-1 h-1 rounded ${step >= 1 ? 'bg-primary' : 'bg-muted'}`} />
+          <div className={`flex-1 h-1 rounded ${step >= 2 ? 'bg-primary' : 'bg-muted'}`} />
+        </div>
+      )}
 
       {/* Step 1: Teams */}
       {step === 1 && (
@@ -305,9 +349,20 @@ export default function SetupClient({
             Tap the color square to pick a team color
           </p>
 
-          <Button onClick={saveTeams} className="w-full h-12 text-base" disabled={loading}>
-            {loading ? 'Saving...' : 'Save Teams & Continue'}
-          </Button>
+          {isEditMode ? (
+            <>
+              <Button onClick={saveTeamsAndGoBack} className="w-full h-12 text-base" disabled={loading}>
+                {loading ? 'Saving...' : '✓ Save Changes'}
+              </Button>
+              <Button variant="ghost" className="w-full text-sm text-muted-foreground" onClick={() => setStep(2)}>
+                Edit Sport Settings →
+              </Button>
+            </>
+          ) : (
+            <Button onClick={saveTeams} className="w-full h-12 text-base" disabled={loading}>
+              {loading ? 'Saving...' : 'Save Teams & Continue'}
+            </Button>
+          )}
         </div>
       )}
 
@@ -356,36 +411,38 @@ export default function SetupClient({
 
                   {(sport.key === 'soccer' || sport.key === 'basketball') && (
                     <>
-                      {/* Regular half duration */}
                       <div className="flex items-center justify-between">
-                        <span className="text-sm">Half duration (min)</span>
+                        <div>
+                          <span className="text-sm">Game duration (min)</span>
+                          <p className="text-xs text-muted-foreground">Include buffer/downtime between games</p>
+                        </div>
                         <div className="flex items-center gap-2">
                           <Button
                             variant="outline"
                             size="icon"
-                            className="h-8 w-8"
+                            className="h-10 w-10"
                             onClick={() =>
                               updateSportSetting(
                                 sport.key,
-                                'half_duration_min',
-                                Math.max(3, (sportConfigs[sport.key]?.settings?.half_duration_min || 7) - 1)
+                                'game_duration_min',
+                                Math.max(5, (sportConfigs[sport.key]?.settings?.game_duration_min || 20) - 1)
                               )
                             }
                           >
                             −
                           </Button>
-                          <span className="w-8 text-center text-sm font-medium">
-                            {sportConfigs[sport.key]?.settings?.half_duration_min || 7}
+                          <span className="w-10 text-center text-sm font-bold">
+                            {sportConfigs[sport.key]?.settings?.game_duration_min || 20}
                           </span>
                           <Button
                             variant="outline"
                             size="icon"
-                            className="h-8 w-8"
+                            className="h-10 w-10"
                             onClick={() =>
                               updateSportSetting(
                                 sport.key,
-                                'half_duration_min',
-                                (sportConfigs[sport.key]?.settings?.half_duration_min || 7) + 1
+                                'game_duration_min',
+                                (sportConfigs[sport.key]?.settings?.game_duration_min || 20) + 1
                               )
                             }
                           >
@@ -394,36 +451,38 @@ export default function SetupClient({
                         </div>
                       </div>
 
-                      {/* Final half duration */}
                       <div className="flex items-center justify-between bg-muted/30 p-2 rounded-lg">
-                        <span className="text-sm">🏆 Final half (min)</span>
+                        <div>
+                          <span className="text-sm">🏆 Final duration (min)</span>
+                          <p className="text-xs text-muted-foreground">Finals can be longer</p>
+                        </div>
                         <div className="flex items-center gap-2">
                           <Button
                             variant="outline"
                             size="icon"
-                            className="h-8 w-8"
+                            className="h-10 w-10"
                             onClick={() =>
                               updateSportSetting(
                                 sport.key,
-                                'final_half_duration_min',
-                                Math.max(3, (sportConfigs[sport.key]?.settings?.final_half_duration_min || 10) - 1)
+                                'final_game_duration_min',
+                                Math.max(5, (sportConfigs[sport.key]?.settings?.final_game_duration_min || 25) - 1)
                               )
                             }
                           >
                             −
                           </Button>
-                          <span className="w-8 text-center text-sm font-medium">
-                            {sportConfigs[sport.key]?.settings?.final_half_duration_min || 10}
+                          <span className="w-10 text-center text-sm font-bold">
+                            {sportConfigs[sport.key]?.settings?.final_game_duration_min || 25}
                           </span>
                           <Button
                             variant="outline"
                             size="icon"
-                            className="h-8 w-8"
+                            className="h-10 w-10"
                             onClick={() =>
                               updateSportSetting(
                                 sport.key,
-                                'final_half_duration_min',
-                                (sportConfigs[sport.key]?.settings?.final_half_duration_min || 10) + 1
+                                'final_game_duration_min',
+                                (sportConfigs[sport.key]?.settings?.final_game_duration_min || 25) + 1
                               )
                             }
                           >
@@ -436,59 +495,35 @@ export default function SetupClient({
 
                   {sport.key === 'volleyball' && (
                     <>
-                      {/* Regular sets */}
                       <div className="flex items-center justify-between">
-                        <span className="text-sm">Best of (sets)</span>
-                        <div className="flex gap-2">
-                          {[3, 5].map((n) => (
-                            <button
-                              key={n}
-                              onClick={() => {
-                                updateSportSetting(sport.key, 'max_sets', n);
-                                updateSportSetting(sport.key, 'sets_to_win', Math.ceil(n / 2));
-                              }}
-                              className={`px-3 py-1 rounded text-sm ${
-                                sportConfigs[sport.key]?.settings?.max_sets === n
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'bg-muted'
-                              }`}
-                            >
-                              {n}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Points per set */}
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm">Points per set</span>
+                        <span className="text-sm">Number of sets</span>
                         <div className="flex items-center gap-2">
                           <Button
                             variant="outline"
                             size="icon"
-                            className="h-8 w-8"
+                            className="h-10 w-10"
                             onClick={() =>
                               updateSportSetting(
                                 sport.key,
-                                'points_per_set',
-                                Math.max(15, (sportConfigs[sport.key]?.settings?.points_per_set || 25) - 5)
+                                'max_sets',
+                                Math.max(1, (sportConfigs[sport.key]?.settings?.max_sets || 5) - 1)
                               )
                             }
                           >
                             −
                           </Button>
-                          <span className="w-8 text-center text-sm font-medium">
-                            {sportConfigs[sport.key]?.settings?.points_per_set || 25}
+                          <span className="w-10 text-center text-sm font-bold">
+                            {sportConfigs[sport.key]?.settings?.max_sets || 5}
                           </span>
                           <Button
                             variant="outline"
                             size="icon"
-                            className="h-8 w-8"
+                            className="h-10 w-10"
                             onClick={() =>
                               updateSportSetting(
                                 sport.key,
-                                'points_per_set',
-                                (sportConfigs[sport.key]?.settings?.points_per_set || 25) + 5
+                                'max_sets',
+                                (sportConfigs[sport.key]?.settings?.max_sets || 5) + 1
                               )
                             }
                           >
@@ -497,26 +532,80 @@ export default function SetupClient({
                         </div>
                       </div>
 
-                      {/* Final sets */}
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-sm">Game duration (min)</span>
+                          <p className="text-xs text-muted-foreground">Include buffer between games</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-10 w-10"
+                            onClick={() =>
+                              updateSportSetting(
+                                sport.key,
+                                'game_duration_min',
+                                Math.max(5, (sportConfigs[sport.key]?.settings?.game_duration_min || 20) - 1)
+                              )
+                            }
+                          >
+                            −
+                          </Button>
+                          <span className="w-10 text-center text-sm font-bold">
+                            {sportConfigs[sport.key]?.settings?.game_duration_min || 20}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-10 w-10"
+                            onClick={() =>
+                              updateSportSetting(
+                                sport.key,
+                                'game_duration_min',
+                                (sportConfigs[sport.key]?.settings?.game_duration_min || 20) + 1
+                              )
+                            }
+                          >
+                            +
+                          </Button>
+                        </div>
+                      </div>
+
                       <div className="flex items-center justify-between bg-muted/30 p-2 rounded-lg">
-                        <span className="text-sm">🏆 Final best of</span>
-                        <div className="flex gap-2">
-                          {[3, 5].map((n) => (
-                            <button
-                              key={n}
-                              onClick={() => {
-                                updateSportSetting(sport.key, 'final_max_sets', n);
-                                updateSportSetting(sport.key, 'final_sets_to_win', Math.ceil(n / 2));
-                              }}
-                              className={`px-3 py-1 rounded text-sm ${
-                                sportConfigs[sport.key]?.settings?.final_max_sets === n
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'bg-muted'
-                              }`}
-                            >
-                              {n}
-                            </button>
-                          ))}
+                        <span className="text-sm">🏆 Final duration (min)</span>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-10 w-10"
+                            onClick={() =>
+                              updateSportSetting(
+                                sport.key,
+                                'final_game_duration_min',
+                                Math.max(5, (sportConfigs[sport.key]?.settings?.final_game_duration_min || 25) - 1)
+                              )
+                            }
+                          >
+                            −
+                          </Button>
+                          <span className="w-10 text-center text-sm font-bold">
+                            {sportConfigs[sport.key]?.settings?.final_game_duration_min || 25}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-10 w-10"
+                            onClick={() =>
+                              updateSportSetting(
+                                sport.key,
+                                'final_game_duration_min',
+                                (sportConfigs[sport.key]?.settings?.final_game_duration_min || 25) + 1
+                              )
+                            }
+                          >
+                            +
+                          </Button>
                         </div>
                       </div>
                     </>
@@ -524,49 +613,117 @@ export default function SetupClient({
 
                   {sport.key === 'dodgeball' && (
                     <>
-                      {/* Regular rounds */}
                       <div className="flex items-center justify-between">
-                        <span className="text-sm">Best of (rounds)</span>
-                        <div className="flex gap-2">
-                          {[3, 5].map((n) => (
-                            <button
-                              key={n}
-                              onClick={() => {
-                                updateSportSetting(sport.key, 'max_rounds', n);
-                                updateSportSetting(sport.key, 'rounds_to_win', Math.ceil(n / 2));
-                              }}
-                              className={`px-3 py-1 rounded text-sm ${
-                                sportConfigs[sport.key]?.settings?.max_rounds === n
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'bg-muted'
-                              }`}
-                            >
-                              {n}
-                            </button>
-                          ))}
+                        <span className="text-sm">Number of rounds</span>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-10 w-10"
+                            onClick={() =>
+                              updateSportSetting(
+                                sport.key,
+                                'max_rounds',
+                                Math.max(1, (sportConfigs[sport.key]?.settings?.max_rounds || 5) - 1)
+                              )
+                            }
+                          >
+                            −
+                          </Button>
+                          <span className="w-10 text-center text-sm font-bold">
+                            {sportConfigs[sport.key]?.settings?.max_rounds || 5}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-10 w-10"
+                            onClick={() =>
+                              updateSportSetting(
+                                sport.key,
+                                'max_rounds',
+                                (sportConfigs[sport.key]?.settings?.max_rounds || 5) + 1
+                              )
+                            }
+                          >
+                            +
+                          </Button>
                         </div>
                       </div>
 
-                      {/* Final rounds */}
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-sm">Game duration (min)</span>
+                          <p className="text-xs text-muted-foreground">Include buffer between games</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-10 w-10"
+                            onClick={() =>
+                              updateSportSetting(
+                                sport.key,
+                                'game_duration_min',
+                                Math.max(5, (sportConfigs[sport.key]?.settings?.game_duration_min || 15) - 1)
+                              )
+                            }
+                          >
+                            −
+                          </Button>
+                          <span className="w-10 text-center text-sm font-bold">
+                            {sportConfigs[sport.key]?.settings?.game_duration_min || 15}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-10 w-10"
+                            onClick={() =>
+                              updateSportSetting(
+                                sport.key,
+                                'game_duration_min',
+                                (sportConfigs[sport.key]?.settings?.game_duration_min || 15) + 1
+                              )
+                            }
+                          >
+                            +
+                          </Button>
+                        </div>
+                      </div>
+
                       <div className="flex items-center justify-between bg-muted/30 p-2 rounded-lg">
-                        <span className="text-sm">🏆 Final best of</span>
-                        <div className="flex gap-2">
-                          {[3, 5, 7].map((n) => (
-                            <button
-                              key={n}
-                              onClick={() => {
-                                updateSportSetting(sport.key, 'final_max_rounds', n);
-                                updateSportSetting(sport.key, 'final_rounds_to_win', Math.ceil(n / 2));
-                              }}
-                              className={`px-3 py-1 rounded text-sm ${
-                                sportConfigs[sport.key]?.settings?.final_max_rounds === n
-                                  ? 'bg-primary text-primary-foreground'
-                                  : 'bg-muted'
-                              }`}
-                            >
-                              {n}
-                            </button>
-                          ))}
+                        <span className="text-sm">🏆 Final duration (min)</span>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-10 w-10"
+                            onClick={() =>
+                              updateSportSetting(
+                                sport.key,
+                                'final_game_duration_min',
+                                Math.max(5, (sportConfigs[sport.key]?.settings?.final_game_duration_min || 20) - 1)
+                              )
+                            }
+                          >
+                            −
+                          </Button>
+                          <span className="w-10 text-center text-sm font-bold">
+                            {sportConfigs[sport.key]?.settings?.final_game_duration_min || 20}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-10 w-10"
+                            onClick={() =>
+                              updateSportSetting(
+                                sport.key,
+                                'final_game_duration_min',
+                                (sportConfigs[sport.key]?.settings?.final_game_duration_min || 20) + 1
+                              )
+                            }
+                          >
+                            +
+                          </Button>
                         </div>
                       </div>
                     </>
@@ -577,7 +734,7 @@ export default function SetupClient({
           ))}
 
           <Button onClick={saveSportsAndFinish} className="w-full h-12 text-base" disabled={loading}>
-            {loading ? 'Setting up...' : '🏆 Start Tournament'}
+            {loading ? 'Saving...' : isEditMode ? '✓ Save Settings' : '🏆 Start Tournament'}
           </Button>
         </div>
       )}
