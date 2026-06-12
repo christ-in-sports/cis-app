@@ -7,7 +7,7 @@ export default function NotFound() {
         <p className="text-4xl mb-4">🤷</p>
         <h1 className="text-xl font-bold mb-2">Page Not Found</h1>
         <p className="text-sm text-muted-foreground mb-4">The page you're looking for doesn't exist.</p>
-        <Link href="/dashboard" className="px-4 py-2 bg-primary text-primary-foreground rounded-lg">
+        <Link href="/" className="px-4 py-2 bg-primary text-primary-foreground rounded-lg">
           Go to Dashboard
         </Link>
       </div>

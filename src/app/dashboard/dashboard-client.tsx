@@ -173,9 +173,15 @@ export default function DashboardClient({ user, memberships }: { user: User; mem
             {user.user_metadata?.display_name || user.email}
           </p>
         </div>
+
+        <Button variant="ghost" size="sm" onClick={() => router.push('/')}>
+          ← Home
+        </Button>
+
         <Button variant="ghost" size="sm" onClick={handleLogout}>
           Sign Out
         </Button>
+        
       </div>
 
       {/* Action Buttons */}
