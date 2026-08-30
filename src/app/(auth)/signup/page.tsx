@@ -10,13 +10,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import Link from 'next/link';
 
 export default function SignupPage() {
+  const [adminCode, setAdminCode] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
   const router = useRouter();
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -28,52 +28,45 @@ export default function SignupPage() {
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (password.length < 10) {
+      setError('Password must be at least 10 characters');
       return;
     }
 
     setLoading(true);
 
-    const supabase = createClient();
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          display_name: displayName,
-        },
-      },
-    });
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, displayName, adminCode }),
+      });
 
-    if (error) {
-      setError(error.message);
+      const json = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setError(json.error ?? 'Something went wrong.');
+        setLoading(false);
+        return;
+      }
+
+      // Account created — sign them straight in
+      const supabase = createClient();
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+
+      if (signInError) {
+        router.push('/login');
+      } else {
+        window.location.href = '/dashboard';
+      }
+    } catch {
+      setError('Network error. Please try again.');
       setLoading(false);
-    } else {
-      setSuccess(true);
     }
   };
-
-  if (success) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <Card className="w-full max-w-sm">
-          <CardHeader className="text-center">
-            <div className="text-4xl mb-2">✉️</div>
-            <CardTitle>Check Your Email</CardTitle>
-            <CardDescription>
-              We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => router.push('/login')} className="w-full h-12">
-              Back to Login
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 safe-top safe-bottom">
@@ -81,7 +74,7 @@ export default function SignupPage() {
         <CardHeader className="text-center">
           <div className="text-4xl mb-2">🏆</div>
           <CardTitle className="text-2xl">Create Account</CardTitle>
-          <CardDescription>Join to create and manage tournaments</CardDescription>
+          <CardDescription>Invite-only — an admin code is required</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignup} className="space-y-4">
@@ -90,6 +83,22 @@ export default function SignupPage() {
                 {error}
               </div>
             )}
+            <div className="space-y-2">
+              <Label htmlFor="adminCode">Admin Code</Label>
+              <Input
+                id="adminCode"
+                type="password"
+                placeholder="Code from your administrator"
+                value={adminCode}
+                onChange={(e) => setAdminCode(e.target.value)}
+                required
+                autoComplete="off"
+                className="h-12 text-base"
+              />
+              <p className="text-xs text-muted-foreground">
+                Signup is invite-only. Ask an admin for the code.
+              </p>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="name">Display Name</Label>
               <Input
@@ -119,7 +128,7 @@ export default function SignupPage() {
               <Input
                 id="password"
                 type="password"
-                placeholder="At least 6 characters"
+                placeholder="At least 10 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
