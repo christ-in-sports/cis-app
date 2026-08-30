@@ -33,10 +33,10 @@ const FEATURES = [
     ready: false,
   },
   {
-    title: 'Announcements',
-    description: 'Post and view announcements for your ministry',
-    emoji: '📢',
-    href: '/announcements',
+    title: 'Registration',
+    description: 'View and edit registration',
+    emoji: '✍🏻',
+    href: '/registration',
     ready: false,
   },
 ];

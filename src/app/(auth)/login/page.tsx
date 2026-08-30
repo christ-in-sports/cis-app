@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
@@ -48,7 +49,16 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center p-4 safe-top safe-bottom">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <div className="text-4xl mb-2">⚽🏀🏐</div>
+          <div className="flex justify-center mb-3">
+            <Image
+              src="/icons/icon-192.png"
+              alt="CIS logo"
+              width={72}
+              height={72}
+              priority
+              className="rounded-2xl"
+            />
+          </div>
           <CardTitle className="text-2xl">Welcome Back</CardTitle>
           <CardDescription>Sign in to CIS</CardDescription>
         </CardHeader>
