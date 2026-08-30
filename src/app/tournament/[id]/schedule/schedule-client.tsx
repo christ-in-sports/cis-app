@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -67,6 +67,22 @@ interface GameDay {
   notes: string | null;
 }
 
+/** One court position within a time slot. */
+interface SlotCell {
+  court: number;
+  match: Match | null;
+}
+
+/** One time slot across all courts. */
+interface SlotRow {
+  slotNumber: number;
+  time: string;
+  cells: SlotCell[];
+}
+
+/** duration_min is stored as (slots * 20) by createGameDay. */
+const SLOT_UNIT_MIN = 20;
+
 export default function ScheduleClient({
   tournament,
   teams,
@@ -94,11 +110,9 @@ export default function ScheduleClient({
   const [loading, setLoading] = useState(false);
   const [newStartTime, setNewStartTime] = useState('14:00');
 
-  // Scoring dialog state
   const [scoringMatch, setScoringMatch] = useState<Match | null>(null);
   const [scoreState, setScoreState] = useState<any>({});
 
-  // Create game day form
   const [newDate, setNewDate] = useState('');
   const [newCourts, setNewCourts] = useState('2');
   const [newSlots, setNewSlots] = useState('4');
@@ -109,29 +123,143 @@ export default function ScheduleClient({
   const supabase = createClient();
   const { toast } = useToast();
 
-  // Real-time updates
+  // Guards against the auto-fill effect firing on top of itself
+  const autoFillLock = useRef(false);
+
+  // ---------------------------------------------------------------
+  // Realtime
+  // ---------------------------------------------------------------
   useEffect(() => {
     const channel = supabase
-      .channel('schedule-updates')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'matches', filter: `tournament_id=eq.${tournament.id}` }, (payload) => {
-        if (payload.eventType === 'INSERT') {
-          setMatches((prev) => [...prev, payload.new as Match]);
-        } else if (payload.eventType === 'UPDATE') {
-          setMatches((prev) => prev.map((m) => (m.id === (payload.new as Match).id ? (payload.new as Match) : m)));
+      .channel(`schedule-${tournament.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'matches',
+          filter: `tournament_id=eq.${tournament.id}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const row = payload.new as Match;
+            setMatches((prev) => (prev.some((m) => m.id === row.id) ? prev : [...prev, row]));
+          } else if (payload.eventType === 'UPDATE') {
+            const row = payload.new as Match;
+            setMatches((prev) => prev.map((m) => (m.id === row.id ? row : m)));
+          } else if (payload.eventType === 'DELETE') {
+            const row = payload.old as Partial<Match>;
+            setMatches((prev) => prev.filter((m) => m.id !== row.id));
+          }
         }
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'match_scores' }, (payload) => {
-        if (payload.eventType === 'INSERT') {
-          setScores((prev) => [...prev, payload.new as Score]);
-        } else if (payload.eventType === 'UPDATE') {
-          setScores((prev) => prev.map((s) => (s.id === (payload.new as Score).id ? (payload.new as Score) : s)));
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'match_scores' },
+        (payload) => {
+          // match_scores has no tournament_id, so filter client-side
+          const row = (payload.new ?? payload.old) as Partial<Score>;
+          if (!row?.match_id) return;
+
+          if (payload.eventType === 'DELETE') {
+            setScores((prev) => prev.filter((s) => s.id !== row.id));
+            return;
+          }
+
+          const fresh = payload.new as Score;
+          setScores((prev) => {
+            const exists = prev.some((s) => s.match_id === fresh.match_id);
+            return exists
+              ? prev.map((s) => (s.match_id === fresh.match_id ? fresh : s))
+              : [...prev, fresh];
+          });
         }
-      })
+      )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [tournament.id]);
 
+  // ---------------------------------------------------------------
+  // Slot math — stable mapping between slot index and clock time
+  // ---------------------------------------------------------------
+  const getSportForDay = (gameDay: GameDay) =>
+    sports.find((s) => s.sport_type === gameDay.sport_type);
+
+  const getSlotCount = (gameDay: GameDay) =>
+    Math.max(1, Math.floor((gameDay.duration_min || SLOT_UNIT_MIN) / SLOT_UNIT_MIN));
+
+  const getGameDuration = (gameDay: GameDay) => {
+    const sport = getSportForDay(gameDay);
+    return sport?.settings?.game_duration_min || SLOT_UNIT_MIN;
+  };
+
+  /** Clock time for a 1-based slot index. Deterministic — this is the key to re-filling. */
+  const slotTime = (gameDay: GameDay, slotNumber: number) => {
+    const [h, m] = (gameDay.start_time || '14:00:00').split(':').map(Number);
+    const total = h * 60 + m + (slotNumber - 1) * getGameDuration(gameDay);
+    const hh = String(Math.floor(total / 60) % 24).padStart(2, '0');
+    const mm = String(total % 60).padStart(2, '0');
+    return `${hh}:${mm}:00`;
+  };
+
+  const formatTime = (time: string) => {
+    const [h, m] = time.split(':');
+    const hour = parseInt(h, 10);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const h12 = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+    return `${h12}:${m} ${ampm}`;
+  };
+
+  /**
+   * Builds the full grid: every slot, every court, whether or not a match sits there.
+   * `overflow` catches rows whose scheduled_time doesn't line up with any slot
+   * (e.g. left over from the old scheduling algorithm) so they never vanish.
+   */
+  const buildGrid = (gameDay: GameDay): { grid: SlotRow[]; overflow: Match[] } => {
+    const sport = getSportForDay(gameDay);
+    if (!sport) return { grid: [], overflow: [] };
+
+    const totalSlots = getSlotCount(gameDay);
+    const courts = Math.max(1, gameDay.courts_available || 1);
+
+    const grid: SlotRow[] = Array.from({ length: totalSlots }, (_, i) => ({
+      slotNumber: i + 1,
+      time: slotTime(gameDay, i + 1),
+      cells: Array.from({ length: courts }, (_, c) => ({ court: c + 1, match: null })),
+    }));
+
+    const timeToSlot = new Map<string, number>();
+    grid.forEach((row) => timeToSlot.set(row.time, row.slotNumber));
+
+    const dayMatches = matches.filter(
+      (m) => m.scheduled_date === gameDay.date && m.sport_id === sport.id
+    );
+
+    const overflow: Match[] = [];
+
+    dayMatches.forEach((m) => {
+      const slotNumber = m.scheduled_time ? timeToSlot.get(m.scheduled_time) : undefined;
+      if (!slotNumber) {
+        overflow.push(m);
+        return;
+      }
+      const row = grid[slotNumber - 1];
+      const cell =
+        row.cells.find((c) => c.court === (m.court || 1) && !c.match) ??
+        row.cells.find((c) => !c.match);
+      if (cell) cell.match = m;
+      else overflow.push(m);
+    });
+
+    return { grid, overflow };
+  };
+
+  // ---------------------------------------------------------------
+  // Game day CRUD
+  // ---------------------------------------------------------------
   const createGameDay = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -142,7 +270,7 @@ export default function ScheduleClient({
         tournament_id: tournament.id,
         date: newDate,
         start_time: newStartTime,
-        duration_min: parseInt(newSlots) * 20, // will be recalculated based on sport
+        duration_min: parseInt(newSlots) * SLOT_UNIT_MIN,
         courts_available: parseInt(newCourts),
         sport_type: newSport,
         notes: newNotes || null,
@@ -169,11 +297,16 @@ export default function ScheduleClient({
 
     const dayToDelete = gameDays.find((d) => d.id === id);
     if (dayToDelete) {
-      await supabase
+      const sport = getSportForDay(dayToDelete);
+      let q = supabase
         .from('matches')
         .update({ scheduled_date: null, scheduled_time: null, court: null })
         .eq('tournament_id', tournament.id)
         .eq('scheduled_date', dayToDelete.date);
+
+      // Only unschedule this day's sport, not every sport sharing the date
+      if (sport) q = q.eq('sport_id', sport.id);
+      await q;
     }
 
     await supabase.from('game_days').delete().eq('id', id);
@@ -183,132 +316,246 @@ export default function ScheduleClient({
     router.refresh();
   };
 
-  // Auto-schedule: fill slots with unscheduled matches
-  const autoSchedule = async (gameDay: GameDay) => {
+  /** Clears the day so you can re-fill from scratch. */
+  const clearDay = async (gameDay: GameDay) => {
+    const sport = getSportForDay(gameDay);
+    if (!sport) return;
+    const confirmed = window.confirm('Unschedule every match on this day? Scores are kept.');
+    if (!confirmed) return;
+
     setLoading(true);
+    await supabase
+      .from('matches')
+      .update({ scheduled_date: null, scheduled_time: null, court: null })
+      .eq('tournament_id', tournament.id)
+      .eq('sport_id', sport.id)
+      .eq('scheduled_date', gameDay.date);
 
-    const sport = sports.find((s) => s.sport_type === gameDay.sport_type);
-    if (!sport) {
-      toast({ title: 'Error', description: 'Sport not found', variant: 'destructive' });
-      setLoading(false);
-      return;
-    }
-
-    const totalSlots = Math.floor(gameDay.duration_min / 20); // We stored slots * 20 as duration
-    const courts = gameDay.courts_available;
-
-    // Get unscheduled matches for this sport (league first, then knockout)
-    const unscheduledLeague = matches.filter(
-      (m) =>
-        m.sport_id === sport.id &&
-        m.status === 'scheduled' &&
-        !m.scheduled_date &&
-        m.match_type === 'league' &&
-        m.home_team_id &&
-        m.away_team_id
+    setMatches((prev) =>
+      prev.map((m) =>
+        m.scheduled_date === gameDay.date && m.sport_id === sport.id
+          ? { ...m, scheduled_date: null, scheduled_time: null, court: null }
+          : m
+      )
     );
-
-    const unscheduledKnockout = matches.filter(
-      (m) =>
-        m.sport_id === sport.id &&
-        m.status === 'scheduled' &&
-        !m.scheduled_date &&
-        m.match_type !== 'league' &&
-        m.match_type !== 'spiritual' &&
-        m.home_team_id &&
-        m.away_team_id
-    );
-
-    const unscheduled = [...unscheduledLeague, ...unscheduledKnockout];
-
-    if (unscheduled.length === 0) {
-      toast({ title: 'No matches available', description: 'All matches are scheduled or waiting for teams', variant: 'destructive' });
-      setLoading(false);
-      return;
-    }
-
-    // Select balanced matches
-    const selected = selectBalancedMatches(unscheduled, totalSlots, courts, teams);
-
-    // Assign slot numbers as scheduled_time (slot 1, 2, 3...)
-    const updates: { id: string; court: number; scheduled_date: string; scheduled_time: string }[] = [];
-    // Get game duration from sport settings
-    const gameDuration = sport?.settings?.game_duration_min || 20;
-
-    // Parse start time
-    const [startHours, startMinutes] = gameDay.start_time.split(':').map(Number);
-
-    let slotIndex = 0;
-
-    for (let i = 0; i < selected.length; i += courts) {
-      const slotMatches = selected.slice(i, i + courts);
-      slotIndex++;
-
-      // Calculate actual start time for this slot
-      const totalMinutes = startHours * 60 + startMinutes + (slotIndex - 1) * gameDuration;
-      const hours = Math.floor(totalMinutes / 60).toString().padStart(2, '0');
-      const mins = (totalMinutes % 60).toString().padStart(2, '0');
-      const timeStr = `${hours}:${mins}:00`;
-
-      slotMatches.forEach((m, courtIdx) => {
-        updates.push({
-          id: m.id,
-          court: courtIdx + 1,
-          scheduled_date: gameDay.date,
-          scheduled_time: timeStr,
-        });
-      });
-    }
-
-    for (const upd of updates) {
-      await supabase
-        .from('matches')
-        .update({
-          court: upd.court,
-          scheduled_date: upd.scheduled_date,
-          scheduled_time: upd.scheduled_time,
-        })
-        .eq('id', upd.id);
-    }
-
-    toast({
-      title: 'Schedule created!',
-      description: `${updates.length} matches assigned to ${slotIndex} slots`,
-    });
-    router.refresh();
+    toast({ title: 'Day cleared' });
     setLoading(false);
   };
 
-  // Get schedule grid for a day
-  const getScheduleGrid = (gameDay: GameDay) => {
-    const sport = sports.find((s) => s.sport_type === gameDay.sport_type);
-    if (!sport) return [];
+  // ---------------------------------------------------------------
+  // Incremental auto-schedule
+  // ---------------------------------------------------------------
+  const autoSchedule = async (gameDay: GameDay, silent = false) => {
+    const sport = getSportForDay(gameDay);
+    if (!sport) {
+      if (!silent) toast({ title: 'Error', description: 'Sport not found', variant: 'destructive' });
+      return;
+    }
 
-    const dayMatches = matches.filter(
-      (m) => m.scheduled_date === gameDay.date && m.sport_id === sport.id
+    setLoading(true);
+
+    const { grid } = buildGrid(gameDay);
+
+    // Free cells, earliest slot first
+    const freeCells: { slot: number; court: number; time: string }[] = [];
+    grid.forEach((row) =>
+      row.cells.forEach((cell) => {
+        if (!cell.match) freeCells.push({ slot: row.slotNumber, court: cell.court, time: row.time });
+      })
     );
 
-    // Group by slot (scheduled_time)
-    const slots = new Map<string, Match[]>();
-    dayMatches.forEach((m) => {
-      if (!m.scheduled_time) return;
-      const slot = m.scheduled_time;
-      if (!slots.has(slot)) slots.set(slot, []);
-      slots.get(slot)!.push(m);
+    if (freeCells.length === 0) {
+      if (!silent) toast({ title: 'Day is full', description: 'Every slot already has a match.' });
+      setLoading(false);
+      return;
+    }
+
+    // Teams already committed per slot, and each team's slot history (for spacing)
+    const busyBySlot = new Map<number, Set<string>>();
+    const teamSlots: Record<string, number[]> = {};
+    grid.forEach((row) => {
+      const busy = new Set<string>();
+      row.cells.forEach((cell) => {
+        const m = cell.match;
+        if (!m) return;
+        [m.home_team_id, m.away_team_id].forEach((t) => {
+          if (!t) return;
+          busy.add(t);
+          (teamSlots[t] ||= []).push(row.slotNumber);
+        });
+      });
+      busyBySlot.set(row.slotNumber, busy);
     });
 
-    return Array.from(slots.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([slot, slotMatches], index) => ({
-        slotNumber: index + 1,
-        matches: slotMatches.sort((a, b) => (a.court || 0) - (b.court || 0)),
-      }));
+    const unscheduled = matches.filter(
+      (m) =>
+        m.sport_id === sport.id &&
+        m.status === 'scheduled' &&
+        !m.scheduled_date &&
+        m.match_type !== 'spiritual'
+    );
+
+    // Ready = both teams known. League before knockout.
+    const ready = [
+      ...unscheduled.filter((m) => m.match_type === 'league' && m.home_team_id && m.away_team_id),
+      ...unscheduled
+        .filter((m) => m.match_type !== 'league' && m.home_team_id && m.away_team_id)
+        .sort((a, b) => (a.round || 0) - (b.round || 0)),
+    ];
+
+    // Pending = real knockout rows still waiting on results. These become the TBD slots.
+    const pending = unscheduled
+      .filter((m) => m.match_type !== 'league' && (!m.home_team_id || !m.away_team_id))
+      .sort((a, b) => (a.round || 0) - (b.round || 0) || (a.bracket || '').localeCompare(b.bracket || ''));
+
+    const updates: { id: string; court: number; scheduled_date: string; scheduled_time: string }[] = [];
+    const remainingReady = [...ready];
+    const usedCells = new Set<string>();
+
+    // Pass 1 — place matches with known teams, spacing teams out
+    for (const cell of freeCells) {
+      if (remainingReady.length === 0) break;
+      const busy = busyBySlot.get(cell.slot)!;
+
+      let bestIdx = -1;
+      let bestScore = -Infinity;
+
+      for (let i = 0; i < remainingReady.length; i++) {
+        const m = remainingReady[i];
+        const home = m.home_team_id!;
+        const away = m.away_team_id!;
+        if (busy.has(home) || busy.has(away)) continue;
+
+        const hs = teamSlots[home] || [];
+        const as = teamSlots[away] || [];
+        const hGap = hs.length ? cell.slot - Math.max(...hs) : 99;
+        const aGap = as.length ? cell.slot - Math.max(...as) : 99;
+        let score = hGap + aGap;
+
+        // Discourage three consecutive slots
+        if (hs.includes(cell.slot - 1) && hs.includes(cell.slot - 2)) score -= 100;
+        if (as.includes(cell.slot - 1) && as.includes(cell.slot - 2)) score -= 100;
+
+        if (score > bestScore) {
+          bestScore = score;
+          bestIdx = i;
+        }
+      }
+
+      if (bestIdx === -1) continue;
+
+      const chosen = remainingReady.splice(bestIdx, 1)[0];
+      updates.push({
+        id: chosen.id,
+        court: cell.court,
+        scheduled_date: gameDay.date,
+        scheduled_time: cell.time,
+      });
+      usedCells.add(`${cell.slot}-${cell.court}`);
+      busy.add(chosen.home_team_id!);
+      busy.add(chosen.away_team_id!);
+      (teamSlots[chosen.home_team_id!] ||= []).push(cell.slot);
+      (teamSlots[chosen.away_team_id!] ||= []).push(cell.slot);
+    }
+
+    // Pass 2 — fill remaining cells with pending knockout rows (TBD vs TBD).
+    // Runs second so these land in later slots, after the games that decide them.
+    const stillFree = freeCells.filter((c) => !usedCells.has(`${c.slot}-${c.court}`));
+    for (const cell of stillFree) {
+      const next = pending.shift();
+      if (!next) break;
+      updates.push({
+        id: next.id,
+        court: cell.court,
+        scheduled_date: gameDay.date,
+        scheduled_time: cell.time,
+      });
+      usedCells.add(`${cell.slot}-${cell.court}`);
+    }
+
+    if (updates.length === 0) {
+      if (!silent) {
+        toast({
+          title: 'Nothing to schedule',
+          description: 'No unscheduled matches for this sport. Empty slots stay open.',
+        });
+      }
+      setLoading(false);
+      return;
+    }
+
+    await Promise.all(
+      updates.map((u) =>
+        supabase
+          .from('matches')
+          .update({
+            court: u.court,
+            scheduled_date: u.scheduled_date,
+            scheduled_time: u.scheduled_time,
+          })
+          .eq('id', u.id)
+      )
+    );
+
+    // Optimistic local update; realtime will confirm
+    setMatches((prev) =>
+      prev.map((m) => {
+        const u = updates.find((x) => x.id === m.id);
+        return u
+          ? { ...m, court: u.court, scheduled_date: u.scheduled_date, scheduled_time: u.scheduled_time }
+          : m;
+      })
+    );
+
+    const openLeft = stillFree.length - updates.filter((u) => !ready.some((r) => r.id === u.id)).length;
+
+    if (!silent) {
+      toast({
+        title: 'Schedule updated',
+        description:
+          `${updates.length} match${updates.length === 1 ? '' : 'es'} placed` +
+          (openLeft > 0 ? ` • ${openLeft} slot${openLeft === 1 ? '' : 's'} still open` : ''),
+      });
+    }
+    setLoading(false);
   };
 
-  // Score helpers
-  const getMatchScore = (matchId: string) => {
-    return scores.find((s) => s.match_id === matchId);
-  };
+  /**
+   * OPTIONAL live auto-fill. When the knockout bracket is created elsewhere,
+   * realtime inserts those rows and this drops them into open slots with no
+   * button press. Delete this whole effect if you'd rather fill manually.
+   */
+  useEffect(() => {
+    if (!isAdmin || !selectedDay || loading || autoFillLock.current) return;
+
+    const sport = getSportForDay(selectedDay);
+    if (!sport) return;
+
+    const { grid } = buildGrid(selectedDay);
+    const hasFreeCell = grid.some((row) => row.cells.some((c) => !c.match));
+    if (!hasFreeCell) return;
+
+    const hasWaiting = matches.some(
+      (m) =>
+        m.sport_id === sport.id &&
+        m.status === 'scheduled' &&
+        !m.scheduled_date &&
+        m.match_type !== 'spiritual'
+    );
+    if (!hasWaiting) return;
+
+    autoFillLock.current = true;
+    autoSchedule(selectedDay, true).finally(() => {
+      setTimeout(() => {
+        autoFillLock.current = false;
+      }, 1500);
+    });
+  }, [matches, selectedDay, isAdmin]);
+
+  // ---------------------------------------------------------------
+  // Display helpers
+  // ---------------------------------------------------------------
+  const getMatchScore = (matchId: string) => scores.find((s) => s.match_id === matchId);
 
   const getTeamName = (teamId: string | null) => {
     if (!teamId) return 'TBD';
@@ -333,14 +580,21 @@ export default function ScheduleClient({
   const getMatchTypeLabel = (match: Match) => {
     switch (match.match_type) {
       case 'league': return 'League';
-      case 'knockout': return 'Knockout';
+      case 'knockout': return match.round ? `Knockout R${match.round}` : 'Knockout';
       case 'third_place': return '3rd Place';
       case 'fifth_place': return '5th/7th Place';
-      default: return '';
+      default: return match.match_type;
     }
   };
 
-  // ---- SCORING LOGIC ----
+  const getSportType = (match: Match) => {
+    const sport = sports.find((s) => s.id === match.sport_id);
+    return sport?.sport_type || 'soccer';
+  };
+
+  // ---------------------------------------------------------------
+  // Scoring
+  // ---------------------------------------------------------------
   const openScoring = (match: Match) => {
     const existingScore = getMatchScore(match.id);
     const sport = sports.find((s) => s.id === match.sport_id);
@@ -374,34 +628,25 @@ export default function ScheduleClient({
     setScoringMatch(match);
   };
 
-  const getSportType = (match: Match) => {
-    const sport = sports.find((s) => s.id === match.sport_id);
-    return sport?.sport_type || 'soccer';
-  };
-
   const calculateTotals = (details: any, sportType: string): { home: number; away: number } => {
     switch (sportType) {
       case 'soccer':
       case 'basketball': {
         let home = details.home_score;
         let away = details.away_score;
-        // Handle old array format
         if (Array.isArray(home)) home = home.reduce((a: number, b: number) => a + b, 0);
         if (Array.isArray(away)) away = away.reduce((a: number, b: number) => a + b, 0);
-        // Handle old halves format
         if (home === undefined || home === null) home = (details.home_halves || []).reduce((a: number, b: number) => a + b, 0);
         if (away === undefined || away === null) away = (details.away_halves || []).reduce((a: number, b: number) => a + b, 0);
         return { home: home || 0, away: away || 0 };
       }
       case 'volleyball': {
-        // Only count sets where at least one team scored
         const playedSets = (details.sets || []).filter((s: any) => s.home > 0 || s.away > 0);
         const homeSets = playedSets.filter((s: any) => s.home > s.away).length;
         const awaySets = playedSets.filter((s: any) => s.away > s.home).length;
         return { home: homeSets, away: awaySets };
       }
       case 'dodgeball': {
-        // Only count rounds with a winner
         const homeRounds = (details.rounds || []).filter((r: any) => r.winner === 'home').length;
         const awayRounds = (details.rounds || []).filter((r: any) => r.winner === 'away').length;
         return { home: homeRounds, away: awayRounds };
@@ -429,38 +674,30 @@ export default function ScheduleClient({
       isDraw = true;
     }
 
-    await supabase
-      .from('match_scores')
-      .upsert({
+    await supabase.from('match_scores').upsert(
+      {
         match_id: scoringMatch.id,
         home_score: totals.home,
         away_score: totals.away,
         score_details: scoreState,
-      }, { onConflict: 'match_id' });
+      },
+      { onConflict: 'match_id' }
+    );
 
     await supabase
       .from('matches')
-      .update({
-        status: 'completed',
-        winner_team_id: winnerId,
-        is_draw: isDraw,
-      })
+      .update({ status: 'completed', winner_team_id: winnerId, is_draw: isDraw })
       .eq('id', scoringMatch.id);
 
-    // Recalculate standings if league match
     if (scoringMatch.match_type === 'league') {
       await recalculateStandings(scoringMatch.sport_id, sportType);
-    }
-
-    // Advance knockout winners
-    if (scoringMatch.match_type !== 'league') {
+    } else {
       await advanceKnockoutWinners(scoringMatch.sport_id);
     }
 
     toast({ title: 'Score saved!' });
     setScoringMatch(null);
     setLoading(false);
-    router.refresh();
   };
 
   const recalculateStandings = async (sportId: string, sportType: string) => {
@@ -474,16 +711,8 @@ export default function ScheduleClient({
     if (!completedMatches) return;
 
     const matchIds = completedMatches.map((m) => m.id);
-    const { data: allScores } = await supabase
-      .from('match_scores')
-      .select('*')
-      .in('match_id', matchIds);
-
-    const { data: currentStandings } = await supabase
-      .from('standings')
-      .select('*')
-      .eq('sport_id', sportId);
-
+    const { data: allScores } = await supabase.from('match_scores').select('*').in('match_id', matchIds);
+    const { data: currentStandings } = await supabase.from('standings').select('*').eq('sport_id', sportId);
     if (!currentStandings) return;
 
     const stats: Record<string, { played: number; won: number; drawn: number; lost: number; scored: number; conceded: number }> = {};
@@ -535,50 +764,46 @@ export default function ScheduleClient({
       }
     });
 
-    // Head-to-head: returns positive if B wins, negative if A wins, 0 if tied
-    const getHeadToHead = (teamA: string, teamB: string, matches: any[]) => {
-      const directMatches = matches.filter(
+    const getHeadToHead = (teamA: string, teamB: string, ms: any[]) => {
+      const direct = ms.filter(
         (m) =>
           (m.home_team_id === teamA && m.away_team_id === teamB) ||
           (m.home_team_id === teamB && m.away_team_id === teamA)
       );
-
       let aWins = 0;
       let bWins = 0;
-
-      directMatches.forEach((m) => {
+      direct.forEach((m) => {
         if (m.winner_team_id === teamA) aWins++;
         else if (m.winner_team_id === teamB) bWins++;
       });
-
-      if (bWins > aWins) return 1;  // B is better
-      if (aWins > bWins) return -1; // A is better
-      return 0; // still tied
+      if (bWins > aWins) return 1;
+      if (aWins > bWins) return -1;
+      return 0;
     };
 
     const sorted = Object.entries(stats)
       .map(([teamId, s]) => ({ teamId, ...s, points: s.won * 3 + s.drawn, difference: s.scored - s.conceded }))
       .sort((a, b) => {
-        // 1. League points
         if (b.points !== a.points) return b.points - a.points;
-        // 2. Point/goal/set/round difference
         if (b.difference !== a.difference) return b.difference - a.difference;
-        // 3. Head-to-head
         const h2h = getHeadToHead(a.teamId, b.teamId, completedMatches);
         if (h2h !== 0) return h2h;
-        // 4. Total scored
         return b.scored - a.scored;
       });
 
-    const updates = sorted.map((t, i) =>
-      supabase.from('standings').update({
-        played: t.played, won: t.won, drawn: t.drawn, lost: t.lost,
-        points: t.points, scored: t.scored, conceded: t.conceded,
-        difference: t.difference, position: i + 1,
-      }).eq('sport_id', sportId).eq('team_id', t.teamId)
+    await Promise.all(
+      sorted.map((t, i) =>
+        supabase
+          .from('standings')
+          .update({
+            played: t.played, won: t.won, drawn: t.drawn, lost: t.lost,
+            points: t.points, scored: t.scored, conceded: t.conceded,
+            difference: t.difference, position: i + 1,
+          })
+          .eq('sport_id', sportId)
+          .eq('team_id', t.teamId)
+      )
     );
-
-    await Promise.all(updates);
   };
 
   const advanceKnockoutWinners = async (sportId: string) => {
@@ -629,7 +854,9 @@ export default function ScheduleClient({
     }
   };
 
-  // Scoring UI renderer
+  // ---------------------------------------------------------------
+  // Scoring UI
+  // ---------------------------------------------------------------
   const renderScoringUI = () => {
     if (!scoringMatch) return null;
     const sportType = getSportType(scoringMatch);
@@ -642,57 +869,23 @@ export default function ScheduleClient({
         return (
           <div className="space-y-6">
             <div className="flex items-center justify-between">
-              {/* Home */}
               <div className="flex flex-col items-center gap-3 flex-1">
                 <span className="text-sm font-medium truncate max-w-[100px] text-center">{homeTeam}</span>
                 <div className="flex items-center gap-3">
-                  <Button
-                    variant="outline"
-                    className="h-14 w-14 text-xl"
-                    onClick={() => {
-                      const s = { ...scoreState };
-                      s.home_score = Math.max(0, (s.home_score || 0) - 1);
-                      setScoreState(s);
-                    }}
-                  >−</Button>
+                  <Button variant="outline" className="h-14 w-14 text-xl" onClick={() => setScoreState({ ...scoreState, home_score: Math.max(0, (scoreState.home_score || 0) - 1) })}>−</Button>
                   <span className="text-4xl font-bold w-12 text-center">{scoreState.home_score || 0}</span>
-                  <Button
-                    variant="outline"
-                    className="h-14 w-14 text-xl"
-                    onClick={() => {
-                      const s = { ...scoreState };
-                      s.home_score = (s.home_score || 0) + 1;
-                      setScoreState(s);
-                    }}
-                  >+</Button>
+                  <Button variant="outline" className="h-14 w-14 text-xl" onClick={() => setScoreState({ ...scoreState, home_score: (scoreState.home_score || 0) + 1 })}>+</Button>
                 </div>
               </div>
 
               <span className="text-2xl text-muted-foreground px-2">-</span>
 
-              {/* Away */}
               <div className="flex flex-col items-center gap-3 flex-1">
                 <span className="text-sm font-medium truncate max-w-[100px] text-center">{awayTeam}</span>
                 <div className="flex items-center gap-3">
-                  <Button
-                    variant="outline"
-                    className="h-14 w-14 text-xl"
-                    onClick={() => {
-                      const s = { ...scoreState };
-                      s.away_score = Math.max(0, (s.away_score || 0) - 1);
-                      setScoreState(s);
-                    }}
-                  >−</Button>
+                  <Button variant="outline" className="h-14 w-14 text-xl" onClick={() => setScoreState({ ...scoreState, away_score: Math.max(0, (scoreState.away_score || 0) - 1) })}>−</Button>
                   <span className="text-4xl font-bold w-12 text-center">{scoreState.away_score || 0}</span>
-                  <Button
-                    variant="outline"
-                    className="h-14 w-14 text-xl"
-                    onClick={() => {
-                      const s = { ...scoreState };
-                      s.away_score = (s.away_score || 0) + 1;
-                      setScoreState(s);
-                    }}
-                  >+</Button>
+                  <Button variant="outline" className="h-14 w-14 text-xl" onClick={() => setScoreState({ ...scoreState, away_score: (scoreState.away_score || 0) + 1 })}>+</Button>
                 </div>
               </div>
             </div>
@@ -710,38 +903,38 @@ export default function ScheduleClient({
           <div className="space-y-5">
             <p className="text-center text-sm text-muted-foreground">Points per set (leave 0-0 for unplayed sets)</p>
             {(scoreState.sets || []).map((set: any, i: number) => (
-                <div key={i} className="space-y-2">
-                  <p className="text-center text-xs font-medium text-muted-foreground">Set {i + 1}</p>
-                  <div className="flex items-center justify-center gap-4">
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" className="h-12 w-12 text-lg" onClick={() => {
-                        const sets = [...(scoreState.sets || [])];
-                        sets[i] = { ...sets[i], home: Math.max(0, sets[i].home - 1) };
-                        setScoreState({ ...scoreState, sets });
-                      }}>−</Button>
-                      <span className="text-2xl font-bold w-8 text-center">{set.home}</span>
-                      <Button variant="outline" className="h-12 w-12 text-lg" onClick={() => {
-                        const sets = [...(scoreState.sets || [])];
-                        sets[i] = { ...sets[i], home: sets[i].home + 1 };
-                        setScoreState({ ...scoreState, sets });
-                      }}>+</Button>
-                    </div>
-                    <span className="text-muted-foreground">-</span>
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" className="h-12 w-12 text-lg" onClick={() => {
-                        const sets = [...(scoreState.sets || [])];
-                        sets[i] = { ...sets[i], away: Math.max(0, sets[i].away - 1) };
-                        setScoreState({ ...scoreState, sets });
-                      }}>−</Button>
-                      <span className="text-2xl font-bold w-8 text-center">{set.away}</span>
-                      <Button variant="outline" className="h-12 w-12 text-lg" onClick={() => {
-                        const sets = [...(scoreState.sets || [])];
-                        sets[i] = { ...sets[i], away: sets[i].away + 1 };
-                        setScoreState({ ...scoreState, sets });
-                      }}>+</Button>
-                    </div>
+              <div key={i} className="space-y-2">
+                <p className="text-center text-xs font-medium text-muted-foreground">Set {i + 1}</p>
+                <div className="flex items-center justify-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" className="h-12 w-12 text-lg" onClick={() => {
+                      const sets = [...(scoreState.sets || [])];
+                      sets[i] = { ...sets[i], home: Math.max(0, sets[i].home - 1) };
+                      setScoreState({ ...scoreState, sets });
+                    }}>−</Button>
+                    <span className="text-2xl font-bold w-8 text-center">{set.home}</span>
+                    <Button variant="outline" className="h-12 w-12 text-lg" onClick={() => {
+                      const sets = [...(scoreState.sets || [])];
+                      sets[i] = { ...sets[i], home: sets[i].home + 1 };
+                      setScoreState({ ...scoreState, sets });
+                    }}>+</Button>
+                  </div>
+                  <span className="text-muted-foreground">-</span>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" className="h-12 w-12 text-lg" onClick={() => {
+                      const sets = [...(scoreState.sets || [])];
+                      sets[i] = { ...sets[i], away: Math.max(0, sets[i].away - 1) };
+                      setScoreState({ ...scoreState, sets });
+                    }}>−</Button>
+                    <span className="text-2xl font-bold w-8 text-center">{set.away}</span>
+                    <Button variant="outline" className="h-12 w-12 text-lg" onClick={() => {
+                      const sets = [...(scoreState.sets || [])];
+                      sets[i] = { ...sets[i], away: sets[i].away + 1 };
+                      setScoreState({ ...scoreState, sets });
+                    }}>+</Button>
                   </div>
                 </div>
+              </div>
             ))}
             <div className="border-t border-muted pt-4 text-center">
               <span className="text-sm text-muted-foreground">Sets won: </span>
@@ -759,39 +952,39 @@ export default function ScheduleClient({
           <div className="space-y-4">
             <p className="text-center text-sm text-muted-foreground">Tap the winner (leave blank for unplayed rounds)</p>
             {(scoreState.rounds || []).map((round: any, i: number) => (
-                <div key={i} className="space-y-2">
-                  <p className="text-center text-xs text-muted-foreground">Round {i + 1}</p>
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => {
-                        const rounds = [...(scoreState.rounds || [])];
-                        rounds[i] = { winner: round.winner === 'home' ? null : 'home' };
-                        setScoreState({ ...scoreState, rounds });
-                      }}
-                      className={`flex-1 py-5 rounded-xl text-sm font-medium transition-all ${
-                        round.winner === 'home'
-                          ? 'bg-green-500/20 border-2 border-green-500 text-green-400 scale-[1.02]'
-                          : 'bg-muted border-2 border-transparent text-muted-foreground'
-                      }`}
-                    >
-                      {homeTeam}
-                    </button>
-                    <button
-                      onClick={() => {
-                        const rounds = [...(scoreState.rounds || [])];
-                        rounds[i] = { winner: round.winner === 'away' ? null : 'away' };
-                        setScoreState({ ...scoreState, rounds });
-                      }}
-                      className={`flex-1 py-5 rounded-xl text-sm font-medium transition-all ${
-                        round.winner === 'away'
-                          ? 'bg-green-500/20 border-2 border-green-500 text-green-400 scale-[1.02]'
-                          : 'bg-muted border-2 border-transparent text-muted-foreground'
-                      }`}
-                    >
-                      {awayTeam}
-                    </button>
-                  </div>
+              <div key={i} className="space-y-2">
+                <p className="text-center text-xs text-muted-foreground">Round {i + 1}</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      const rounds = [...(scoreState.rounds || [])];
+                      rounds[i] = { winner: round.winner === 'home' ? null : 'home' };
+                      setScoreState({ ...scoreState, rounds });
+                    }}
+                    className={`flex-1 py-5 rounded-xl text-sm font-medium transition-all ${
+                      round.winner === 'home'
+                        ? 'bg-green-500/20 border-2 border-green-500 text-green-400 scale-[1.02]'
+                        : 'bg-muted border-2 border-transparent text-muted-foreground'
+                    }`}
+                  >
+                    {getTeamName(scoringMatch.home_team_id)}
+                  </button>
+                  <button
+                    onClick={() => {
+                      const rounds = [...(scoreState.rounds || [])];
+                      rounds[i] = { winner: round.winner === 'away' ? null : 'away' };
+                      setScoreState({ ...scoreState, rounds });
+                    }}
+                    className={`flex-1 py-5 rounded-xl text-sm font-medium transition-all ${
+                      round.winner === 'away'
+                        ? 'bg-green-500/20 border-2 border-green-500 text-green-400 scale-[1.02]'
+                        : 'bg-muted border-2 border-transparent text-muted-foreground'
+                    }`}
+                  >
+                    {getTeamName(scoringMatch.away_team_id)}
+                  </button>
                 </div>
+              </div>
             ))}
             <div className="border-t border-muted pt-4 text-center">
               <span className="text-sm text-muted-foreground">Rounds: </span>
@@ -809,9 +1002,101 @@ export default function ScheduleClient({
     }
   };
 
+  // ---------------------------------------------------------------
+  // Cell renderers
+  // ---------------------------------------------------------------
+  const renderMatchCell = (match: Match) => {
+    const matchScore = getMatchScore(match.id);
+    const sportType = getSportType(match);
+    const totals = matchScore ? calculateTotals(matchScore.score_details || {}, sportType) : null;
+    const awaitingTeams = !match.home_team_id || !match.away_team_id;
+
+    return (
+      <div
+        key={match.id}
+        className={`p-4 border-b border-muted/30 last:border-0 ${
+          match.status === 'completed' ? 'bg-green-500/5' : ''
+        } ${awaitingTeams ? 'opacity-80' : ''}`}
+      >
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-xs">Court {match.court || '?'}</Badge>
+            <Badge className="text-xs bg-muted text-muted-foreground">{getMatchTypeLabel(match)}</Badge>
+          </div>
+          {match.status === 'completed' && (
+            <Badge className="text-xs bg-green-500/20 text-green-400">Done</Badge>
+          )}
+          {awaitingTeams && match.status !== 'completed' && (
+            <Badge className="text-xs bg-amber-500/20 text-amber-400">Pending</Badge>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between py-2">
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: getTeamColor(match.home_team_id) }} />
+              <span className={`text-base ${match.winner_team_id === match.home_team_id ? 'font-bold' : ''} ${!match.home_team_id ? 'text-muted-foreground italic' : ''}`}>
+                {getTeamName(match.home_team_id)}
+              </span>
+            </div>
+          </div>
+
+          <div className="px-4">
+            {match.status === 'completed' && totals ? (
+              <span className="text-2xl font-bold">{totals.home} - {totals.away}</span>
+            ) : (
+              <span className="text-lg text-muted-foreground">vs</span>
+            )}
+          </div>
+
+          <div className="flex-1 flex justify-end">
+            <div className="flex items-center gap-2">
+              <span className={`text-base ${match.winner_team_id === match.away_team_id ? 'font-bold' : ''} ${!match.away_team_id ? 'text-muted-foreground italic' : ''}`}>
+                {getTeamName(match.away_team_id)}
+              </span>
+              <div className="w-4 h-4 rounded-full" style={{ backgroundColor: getTeamColor(match.away_team_id) }} />
+            </div>
+          </div>
+        </div>
+
+        {isAdmin && match.home_team_id && match.away_team_id && (
+          <Button variant="outline" className="w-full h-12 mt-2 text-sm" onClick={() => openScoring(match)}>
+            {match.status === 'completed' ? '✏️ Edit Score' : '📝 Record Score'}
+          </Button>
+        )}
+
+        {awaitingTeams && (
+          <p className="text-xs text-muted-foreground text-center mt-2">
+            Teams decided by earlier results — updates automatically
+          </p>
+        )}
+      </div>
+    );
+  };
+
+  const renderEmptyCell = (slot: SlotRow, cell: SlotCell) => (
+    <div
+      key={`empty-${slot.slotNumber}-${cell.court}`}
+      className="p-4 border-b border-muted/30 last:border-0"
+    >
+      <div className="flex items-center justify-between mb-2">
+        <Badge variant="outline" className="text-xs opacity-60">Court {cell.court}</Badge>
+        <Badge className="text-xs bg-muted/50 text-muted-foreground">TBD</Badge>
+      </div>
+      <div className="border border-dashed border-muted rounded-lg py-5 text-center">
+        <p className="text-sm text-muted-foreground italic">Open slot</p>
+        <p className="text-xs text-muted-foreground/70 mt-1">
+          Fills in once more matches exist
+        </p>
+      </div>
+    </div>
+  );
+
+  // ---------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------
   return (
     <div className="min-h-screen pb-32 safe-top safe-bottom">
-      {/* Header */}
       <div className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur border-b border-muted p-4">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div>
@@ -880,7 +1165,6 @@ export default function ScheduleClient({
       </div>
 
       <div className="max-w-2xl mx-auto p-4">
-        {/* Game Day Selector */}
         {gameDays.length > 0 && (
           <div className="flex gap-2 overflow-x-auto pb-3 mb-4 -mx-1 px-1">
             {gameDays.map((day) => (
@@ -902,21 +1186,14 @@ export default function ScheduleClient({
           </div>
         )}
 
-        {/* Selected Day Content */}
         {selectedDay && (() => {
-          const grid = getScheduleGrid(selectedDay);
-          const totalSlots = Math.floor(selectedDay.duration_min / 20);
-          const formatTime = (time: string) => {
-            const [h, m] = time.split(':');
-            const hour = parseInt(h);
-            const ampm = hour >= 12 ? 'PM' : 'AM';
-            const h12 = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
-            return `${h12}:${m} ${ampm}`;
-          };
+          const { grid, overflow } = buildGrid(selectedDay);
+          const totalSlots = getSlotCount(selectedDay);
+          const filledCount = grid.reduce((n, r) => n + r.cells.filter((c) => c.match).length, 0);
+          const openCount = grid.reduce((n, r) => n + r.cells.filter((c) => !c.match).length, 0);
 
           return (
             <div>
-              {/* Day Header */}
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-lg font-bold">
@@ -925,14 +1202,20 @@ export default function ScheduleClient({
                   </h2>
                   <p className="text-sm text-muted-foreground">
                     {totalSlots} slots • {selectedDay.courts_available} court{selectedDay.courts_available > 1 ? 's' : ''}
+                    {' • '}{filledCount} filled, {openCount} open
                     {selectedDay.notes && ` • ${selectedDay.notes}`}
                   </p>
                 </div>
                 {isAdmin && (
                   <div className="flex gap-2">
-                    {grid.length === 0 && (
+                    {openCount > 0 && (
                       <Button onClick={() => autoSchedule(selectedDay)} disabled={loading} className="h-12">
-                        {loading ? '...' : '⚡ Fill'}
+                        {loading ? '...' : filledCount === 0 ? '⚡ Fill' : '⚡ Fill Open'}
+                      </Button>
+                    )}
+                    {filledCount > 0 && (
+                      <Button variant="ghost" className="h-12 text-xs" onClick={() => clearDay(selectedDay)} disabled={loading}>
+                        ♻️
                       </Button>
                     )}
                     <Button variant="ghost" className="h-12 text-red-400" onClick={() => deleteGameDay(selectedDay.id)}>
@@ -942,12 +1225,13 @@ export default function ScheduleClient({
                 )}
               </div>
 
-              {/* Schedule Grid */}
-              {grid.length === 0 ? (
+              {!getSportForDay(selectedDay) ? (
                 <Card className="border-dashed">
                   <CardContent className="py-12 text-center text-muted-foreground">
-                    <p className="text-lg mb-2">No games scheduled</p>
-                    {isAdmin && <p className="text-sm">Tap ⚡ Fill to auto-assign matches</p>}
+                    <p className="text-lg mb-2">Sport not set up</p>
+                    <p className="text-sm">
+                      No “{selectedDay.sport_type}” sport exists in this tournament yet.
+                    </p>
                   </CardContent>
                 </Card>
               ) : (
@@ -960,98 +1244,35 @@ export default function ScheduleClient({
                             {slot.slotNumber}
                           </span>
                           <span>Game {slot.slotNumber}</span>
-                          {slot.matches[0]?.scheduled_time && (
-                            <span className="text-xs text-muted-foreground ml-auto">
-                              {formatTime(slot.matches[0].scheduled_time)}
-                            </span>
-                          )}
+                          <span className="text-xs text-muted-foreground ml-auto">
+                            {formatTime(slot.time)}
+                          </span>
                         </CardTitle>
                       </CardHeader>
                       <CardContent className="p-0">
-                        {slot.matches.map((match) => {
-                          const matchScore = getMatchScore(match.id);
-                          const sportType = getSportType(match);
-                          const totals = matchScore ? calculateTotals(matchScore.score_details || {}, sportType) : null;
-
-                          return (
-                            <div
-                              key={match.id}
-                              className={`p-4 border-b border-muted/30 last:border-0 ${
-                                match.status === 'completed' ? 'bg-green-500/5' : ''
-                              }`}
-                            >
-                              {/* Court label + match type */}
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="outline" className="text-xs">
-                                    Court {match.court || '?'}
-                                  </Badge>
-                                  <Badge className="text-xs bg-muted text-muted-foreground">
-                                    {getMatchTypeLabel(match)}
-                                  </Badge>
-                                </div>
-                                {match.status === 'completed' && (
-                                  <Badge className="text-xs bg-green-500/20 text-green-400">Done</Badge>
-                                )}
-                              </div>
-
-                              {/* Teams and Score */}
-                              <div className="flex items-center justify-between py-2">
-                                {/* Home */}
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: getTeamColor(match.home_team_id) }} />
-                                    <span className={`text-base ${match.winner_team_id === match.home_team_id ? 'font-bold' : ''}`}>
-                                      {getTeamName(match.home_team_id)}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                {/* Score */}
-                                <div className="px-4">
-                                  {match.status === 'completed' && totals ? (
-                                    <span className="text-2xl font-bold">
-                                      {totals.home} - {totals.away}
-                                    </span>
-                                  ) : (
-                                    <span className="text-lg text-muted-foreground">vs</span>
-                                  )}
-                                </div>
-
-                                {/* Away */}
-                                <div className="flex-1 flex justify-end">
-                                  <div className="flex items-center gap-2">
-                                    <span className={`text-base ${match.winner_team_id === match.away_team_id ? 'font-bold' : ''}`}>
-                                      {getTeamName(match.away_team_id)}
-                                    </span>
-                                    <div className="w-4 h-4 rounded-full" style={{ backgroundColor: getTeamColor(match.away_team_id) }} />
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Admin action */}
-                              {isAdmin && match.home_team_id && match.away_team_id && (
-                                <Button
-                                  variant="outline"
-                                  className="w-full h-12 mt-2 text-sm"
-                                  onClick={() => openScoring(match)}
-                                >
-                                  {match.status === 'completed' ? '✏️ Edit Score' : '📝 Record Score'}
-                                </Button>
-                              )}
-
-                              {/* TBD notice */}
-                              {(!match.home_team_id || !match.away_team_id) && (
-                                <p className="text-xs text-muted-foreground text-center mt-2">
-                                  Waiting for previous results...
-                                </p>
-                              )}
-                            </div>
-                          );
-                        })}
+                        {slot.cells.map((cell) =>
+                          cell.match ? renderMatchCell(cell.match) : renderEmptyCell(slot, cell)
+                        )}
                       </CardContent>
                     </Card>
                   ))}
+
+                  {overflow.length > 0 && (
+                    <Card className="border-amber-500/40">
+                      <CardHeader className="py-3 px-4">
+                        <CardTitle className="text-sm text-amber-400">
+                          ⚠️ Outside the slot grid ({overflow.length})
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="p-0">
+                        {overflow.map((m) => renderMatchCell(m))}
+                        <p className="px-4 py-3 text-xs text-muted-foreground">
+                          These were scheduled at times that don&apos;t line up with the current
+                          slot grid. Tap ♻️ to clear the day and re-fill.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
                 </div>
               )}
             </div>
@@ -1068,11 +1289,11 @@ export default function ScheduleClient({
         )}
       </div>
 
-      {/* Scoring Dialog */}
       {scoringMatch && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
           <div className="fixed inset-0 bg-black/80" onClick={() => setScoringMatch(null)} />
-            <div className="relative z-50 w-full max-w-md max-h-[85vh] overflow-auto rounded-t-2xl sm:rounded-2xl border bg-background p-6 pb-32 shadow-lg mx-0 sm:mx-4">            <div className="flex items-center justify-between mb-6">
+          <div className="relative z-50 w-full max-w-md max-h-[85vh] overflow-auto rounded-t-2xl sm:rounded-2xl border bg-background p-6 pb-32 shadow-lg mx-0 sm:mx-4">
+            <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-bold">
                 {getTeamName(scoringMatch.home_team_id)} vs {getTeamName(scoringMatch.away_team_id)}
               </h2>
@@ -1081,11 +1302,7 @@ export default function ScheduleClient({
 
             {renderScoringUI()}
 
-            <Button
-              onClick={saveScore}
-              className="w-full h-14 mt-6 text-base"
-              disabled={loading}
-            >
+            <Button onClick={saveScore} className="w-full h-14 mt-6 text-base" disabled={loading}>
               {loading ? 'Saving...' : '✓ Save Result'}
             </Button>
           </div>
@@ -1093,60 +1310,4 @@ export default function ScheduleClient({
       )}
     </div>
   );
-}
-
-// Balance algorithm
-function selectBalancedMatches(
-  unscheduled: Match[],
-  totalSlots: number,
-  courts: number,
-  teams: Team[]
-): Match[] {
-  const selected: Match[] = [];
-  const remaining = [...unscheduled];
-  const teamSlotCount: Record<string, number[]> = {};
-  teams.forEach((t) => (teamSlotCount[t.id] = []));
-
-  for (let slot = 0; slot < totalSlots && remaining.length > 0; slot++) {
-    const slotTeams = new Set<string>();
-
-    for (let c = 0; c < courts && remaining.length > 0; c++) {
-      let bestIdx = -1;
-      let bestScore = -Infinity;
-
-      for (let i = 0; i < remaining.length; i++) {
-        const m = remaining[i];
-        if (!m.home_team_id || !m.away_team_id) continue;
-        if (slotTeams.has(m.home_team_id) || slotTeams.has(m.away_team_id)) continue;
-
-        const homeSlots = teamSlotCount[m.home_team_id] || [];
-        const awaySlots = teamSlotCount[m.away_team_id] || [];
-        const homeGap = homeSlots.length > 0 ? slot - homeSlots[homeSlots.length - 1] : 99;
-        const awayGap = awaySlots.length > 0 ? slot - awaySlots[awaySlots.length - 1] : 99;
-        let score = homeGap + awayGap;
-
-        // Penalize 3 in a row
-        const homeConsec = homeSlots.length >= 2 && homeSlots[homeSlots.length - 1] === slot - 1 && homeSlots[homeSlots.length - 2] === slot - 2;
-        const awayConsec = awaySlots.length >= 2 && awaySlots[awaySlots.length - 1] === slot - 1 && awaySlots[awaySlots.length - 2] === slot - 2;
-        if (homeConsec) score -= 100;
-        if (awayConsec) score -= 100;
-
-        if (score > bestScore) {
-          bestScore = score;
-          bestIdx = i;
-        }
-      }
-
-      if (bestIdx === -1) break;
-
-      const chosen = remaining.splice(bestIdx, 1)[0];
-      selected.push(chosen);
-      slotTeams.add(chosen.home_team_id!);
-      slotTeams.add(chosen.away_team_id!);
-      if (teamSlotCount[chosen.home_team_id!]) teamSlotCount[chosen.home_team_id!].push(slot);
-      if (teamSlotCount[chosen.away_team_id!]) teamSlotCount[chosen.away_team_id!].push(slot);
-    }
-  }
-
-  return selected;
 }
