@@ -53,8 +53,8 @@ export default function LoginPage() {
             <Image
               src="/icons/icon-192.png"
               alt="CIS logo"
-              width={72}
-              height={72}
+              width={150}
+              height={150}
               priority
               className="rounded-2xl"
             />
