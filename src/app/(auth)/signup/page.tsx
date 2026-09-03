@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function SignupPage() {
   const [adminCode, setAdminCode] = useState('');
@@ -50,7 +51,6 @@ export default function SignupPage() {
         return;
       }
 
-      // Account created — sign them straight in
       const supabase = createClient();
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
@@ -60,7 +60,7 @@ export default function SignupPage() {
       if (signInError) {
         router.push('/login');
       } else {
-        window.location.href = '/dashboard';
+        window.location.href = '/';
       }
     } catch {
       setError('Network error. Please try again.');
@@ -72,9 +72,18 @@ export default function SignupPage() {
     <div className="min-h-screen flex items-center justify-center p-4 safe-top safe-bottom">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <div className="text-4xl mb-2">🏆</div>
+          <div className="flex justify-center mb-3">
+            <Image
+              src="/icons/icon-192.png"
+              alt="CIS logo"
+              width={150}
+              height={150}
+              priority
+              className="rounded-2xl"
+            />
+          </div>
           <CardTitle className="text-2xl">Create Account</CardTitle>
-          <CardDescription>Invite-only — an admin code is required</CardDescription>
+          <CardDescription>Invite-only — a signup code is required</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignup} className="space-y-4">
@@ -84,11 +93,11 @@ export default function SignupPage() {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="adminCode">Admin Code</Label>
+              <Label htmlFor="adminCode">Signup Code</Label>
               <Input
                 id="adminCode"
                 type="password"
-                placeholder="Code from your administrator"
+                placeholder="Code from Admin"
                 value={adminCode}
                 onChange={(e) => setAdminCode(e.target.value)}
                 required
@@ -96,7 +105,8 @@ export default function SignupPage() {
                 className="h-12 text-base"
               />
               <p className="text-xs text-muted-foreground">
-                Signup is invite-only. Ask an admin for the code.
+                Coaches: use the coach code you were given. Your access level is set
+                automatically.
               </p>
             </div>
             <div className="space-y-2">
@@ -120,6 +130,7 @@ export default function SignupPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="email"
                 className="h-12 text-base"
               />
             </div>
@@ -132,6 +143,7 @@ export default function SignupPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete="new-password"
                 className="h-12 text-base"
               />
             </div>
@@ -144,6 +156,7 @@ export default function SignupPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
+                autoComplete="new-password"
                 className="h-12 text-base"
               />
             </div>
