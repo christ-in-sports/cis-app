@@ -36,8 +36,8 @@ const FEATURES = [
     title: 'Registration',
     description: 'View and edit registration',
     emoji: '✍🏻',
-    href: '/registration',
-    ready: false,
+    href: '/registrations',
+    ready: true,
   },
 ];
 
