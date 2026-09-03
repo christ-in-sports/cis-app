@@ -46,6 +46,32 @@ export interface RosterKid {
   team_id: string | null;
 }
 
+export interface Season {
+  id: string;
+  name: string;
+  starts_on: string;
+  ends_on: string | null;
+  is_current: boolean;
+}
+
+export interface SummaryRow {
+  registration_id: string;
+  first_name: string;
+  last_name: string;
+  grade: string | null;
+  session: Session | null;
+  team_id: string | null;
+  team_name: string | null;
+  eligible: number;
+  present: number;
+  late: number;
+  absent: number;
+  excused: number;
+  unmarked: number;
+  attended: number;
+  pct: number;
+}
+
 export const SESSION_LABEL: Record<Session, string> = {
   juniors: 'Juniors (4th–7th)',
   ambassadors: 'Ambassadors (7th–12th)',

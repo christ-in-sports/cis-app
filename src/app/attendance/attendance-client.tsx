@@ -129,6 +129,11 @@ export default function AttendanceClient({
           </Button>
         )}
 
+        <Button variant="outline" className="w-full h-12"
+                onClick={() => router.push('/attendance/summary')}>
+          📊 Attendance Summary
+        </Button>
+
         {showAdd && isStaff && (
           <Card className="border-primary/50">
             <CardHeader className="pb-2"><CardTitle className="text-sm">New Attendance Day</CardTitle></CardHeader>
