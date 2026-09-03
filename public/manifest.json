@@ -1,7 +1,7 @@
 {
-  "name": "CIS Tournament Manager",
+  "name": "Christ in Sports App",
   "short_name": "Tournaments",
-  "description": "Manage CIS tournaments",
+  "description": "Manage CIS Season",
   "start_url": "/dashboard",
   "display": "standalone",
   "background_color": "#0f172a",
