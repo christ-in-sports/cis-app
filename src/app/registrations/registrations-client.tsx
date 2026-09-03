@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Papa from 'papaparse';
 import { createClient } from '@/lib/supabase/client';
+import { SESSION_LABEL, type Session } from '@/lib/attendance';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -42,6 +43,7 @@ const EMPTY: RegistrationInput & { notes: string | null } = {
   emergency_contact_name: null,
   emergency_contact_phone: null,
   notes: null,
+  session: null,
 };
 
 const GRADES = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
@@ -123,12 +125,16 @@ export default function RegistrationsClient({
       emergency_contact_name: r.emergency_contact_name,
       emergency_contact_phone: r.emergency_contact_phone,
       notes: r.notes,
+      session: r.session,
     });
     setShowForm(true);
   };
 
   const set = (k: keyof typeof EMPTY, v: string) =>
     setForm((p) => ({ ...p, [k]: v === '' ? null : v }));
+
+  const setSession = (v: string) =>
+    setForm((p) => ({ ...p, session: v === '' ? null : (v as Session) }));
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -509,6 +515,9 @@ export default function RegistrationsClient({
                         <p className="text-xs text-muted-foreground">
                           {r.grade ? `Grade ${r.grade}` : 'No grade'}
                           {r.dob && ` • ${fmtDate(r.dob)}`}
+                          {r.session
+                            ? ` • ${r.session === 'juniors' ? 'Juniors' : 'Ambassadors'}`
+                            : ' • ⚠️ no session'}
                           {r.source === 'import' && ' • imported'}
                         </p>
                       </div>
@@ -519,6 +528,25 @@ export default function RegistrationsClient({
 
                     {open && (
                       <div className="px-4 pb-4 space-y-3">
+                        {/* Session — shown even when unset, since that's a problem */}
+                        <div className="flex items-center gap-2">
+                          {r.session ? (
+                            <Badge
+                              className={`text-xs ${
+                                r.session === 'juniors'
+                                  ? 'bg-cyan-500/20 text-cyan-400'
+                                  : 'bg-purple-500/20 text-purple-400'
+                              }`}
+                            >
+                              {SESSION_LABEL[r.session]}
+                            </Badge>
+                          ) : (
+                            <Badge className="text-xs bg-amber-500/20 text-amber-400">
+                              ⚠️ No session — won&apos;t appear on attendance
+                            </Badge>
+                          )}
+                        </div>
+
                         <dl className="grid grid-cols-1 gap-1.5 text-xs">
                           {[
                             ['Kid email', r.email],
@@ -601,6 +629,22 @@ export default function RegistrationsClient({
                     {GRADES.map((g) => <option key={g} value={g}>{g}</option>)}
                   </select>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Session</Label>
+                <select
+                  value={form.session ?? ''}
+                  onChange={(e) => setSession(e.target.value)}
+                  className="w-full h-12 rounded-lg border border-input bg-background px-3 text-base"
+                >
+                  <option value="">— not set —</option>
+                  <option value="juniors">Juniors (4th–7th)</option>
+                  <option value="ambassadors">Ambassadors (7th–12th)</option>
+                </select>
+                <p className="text-xs text-muted-foreground">
+                  Normally filled in from the registration form.
+                </p>
               </div>
 
               <div className="space-y-2">
