@@ -4,9 +4,7 @@ export type AttStatus = 'unmarked' | 'present' | 'absent' | 'late' | 'excused';
 export interface MinistryTeam {
   id: string;
   name: string;
-  color: string;
   session: Session | null;
-  coach_user_id: string | null;
   active: boolean;
 }
 

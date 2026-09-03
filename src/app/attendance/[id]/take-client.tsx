@@ -17,13 +17,14 @@ import {
 const NO_TEAM = '__none__';
 
 export default function TakeClient({
-  day, groupName, records: initial, kids, teams, isStaff, userId,
+  day, groupName, records: initial, kids, teams, myTeamIds, isStaff, userId,
 }: {
   day: AttendanceDay;
   groupName: string;
   records: AttendanceRecord[];
   kids: RosterKid[];
   teams: MinistryTeam[];
+  myTeamIds: string[];
   isStaff: boolean;
   userId: string;
 }) {
@@ -42,17 +43,18 @@ export default function TakeClient({
     return m;
   }, [kids]);
 
-  /** My teams as a coach — used to default the tab and to gray out others. */
-  const myTeamIds = useMemo(
-    () => new Set(teams.filter((t) => t.coach_user_id === userId).map((t) => t.id)),
-    [teams, userId]
-  );
+  /**
+   * Teams I coach, from the team_coaches junction table.
+   * A Set for O(1) lookups — note this is a Set, so use .has(), not .includes().
+   */
+  const myTeams = useMemo(() => new Set(myTeamIds), [myTeamIds]);
 
+  /** Coaches land on their own team; staff stay on "All". */
   useEffect(() => {
-    if (!isStaff && myTeamIds.size > 0) setTeamTab([...myTeamIds][0]);
-  }, [isStaff, myTeamIds]);
+    if (!isStaff && myTeams.size > 0) setTeamTab([...myTeams][0]);
+  }, [isStaff, myTeams]);
 
-  // Two coaches at once
+  // Two coaches marking side by side
   useEffect(() => {
     const ch = supabase
       .channel(`att-${day.id}`)
@@ -102,20 +104,27 @@ export default function TakeClient({
     return { present, absent, unmarked, total: records.length };
   }, [records]);
 
+  /** Only tabs that actually have kids on this day. No color — teams don't have one. */
   const teamTabs = useMemo(() => {
     const used = new Set(kids.map((k) => k.team_id ?? NO_TEAM));
-    const list = teams.filter((t) => used.has(t.id)).map((t) => ({ id: t.id, name: t.name, color: t.color }));
-    if (used.has(NO_TEAM)) list.push({ id: NO_TEAM, name: 'No team', color: '#555' });
+    const list = teams
+      .filter((t) => used.has(t.id))
+      .map((t) => ({ id: t.id, name: t.name }));
+    if (used.has(NO_TEAM)) list.push({ id: NO_TEAM, name: 'No team' });
     return list;
   }, [kids, teams]);
 
   const canMark = (kid: RosterKid) =>
-    isStaff || (kid.team_id ? myTeamIds.has(kid.team_id) : false);
+    isStaff || (kid.team_id ? myTeams.has(kid.team_id) : false);
 
   const mark = async (rec: AttendanceRecord, kid: RosterKid, status: AttStatus) => {
     if (day.locked) return toast({ title: 'Day is locked', variant: 'destructive' });
     if (!canMark(kid)) {
-      return toast({ title: 'Not your team', description: 'Only this team\'s coach or staff can mark.', variant: 'destructive' });
+      return toast({
+        title: 'Not your team',
+        description: "Only this team's coaches or staff can mark.",
+        variant: 'destructive',
+      });
     }
 
     const before = rec.status;
@@ -192,7 +201,8 @@ export default function TakeClient({
             <CardContent className="py-10 text-center space-y-3">
               <p className="text-lg text-muted-foreground">Empty roster</p>
               <p className="text-sm text-muted-foreground">
-                No active kids matched this session. Assign sessions first.
+                No active kids matched this session. Check that sessions are set —
+                they come from the registration form.
               </p>
               {isStaff && (
                 <div className="flex flex-col gap-2 pt-2">
@@ -208,7 +218,7 @@ export default function TakeClient({
           </Card>
         ) : (
           <>
-            {/* Team tabs */}
+            {/* Team tabs — ★ marks teams you coach */}
             {teamTabs.length > 0 && (
               <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
                 <button onClick={() => setTeamTab('all')}
@@ -217,11 +227,10 @@ export default function TakeClient({
                 </button>
                 {teamTabs.map((t) => {
                   const n = kids.filter((k) => (k.team_id ?? NO_TEAM) === t.id).length;
-                  const mine = myTeamIds.has(t.id);
+                  const mine = myTeams.has(t.id);
                   return (
                     <button key={t.id} onClick={() => setTeamTab(t.id)}
-                      className={`flex-shrink-0 px-4 py-2.5 rounded-xl text-sm flex items-center gap-2 ${teamTab === t.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.color }} />
+                      className={`flex-shrink-0 px-4 py-2.5 rounded-xl text-sm ${teamTab === t.id ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
                       {t.name} ({n}){mine && ' ★'}
                     </button>
                   );

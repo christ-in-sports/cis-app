@@ -9,22 +9,37 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/toast';
-import {
-  type MinistryTeam, type RosterKid, type Session,
-  SESSION_LABEL, defaultSession, gradeNum,
-} from '@/lib/attendance';
+import { type RosterKid, type Session, SESSION_LABEL } from '@/lib/attendance';
 
-interface Coach { id: string; display_name: string | null; email: string | null }
+interface Team {
+  id: string;
+  name: string;
+  session: Session | null;
+  active: boolean;
+}
 
-const COLORS = ['#ef4444','#f97316','#eab308','#22c55e','#06b6d4','#6366f1','#a855f7','#ec4899'];
+interface Coach {
+  id: string;
+  display_name: string | null;
+  email: string | null;
+}
+
+interface Link {
+  team_id: string;
+  user_id: string;
+}
+
+/** Prefer the real name; fall back to email only if there's no name yet. */
+const coachLabel = (c: Coach) => c.display_name?.trim() || c.email || 'Unnamed user';
 
 export default function TeamsClient({
-  isStaff, teams: initialTeams, kids: initialKids, coaches,
+  isStaff, teams: initialTeams, kids: initialKids, coaches, links: initialLinks,
 }: {
   isStaff: boolean;
-  teams: MinistryTeam[];
+  teams: Team[];
   kids: RosterKid[];
   coaches: Coach[];
+  links: Link[];
 }) {
   const router = useRouter();
   const supabase = createClient();
@@ -32,6 +47,7 @@ export default function TeamsClient({
 
   const [teams, setTeams] = useState(initialTeams);
   const [kids, setKids] = useState(initialKids);
+  const [links, setLinks] = useState(initialLinks);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<'all' | Session | 'unassigned' | 'noteam'>('all');
   const [search, setSearch] = useState('');
@@ -39,9 +55,21 @@ export default function TeamsClient({
 
   const [showTeam, setShowTeam] = useState(false);
   const [tName, setTName] = useState('');
-  const [tColor, setTColor] = useState(COLORS[0]);
   const [tSession, setTSession] = useState<'' | Session>('');
-  const [tCoach, setTCoach] = useState('');
+  const [tCoaches, setTCoaches] = useState<Set<string>>(new Set());
+
+  const [manageCoaches, setManageCoaches] = useState<string | null>(null);
+
+  const coachById = useMemo(() => {
+    const m = new Map<string, Coach>();
+    coaches.forEach((c) => m.set(c.id, c));
+    return m;
+  }, [coaches]);
+
+  const coachesFor = (teamId: string) =>
+    links.filter((l) => l.team_id === teamId)
+         .map((l) => coachById.get(l.user_id))
+         .filter((c): c is Coach => !!c);
 
   const shown = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -56,9 +84,8 @@ export default function TeamsClient({
 
   const unassignedCount = kids.filter((k) => !k.session).length;
   const teamName = (id: string | null) => teams.find((t) => t.id === id)?.name ?? null;
-  const teamColor = (id: string | null) => teams.find((t) => t.id === id)?.color ?? '#444';
 
-  const toggle = (id: string) =>
+  const toggleKid = (id: string) =>
     setSelected((p) => {
       const n = new Set(p);
       n.has(id) ? n.delete(id) : n.add(id);
@@ -80,55 +107,65 @@ export default function TeamsClient({
     setBusy(false);
   };
 
-  /** Fills session from grade for everyone except 7th graders. */
-  const autoAssignSessions = async () => {
-    const todo = kids
-      .filter((k) => !k.session && defaultSession(k.grade))
-      .map((k) => ({ id: k.id, session: defaultSession(k.grade)! }));
-
-    if (todo.length === 0) {
-      toast({ title: 'Nothing to auto-assign', description: 'Remaining kids are grade 7 or have no grade — assign those by hand.' });
-      return;
-    }
-
-    setBusy(true);
-    for (const t of todo) {
-      await supabase.from('registrations').update({ session: t.session }).eq('id', t.id);
-    }
-    setKids((p) => p.map((k) => {
-      const hit = todo.find((t) => t.id === k.id);
-      return hit ? { ...k, session: hit.session } : k;
-    }));
-    toast({ title: `Auto-assigned ${todo.length}`, description: 'Grade 7 kids still need a manual choice.' });
-    setBusy(false);
-  };
-
   const createTeam = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tName.trim()) return;
     setBusy(true);
-    const { data, error } = await supabase.from('ministry_teams').insert({
-      name: tName.trim(),
-      color: tColor,
-      session: tSession || null,
-      coach_user_id: tCoach || null,
-    }).select().single();
 
-    if (error) toast({ title: 'Could not create team', description: error.message, variant: 'destructive' });
-    else {
-      setTeams((p) => [...p, data].sort((a, b) => a.name.localeCompare(b.name)));
-      setTName(''); setTCoach(''); setTSession(''); setShowTeam(false);
-      toast({ title: 'Team created' });
+    const { data, error } = await supabase
+      .from('ministry_teams')
+      .insert({ name: tName.trim(), session: tSession || null })
+      .select('id, name, session, active')
+      .single();
+
+    if (error) {
+      toast({ title: 'Could not create team', description: error.message, variant: 'destructive' });
+      setBusy(false);
+      return;
+    }
+
+    if (tCoaches.size > 0) {
+      const rows = [...tCoaches].map((user_id) => ({ team_id: data.id, user_id }));
+      const { error: linkErr } = await supabase.from('team_coaches').insert(rows);
+      if (linkErr) {
+        toast({ title: 'Team made, coaches failed', description: linkErr.message, variant: 'destructive' });
+      } else {
+        setLinks((p) => [...p, ...rows]);
+      }
+    }
+
+    setTeams((p) => [...p, data].sort((a, b) => a.name.localeCompare(b.name)));
+    setTName(''); setTSession(''); setTCoaches(new Set()); setShowTeam(false);
+    toast({ title: 'Team created' });
+    setBusy(false);
+  };
+
+  const toggleCoach = async (teamId: string, userId: string) => {
+    const exists = links.some((l) => l.team_id === teamId && l.user_id === userId);
+    setBusy(true);
+
+    if (exists) {
+      const { error } = await supabase
+        .from('team_coaches').delete()
+        .eq('team_id', teamId).eq('user_id', userId);
+      if (error) toast({ title: 'Could not remove coach', description: error.message, variant: 'destructive' });
+      else setLinks((p) => p.filter((l) => !(l.team_id === teamId && l.user_id === userId)));
+    } else {
+      const { error } = await supabase
+        .from('team_coaches').insert({ team_id: teamId, user_id: userId });
+      if (error) toast({ title: 'Could not add coach', description: error.message, variant: 'destructive' });
+      else setLinks((p) => [...p, { team_id: teamId, user_id: userId }]);
     }
     setBusy(false);
   };
 
-  const deleteTeam = async (t: MinistryTeam) => {
+  const deleteTeam = async (t: Team) => {
     const n = kids.filter((k) => k.team_id === t.id).length;
     if (!window.confirm(`Delete "${t.name}"?${n ? ` ${n} kid(s) will become unassigned.` : ''}`)) return;
     const { error } = await supabase.from('ministry_teams').delete().eq('id', t.id);
     if (error) return toast({ title: 'Delete failed', description: error.message, variant: 'destructive' });
     setTeams((p) => p.filter((x) => x.id !== t.id));
+    setLinks((p) => p.filter((l) => l.team_id !== t.id));
     setKids((p) => p.map((k) => (k.team_id === t.id ? { ...k, team_id: null } : k)));
     toast({ title: 'Team deleted' });
   };
@@ -141,7 +178,10 @@ export default function TeamsClient({
             <div className="text-4xl mb-2">🔒</div>
             <CardTitle>Staff Only</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground text-center">
+              Only staff can create teams or change session assignments.
+            </p>
             <Button variant="outline" className="w-full h-12" onClick={() => router.push('/attendance')}>
               ← Back
             </Button>
@@ -157,21 +197,24 @@ export default function TeamsClient({
         <div className="max-w-3xl mx-auto">
           <Button variant="ghost" size="sm" onClick={() => router.push('/attendance')}>← Attendance</Button>
           <h1 className="text-xl font-bold mt-1">🧑‍🤝‍🧑 Teams &amp; Sessions</h1>
-          <p className="text-sm text-muted-foreground">{kids.length} active kids • {teams.length} teams</p>
+          <p className="text-sm text-muted-foreground">
+            {kids.length} active kids • {teams.length} teams
+          </p>
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto p-4 space-y-4">
         {unassignedCount > 0 && (
           <Card className="border-amber-500/50">
-            <CardContent className="py-4 space-y-3">
+            <CardContent className="py-4 space-y-2">
               <p className="text-sm text-amber-400">
-                ⚠️ {unassignedCount} kid{unassignedCount === 1 ? ' ' : 's '} have no session yet — they
+                ⚠️ {unassignedCount} kid{unassignedCount === 1 ? '' : 's'} have no session — they
                 won&apos;t appear on any attendance roster.
               </p>
-              <Button variant="outline" className="w-full h-11 text-sm" onClick={autoAssignSessions} disabled={busy}>
-                ✨ Auto-assign from grade (skips 7th)
-              </Button>
+              <p className="text-xs text-muted-foreground">
+                Sessions come from the registration form. Re-upload your CSV with
+                &ldquo;Update with the new info&rdquo; to fill these in, or set them below.
+              </p>
             </CardContent>
           </Card>
         )}
@@ -191,29 +234,43 @@ export default function TeamsClient({
               <form onSubmit={createTeam} className="space-y-3 border border-muted rounded-lg p-3">
                 <Input placeholder="Team name (e.g. Lions)" value={tName}
                        onChange={(e) => setTName(e.target.value)} required className="h-12 text-base" />
-                <div className="space-y-2">
-                  <Label className="text-xs">Color</Label>
-                  <div className="flex gap-2 flex-wrap">
-                    {COLORS.map((c) => (
-                      <button key={c} type="button" onClick={() => setTColor(c)}
-                        className={`w-9 h-9 rounded-full border-2 ${tColor === c ? 'border-white' : 'border-transparent'}`}
-                        style={{ backgroundColor: c }} />
-                    ))}
-                  </div>
-                </div>
+
                 <select value={tSession} onChange={(e) => setTSession(e.target.value as any)}
                         className="w-full h-12 rounded-lg border border-input bg-background px-3 text-base">
                   <option value="">Both sessions</option>
                   <option value="juniors">Juniors only</option>
                   <option value="ambassadors">Ambassadors only</option>
                 </select>
-                <select value={tCoach} onChange={(e) => setTCoach(e.target.value)}
-                        className="w-full h-12 rounded-lg border border-input bg-background px-3 text-base">
-                  <option value="">No coach assigned</option>
-                  {coaches.map((c) => (
-                    <option key={c.id} value={c.id}>{c.display_name || c.email}</option>
-                  ))}
-                </select>
+
+                <div className="space-y-2">
+                  <Label className="text-xs">Coaches (pick any number)</Label>
+                  {coaches.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      No coach accounts yet. Share the coach signup code first.
+                    </p>
+                  ) : (
+                    <div className="max-h-40 overflow-auto border border-muted rounded-lg">
+                      {coaches.map((c) => {
+                        const on = tCoaches.has(c.id);
+                        return (
+                          <button key={c.id} type="button"
+                            onClick={() => setTCoaches((p) => {
+                              const n = new Set(p);
+                              n.has(c.id) ? n.delete(c.id) : n.add(c.id);
+                              return n;
+                            })}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 text-left border-b border-muted/30 last:border-0 ${on ? 'bg-primary/10' : ''}`}>
+                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${on ? 'bg-primary border-primary' : 'border-muted'}`}>
+                              {on && <span className="text-[10px]">✓</span>}
+                            </div>
+                            <span className="text-sm truncate">{coachLabel(c)}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
                 <Button type="submit" className="w-full h-12" disabled={busy}>✓ Create Team</Button>
               </form>
             )}
@@ -222,21 +279,53 @@ export default function TeamsClient({
               <p className="text-sm text-muted-foreground text-center py-4">No teams yet.</p>
             ) : teams.map((t) => {
               const count = kids.filter((k) => k.team_id === t.id).length;
-              const coach = coaches.find((c) => c.id === t.coach_user_id);
+              const assigned = coachesFor(t.id);
+              const open = manageCoaches === t.id;
+
               return (
-                <div key={t.id} className="flex items-center justify-between py-2 border-b border-muted/30 last:border-0">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: t.color }} />
+                <div key={t.id} className="border-b border-muted/30 last:border-0 py-2">
+                  <div className="flex items-center justify-between gap-2">
                     <div className="min-w-0">
                       <p className="text-sm font-medium truncate">{t.name}</p>
                       <p className="text-xs text-muted-foreground truncate">
                         {count} kid{count === 1 ? '' : 's'}
                         {t.session && ` • ${t.session}`}
-                        {coach && ` • ${coach.display_name || coach.email}`}
+                        {assigned.length > 0
+                          ? ` • ${assigned.map(coachLabel).join(', ')}`
+                          : ' • no coach'}
                       </p>
                     </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <Button variant="ghost" size="sm" className="h-9 text-xs"
+                              onClick={() => setManageCoaches(open ? null : t.id)}>
+                        {open ? 'Done' : '👤 Coaches'}
+                      </Button>
+                      <Button variant="ghost" size="sm" className="text-red-400 h-9"
+                              onClick={() => deleteTeam(t)}>✕</Button>
+                    </div>
                   </div>
-                  <Button variant="ghost" size="sm" className="text-red-400 h-9" onClick={() => deleteTeam(t)}>✕</Button>
+
+                  {open && (
+                    <div className="mt-2 border border-muted rounded-lg max-h-48 overflow-auto">
+                      {coaches.length === 0 ? (
+                        <p className="text-xs text-muted-foreground p-3">
+                          No coach accounts exist yet.
+                        </p>
+                      ) : coaches.map((c) => {
+                        const on = links.some((l) => l.team_id === t.id && l.user_id === c.id);
+                        return (
+                          <button key={c.id} type="button" disabled={busy}
+                            onClick={() => toggleCoach(t.id, c.id)}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 text-left border-b border-muted/30 last:border-0 ${on ? 'bg-primary/10' : ''}`}>
+                            <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${on ? 'bg-primary border-primary' : 'border-muted'}`}>
+                              {on && <span className="text-[10px]">✓</span>}
+                            </div>
+                            <span className="text-sm truncate">{coachLabel(c)}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -271,7 +360,7 @@ export default function TeamsClient({
             {shown.map((k) => {
               const on = selected.has(k.id);
               return (
-                <button key={k.id} onClick={() => toggle(k.id)}
+                <button key={k.id} onClick={() => toggleKid(k.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 text-left border-b border-muted/30 last:border-0 ${on ? 'bg-primary/10' : ''}`}>
                   <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${on ? 'bg-primary border-primary' : 'border-muted'}`}>
                     {on && <span className="text-[10px]">✓</span>}
@@ -281,12 +370,13 @@ export default function TeamsClient({
                     <p className="text-xs text-muted-foreground">
                       {k.grade ? `Grade ${k.grade}` : 'No grade'}
                       {' • '}
-                      {k.session ? SESSION_LABEL[k.session].split(' ')[0] : <span className="text-amber-400">no session</span>}
+                      {k.session
+                        ? SESSION_LABEL[k.session].split(' ')[0]
+                        : <span className="text-amber-400">no session</span>}
                     </p>
                   </div>
                   {k.team_id && (
-                    <Badge variant="outline" className="text-xs flex-shrink-0"
-                           style={{ borderColor: teamColor(k.team_id) }}>
+                    <Badge variant="outline" className="text-xs flex-shrink-0">
                       {teamName(k.team_id)}
                     </Badge>
                   )}

@@ -13,6 +13,7 @@ export interface RegistrationInput {
   guardian_email: string | null;
   emergency_contact_name: string | null;
   emergency_contact_phone: string | null;
+  session: 'juniors' | 'ambassadors' | null;
 }
 
 /** Strip everything but letters+digits so header variants collapse together. */
@@ -42,10 +43,12 @@ const EXACT_MAP: Record<string, keyof RegistrationInput | '__ignore__'> = {
   homeaddress: 'address',
   emergencycontactname: 'emergency_contact_name',
   emergencycontactnumber: 'emergency_contact_phone',
+  '7thgradeonlypleasechoosewhichsessionyoudliketoattend': 'session'
 };
 
 /** Fallback fuzzy rules, in priority order. More specific first. */
 const FUZZY_RULES: [RegExp, keyof RegistrationInput][] = [
+  [/session/, 'session'],
   [/emergency.*(name)/, 'emergency_contact_name'],
   [/emergency.*(number|phone|cell)/, 'emergency_contact_phone'],
   [/(parent|guardian).*(email)/, 'guardian_email'],
@@ -163,6 +166,30 @@ export interface ParsedRow {
   errors: string[];
 }
 
+/** Reads the 7th-grade choice; falls back to grade for everyone else. */
+export function parseSession(
+  choice: string | null,
+  grade: string | null
+): 'juniors' | 'ambassadors' | null {
+  const c = (choice ?? '').toLowerCase();
+  if (c.includes('ambassador')) return 'ambassadors';
+  if (c.includes('junior')) return 'juniors';
+  return defaultSession(grade);
+}
+
+/** 4-6 juniors, 8-12 ambassadors, 7 undecided. */
+export function defaultSession(g: string | null): 'juniors' | 'ambassadors' | null {
+  const t = (g ?? '').trim().toLowerCase();
+  if (!t) return null;
+  if (['k', 'tk', 'kinder', 'kindergarten'].includes(t)) return null;
+  const d = t.replace(/\D/g, '');
+  if (d === '') return null;
+  const n = parseInt(d, 10);
+  if (n >= 4 && n <= 6) return 'juniors';
+  if (n >= 8 && n <= 12) return 'ambassadors';
+  return null;
+}
+
 export function parseRows(
   rows: string[][],
   mapping: HeaderMapping
@@ -209,6 +236,7 @@ export function parseRows(
         guardian_email: get('guardian_email'),
         emergency_contact_name: get('emergency_contact_name'),
         emergency_contact_phone: normalizePhone(get('emergency_contact_phone')),
+        session: parseSession(get('session'), get('grade')),
       },
     };
   });

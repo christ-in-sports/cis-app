@@ -19,11 +19,13 @@ export default async function TakePage({ params }: { params: Promise<{ id: strin
     .from('attendance_days').select('*').eq('id', id).single();
   if (!day) redirect('/attendance');
 
-  const [{ data: group }, { data: records }, { data: teams }] = await Promise.all([
-    supabase.from('attendance_groups').select('*').eq('id', day.group_id).single(),
-    supabase.from('attendance_records').select('*').eq('day_id', id),
-    supabase.from('ministry_teams').select('*').order('name'),
-  ]);
+  const [{ data: group }, { data: records }, { data: teams }, { data: myLinks }] =
+    await Promise.all([
+      supabase.from('attendance_groups').select('*').eq('id', day.group_id).single(),
+      supabase.from('attendance_records').select('*').eq('day_id', id),
+      supabase.from('ministry_teams').select('id, name, session, active').order('name'),
+      supabase.from('team_coaches').select('team_id').eq('user_id', user.id),
+    ]);
 
   const ids = (records ?? []).map((r) => r.registration_id);
   const { data: kids } = ids.length
@@ -40,6 +42,7 @@ export default async function TakePage({ params }: { params: Promise<{ id: strin
       records={records ?? []}
       kids={kids ?? []}
       teams={teams ?? []}
+      myTeamIds={(myLinks ?? []).map((l) => l.team_id)}
       isStaff={isStaff}
       userId={user.id}
     />
