@@ -7,10 +7,10 @@ export async function GET(request: Request) {
   const code = searchParams.get('code');
   const tokenHash = searchParams.get('token_hash');
   const type = searchParams.get('type') as EmailOtpType | null;
-  const next = searchParams.get('next') ?? '/dashboard';
+  const next = searchParams.get('next') ?? '/';
 
   // Only allow internal redirects — blocks ?next=https://evil.com
-  const safeNext = next.startsWith('/') ? next : '/dashboard';
+  const safeNext = next.startsWith('/') && !next.startsWith('//') ? next : '/';
 
   const supabase = await createServerSupabaseClient();
 

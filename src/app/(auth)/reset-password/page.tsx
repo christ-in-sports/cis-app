@@ -104,7 +104,7 @@ export default function ResetPasswordPage() {
           </CardHeader>
           <CardContent>
             <Button
-              onClick={() => (window.location.href = '/dashboard')}
+              onClick={() => (window.location.href = '/')}
               className="w-full h-12"
             >
               Go to Dashboard
