@@ -4,7 +4,7 @@
 >
 > `CLAUDE.md` at the repo root imports this file via `@AGENTS.md` for Claude Code compatibility — it has no content of its own. **Edit this file, not `CLAUDE.md`.**
 
-# This is NOT the Next.js you know
+> This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 
