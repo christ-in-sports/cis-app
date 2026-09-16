@@ -107,12 +107,25 @@ Full user stories with acceptance criteria live in the PRD (see `/docs/PRD.md` i
 - **No offline mode required** for MVP/v1.0 — assume connectivity
 - **Minor data handling** — kids' data (DOB, allergies, etc.) must be treated as sensitive; parental consent required for registration
 - **Accessibility** — WCAG 2.1 AA minimum
+- **Design system** — see `DESIGN_SYSTEM.md`. Analog sports-clipboard direction (not SaaS dashboard); three colors each with exactly one job — orange for primary actions, ember for sport/results, sage for spiritual content. Read it before building or modifying any UI.
 
 ---
 
 ## Part 2: Technical Design
 
-### 2.1 Tech Stack
+### 2.1 UI & Design System
+
+Full spec: `DESIGN_SYSTEM.md` (companion to this file). Key rules that affect how components get built:
+
+- **Color has meaning, not decoration.** `--cis-orange` = primary actions, `--cis-ember` = sport/scores, `--cis-sage` = spiritual content. This mapping must hold on every screen.
+- **Tables for tabular data** — standings is a real `<table>`, not a card grid.
+- **No status dots** — state is carried by a label, chip, or tick box (also a WCAG requirement).
+- **Pill radius (`999px`) is reserved for buttons only** — sheets/chips/tick boxes use their own fixed radii (see `DESIGN_SYSTEM.md` §6).
+- **Repeated 8+ utility Tailwind strings become a component or `cva` variant**, not copy-paste.
+- Fonts: Caprasimo (display — scores, headings only) + Figtree (UI/body), via Google Fonts.
+- `/design/tokens.css` and `/design/tokens.json` are literal — import directly into `globals.css`/`tailwind.config`, don't reinterpret. `/design/reference/*.dc.html` files are prototypes only — rebuild faithfully in React/Tailwind/shadcn, never port the raw markup.
+
+### 2.2 Tech Stack
 
 | Layer | Technology | Notes |
 |---|---|---|
@@ -122,7 +135,7 @@ Full user stories with acceptance criteria live in the PRD (see `/docs/PRD.md` i
 | UI Components | **shadcn/ui** | Accessible, Tailwind-native, copy-in components |
 | Forms & Validation | **React Hook Form + Zod** | Share Zod schemas between client and server where possible |
 | Server State | **TanStack Query** | Caching, refetching, optimistic updates |
-| Local/UI State | **React `useState`** + URL search params | No global state library by default — see 2.1.1 |
+| Local/UI State | **React `useState`** + URL search params | No global state library by default — see 2.2.1 |
 | Backend + DB + Auth | **Supabase (PostgreSQL)** | Auth, Row Level Security (RBAC), Realtime, Storage, Edge Functions |
 | PWA Layer | **Serwist** | Service worker, manifest, installability |
 | Push Notifications | **Web Push API + Supabase Edge Functions** | Triggered server-side on relevant events |
@@ -133,7 +146,7 @@ Full user stories with acceptance criteria live in the PRD (see `/docs/PRD.md` i
 | Hosting | **Vercel** | Preview deploy per PR, auto-deploy `main` to prod |
 | CI/CD | **GitHub Actions + Vercel** | Lint, type-check, test, build gate before merge |
 
-#### 2.1.1 State Management Approach
+#### 2.2.1 State Management Approach
 
 Most state in this app is **server state** — rosters, standings, attendance, calendar events — and belongs in TanStack Query, not component state. Genuine client-only state (modal open/closed, form inputs before submit) should use plain `useState`. Shareable/filterable UI state (e.g. selected division or team filter) should live in the **URL search params**, not a global store — it's bookmarkable and shareable for free.
 
@@ -147,7 +160,7 @@ Most state in this app is **server state** — rosters, standings, attendance, c
 | End-to-end | Playwright |
 | Edge Functions | Vitest |
 
-### 2.2 System Architecture
+### 2.3 System Architecture
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -179,7 +192,7 @@ Most state in this app is **server state** — rosters, standings, attendance, c
 - **Server Actions / API routes** in Next.js are the only layer allowed to call Stripe and Claude APIs — never call these directly from the client.
 - **Edge Functions** handle background/triggered work: sending push notifications, processing scheduled reminders.
 
-### 2.3 Core Data Model
+### 2.4 Core Data Model
 
 Divisions (`juniors` / `ambassadors`) are an attribute on `Kid` and `Team`, not separate tables.
 
@@ -198,7 +211,7 @@ Divisions (`juniors` / `ambassadors`) are an attribute on `Kid` and `Team`, not 
 | `Payment` | id, kid_id, parent_user_id, total_amount, plan, amount_paid, status | belongs to `Kid`, `User` |
 | `Equipment` | id, item_name, quantity, requested_by_user_id, status | belongs to `User` |
 
-### 2.4 Engineering Requirements
+### 2.5 Engineering Requirements
 
 - **RLS policies are mandatory** on every table containing user data — write them alongside the table, not after.
 - **Zod schemas** should be the single source of truth for a shape's validation and, where practical, its TypeScript type (`z.infer`).
@@ -207,7 +220,7 @@ Divisions (`juniors` / `ambassadors`) are an attribute on `Kid` and `Team`, not 
 - **CSV import (MVP)**: build as a server-side parser + validator that maps rows to the `Kid` schema, reports row-level errors, and requires Admin review before committing to the database.
 - **Migrations**: use Supabase CLI migrations, committed to the repo — never make schema changes directly in the Supabase dashboard for anything beyond prototyping.
 
-### 2.5 Git Workflow
+### 2.6 Git Workflow
 
 Trunk-based development, not GitFlow — appropriate for a 2-developer team with AI coding assistants.
 
@@ -225,7 +238,7 @@ Trunk-based development, not GitFlow — appropriate for a 2-developer team with
 | Merge to `main` | Production (auto-deploy) |
 | Local | `.env.local` + Supabase local dev |
 
-### 2.6 Guidelines for AI Coding Assistants (Claude Code / Codex)
+### 2.7 Guidelines for AI Coding Assistants (Claude Code / Codex)
 
 - **This file is your primary context.** Re-read it if a task seems to conflict with something here — this file wins unless the human operator says otherwise.
 - Work in **small, scoped tasks** — one ticket, one feature, or one bug fix per session. Avoid open-ended requests like "build the attendance module" in one shot; break it into schema → API/server action → UI → tests.
@@ -234,9 +247,10 @@ Trunk-based development, not GitFlow — appropriate for a 2-developer team with
 - **Never call Stripe or Claude APIs from client components** — server-side only.
 - When adding a table or column, **write the RLS policy in the same change**, not as a follow-up.
 - Prefer editing/extending existing patterns in the codebase over introducing a new library or pattern for something already solved.
+- **Follow `DESIGN_SYSTEM.md` exactly for any UI work** — don't invent a new color role, reach for a status dot, or wrap standings in cards. If a screen seems to need breaking an anti-pattern, flag it rather than deciding unilaterally.
 - Flag any assumption you make explicitly in the PR description if a requirement is ambiguous.
 
-### 2.7 Open Questions (resolve before building the related feature)
+### 2.8 Open Questions (resolve before building the related feature)
 
 - How are spiritual recitation points structured — preset per verse, or set dynamically each time?
 - Can one parent account manage multiple kids?
