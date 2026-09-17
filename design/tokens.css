@@ -7,7 +7,7 @@
   --cis-orange: #EE6B2D;        /* primary: buttons, active nav, progress */
   --cis-orange-hover: #F98244;
   --cis-orange-press: #DC5D22;
-  --cis-orange-shadow: #B14E1C; /* 4px offset "stamp" shadow under buttons */
+  --cis-orange-shadow: #B14E1C; /* 4px offset "stamp" shadow under buttons; 3px on the clip pill */
   --cis-orange-text: #C2531B;   /* orange for text on light grounds (>=4.5:1) */
   --cis-orange-deep: #9C3E12;   /* text-on-tint, link hover */
 
@@ -31,14 +31,17 @@
   --cis-paper-light: #FFFCF6;   /* primary sheet / card */
   --cis-rule: #E3D4B8;          /* 1px row rules on paper */
   --cis-rule-soft: #DFCFAF;     /* ruled-paper gradient line */
+  --cis-rule-dash: #D6C4A6;     /* 2px dashed section break inside a sheet */
   --cis-track: #E0D2B8;         /* progress track */
+  --cis-box-empty: #C9B49A;     /* unticked attendance box border */
 
   /* Ink */
   --cis-ink: #241F1C;           /* body text */
-  --cis-ink-dark: #201E1D;      /* dark surfaces, scoreboard ground */
+  --cis-ink-dark: #201E1D;      /* dark surfaces, heavy rules, text on an orange fill */
   --cis-ink-muted: #5E534A;     /* secondary text (5.9:1 on --cis-paper-light) */
   --cis-ink-on-dark: #F3E7D4;   /* text on ink/board */
   --cis-ink-on-dark-muted: #C9B9A0;
+  --cis-ink-on-ember: #FFF6EE;  /* text on an ember fill — warmer than --cis-ink-on-dark */
 
   /* Clipboard direction only */
   --cis-board: #6F5133;         /* hardboard backdrop */
@@ -58,9 +61,11 @@
   --cis-display-lg: 34px; /* matchup names */
 
   /* Radius — 12 for chips/stamps, 26 for sheets, 40 for the app shell,
-     999 for buttons only (per Organic). Do not introduce new steps. */
+     999 for buttons only (per Organic). Do not introduce new steps.
+     --cis-radius-tab is the one documented exception; see DESIGN_SYSTEM.md §6. */
   --cis-radius-chip: 12px;
   --cis-radius-box: 14px;   /* attendance tick box */
+  --cis-radius-tab: 18px;   /* DivisionTabs top corners only */
   --cis-radius-sheet: 26px;
   --cis-radius-shell: 40px;
   --cis-radius-pill: 999px;
@@ -77,6 +82,10 @@
   --cis-shadow-sheet: 0 6px 14px rgba(40,22,8,.25);
   --cis-shadow-shell: 0 18px 44px rgba(60,35,15,.26);
   --cis-shadow-press: 0 4px 0 var(--cis-orange-shadow);
+
+  /* Rule weights — heavy ink rules stand in for card borders */
+  --cis-rule-heavy: 5px;  /* region divide inside a sheet */
+  --cis-rule-table: 4px;  /* under a table head */
 
   /* Targets */
   --cis-tap-min: 44px;
