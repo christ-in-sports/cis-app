@@ -1,9 +1,7 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-
-const inter = Inter({ subsets: ['latin'] });
+import { caprasimo, figtree } from '@/lib/fonts';
 
 export const metadata: Metadata = {
   title: 'CIS Tournament Manager',
@@ -11,7 +9,7 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'black-translucent',
+    statusBarStyle: 'default',
     title: 'Tournaments',
   },
 };
@@ -21,7 +19,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: '#0f172a',
+  themeColor: '#E9DCC6',
 };
 
 export default function RootLayout({
@@ -30,12 +28,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className={`${caprasimo.variable} ${figtree.variable}`}>
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
       </head>
-      <body className={`${inter.className} bg-slate-950 text-white min-h-screen`}>
+      <body className="min-h-screen bg-background font-cis-body text-foreground">
         <Toaster>
           {children}
         </Toaster>

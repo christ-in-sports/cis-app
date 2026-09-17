@@ -20,7 +20,7 @@ export default function BottomNav({ tournamentId }: { tournamentId: string }) {
       {/* Invisible spacer that takes up the same height as the nav */}
       <div className="h-20" />
       {/* The actual fixed nav */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-950 border-t border-muted pb-[env(safe-area-inset-bottom)]">
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-muted pb-[env(safe-area-inset-bottom)]">
         <div className="max-w-lg mx-auto flex">
           {tabs.map((tab) => {
             const isActive = pathname === tab.href || (tab.href !== base && pathname.startsWith(tab.href));

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/organic-6f932b05-b944-4acf-b335-4681148d2e62/styles.css">
+<script src="_ds/organic-6f932b05-b944-4acf-b335-4681148d2e62/_ds_bundle.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400..800&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #E9DCC6; }
+  a { color: #C2531B; }
+  a:hover { color: #9C3E12; }
+  button:focus-visible, [role="button"]:focus-visible { outline: 2px solid #EE6B2D; outline-offset: 3px; }
+</style>
+</helmet>
+
+<div style="background:#E9DCC6;min-height:100%;padding:28px 16px 40px;display:flex;justify-content:center;font-family:Figtree,system-ui,sans-serif;color:#241F1C">
+
+  <div style="width:390px;max-width:100%;background:#6F5133;border-radius:40px;overflow:hidden;box-shadow:0 18px 44px rgba(60,35,15,.26);display:flex;flex-direction:column">
+
+    <div style="padding:14px 24px 0;display:flex;justify-content:space-between;font-size:13px;font-weight:700;color:#F3E7D4">
+      <span>9:12</span>
+      <span style="display:flex;gap:6px;align-items:center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"></path><path d="M1.42 9a16 16 0 0 1 21.16 0"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><path d="M12 20h.01"></path></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round"><rect x="2" y="7" width="16" height="10" rx="3"></rect><path d="M21 11v2"></path></svg>
+      </span>
+    </div>
+
+    <div style="padding:10px 14px 0;display:flex;flex-direction:column;align-items:center">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:-11px;z-index:2">
+        <div style="width:22px;height:22px;border-radius:999px;background:#41301E;box-shadow:inset 0 2px 3px rgba(0,0,0,.35)"></div>
+        <div style="background:#EE6B2D;color:#201E1D;font-weight:800;font-size:13px;padding:9px 20px;border-radius:999px;box-shadow:0 3px 0 #B14E1C">Lions · 12U</div>
+        <div style="width:22px;height:22px;border-radius:999px;background:#41301E;box-shadow:inset 0 2px 3px rgba(0,0,0,.35)"></div>
+      </div>
+    </div>
+
+    <div style="margin:0 14px 14px;background:#FFFCF6;border-radius:26px;padding:26px 22px 24px;box-shadow:0 6px 14px rgba(40,22,8,.25);display:flex;flex-direction:column;gap:0">
+
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding-bottom:12px">
+        <div>
+          <div style="font-family:Caprasimo,cursive;font-size:20px;line-height:1.1">Game day</div>
+          <div style="font-size:15px;font-weight:700;color:#5E534A;margin-top:3px">Saturday, Oct 12</div>
+        </div>
+        <div style="transform:rotate(-5deg);border:3px double #C4341C;color:#C4341C;font-weight:700;font-size:13px;padding:8px 13px;border-radius:12px">Week 4 · home</div>
+      </div>
+
+      <div style="height:5px;background:#201E1D;border-radius:3px"></div>
+
+      <div style="padding:18px 0 16px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;border-bottom:2px dashed #D6C4A6">
+        <div>
+          <div style="font-family:Caprasimo,cursive;font-size:34px;line-height:1">Lions</div>
+          <div style="font-size:14px;font-weight:700;color:#5E534A;margin:3px 0">vs.</div>
+          <div style="font-family:Caprasimo,cursive;font-size:34px;line-height:1;color:#5E534A">Eagles</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:Caprasimo,cursive;font-size:30px;line-height:1;color:#C4341C">10:30</div>
+          <div style="font-size:14px;font-weight:700;color:#241F1C;margin-top:4px">AM · Court 3</div>
+          <div style="font-size:13px;font-weight:700;color:#5E534A;margin-top:2px">tip-off in 1h 20m</div>
+        </div>
+      </div>
+
+      <div style="padding:16px 0 6px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div style="font-family:Caprasimo,cursive;font-size:18px">Attendance</div>
+        <div style="display:flex;align-items:baseline;gap:6px">
+          <span style="font-family:Caprasimo,cursive;font-size:26px;line-height:1;color:#C2531B">{{ checkedCount }}</span>
+          <span style="font-size:15px;font-weight:800;color:#5E534A">/ 12 present</span>
+        </div>
+      </div>
+
+      <sc-for list="{{ players }}" as="p" hint-placeholder-count="12">
+        <div role="button" tabindex="0" onClick="{{ p.toggle }}" style="display:flex;align-items:center;gap:12px;min-height:54px;padding:6px 0;border-bottom:1px solid #E3D4B8;cursor:pointer" style-hover="background:#FBF2E2">
+          <div style="width:30px;font-size:15px;font-weight:800;color:#5E534A;text-align:right">{{ p.num }}</div>
+          <div style="flex:1;min-width:0;font-size:17px;font-weight:700;color:{{ p.nameColor }};text-decoration:{{ p.strike }}">{{ p.name }}</div>
+          <div style="font-size:12px;font-weight:800;letter-spacing:.1em;color:#4C5C3B;width:34px;text-align:center">{{ p.verseMark }}</div>
+          <div style="width:44px;height:44px;border-radius:14px;border:3px solid {{ p.boxBorder }};background:{{ p.boxBg }};display:flex;align-items:center;justify-content:center" style-active="transform:scale(.94)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFCF6" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" style="opacity:{{ p.tickOpacity }}"><path d="M20 6 9 17l-5-5"></path></svg>
+          </div>
+        </div>
+      </sc-for>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:12px;font-size:13px;font-weight:700;color:#4C5C3B">
+        <span>✓ column = verse recited</span>
+        <span style="color:#5E534A">tap a box to mark present</span>
+      </div>
+
+      <button type="button" style="margin-top:16px;border:none;background:#EE6B2D;color:#201E1D;font-family:Figtree,sans-serif;font-weight:800;font-size:18px;letter-spacing:.02em;padding:18px;border-radius:999px;min-height:58px;cursor:pointer;box-shadow:0 4px 0 #B14E1C" style-hover="background:#F98244;box-shadow:0 4px 0 #B14E1C" style-active="background:#DC5D22;box-shadow:0 1px 0 #B14E1C;transform:translateY(3px)">Submit line-up</button>
+    </div>
+
+    <div style="margin:0 14px 14px;background:#F3E7D4;border-radius:26px;padding:22px;box-shadow:0 6px 14px rgba(40,22,8,.22)">
+      <div style="font-family:Caprasimo,cursive;font-size:18px;margin-bottom:14px">Run of day</div>
+      <div style="display:grid;grid-template-columns:62px 1fr;column-gap:12px;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 55px,#DFCFAF 55px,#DFCFAF 56px)">
+        <div style="font-size:15px;font-weight:800;color:#5E534A;height:56px;display:flex;align-items:center">9:45</div>
+        <div style="height:56px;display:flex;flex-direction:column;justify-content:center">
+          <div style="font-size:16px;font-weight:700">Warm-up, Court 3</div>
+        </div>
+
+        <div style="font-size:15px;font-weight:800;color:#C4341C;height:56px;display:flex;align-items:center">10:30</div>
+        <div style="height:56px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <div style="font-family:Caprasimo,cursive;font-size:19px">Lions vs. Eagles</div>
+          <span style="background:#C4341C;color:#FFF6EE;font-size:13px;font-weight:700;padding:6px 11px;border-radius:12px">Game</span>
+        </div>
+
+        <div style="font-size:15px;font-weight:800;color:#4C5C3B;height:56px;display:flex;align-items:center">11:40</div>
+        <div style="height:56px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <div>
+            <div style="font-size:16px;font-weight:700;color:#3F4C31">Verse huddle</div>
+            <div style="font-size:13px;font-weight:600;color:#4C5C3B">Philippians 4:13</div>
+          </div>
+          <span style="border:2px solid #6F8457;color:#3F4C31;font-size:13px;font-weight:700;padding:5px 10px;border-radius:12px">+3 pts</span>
+        </div>
+
+        <div style="font-size:15px;font-weight:800;color:#5E534A;height:56px;display:flex;align-items:center">12:15</div>
+        <div style="height:56px;display:flex;align-items:center">
+          <div style="font-size:16px;font-weight:700">Snack duty — Ruiz family</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button type="button" style="flex:1;border:3px solid #241F1C;background:transparent;color:#241F1C;font-family:Figtree,sans-serif;font-weight:800;font-size:15px;padding:13px;border-radius:999px;min-height:52px;cursor:pointer" style-hover="background:rgba(36,31,28,.07)">Log a verse</button>
+        <button type="button" style="flex:1;border:none;background:#6F8457;color:#FFFCF6;font-family:Figtree,sans-serif;font-weight:800;font-size:15px;padding:13px;border-radius:999px;min-height:52px;cursor:pointer;box-shadow:0 4px 0 #4C5C3B" style-hover="background:#7C946A;box-shadow:0 4px 0 #4C5C3B" style-active="box-shadow:0 1px 0 #4C5C3B;transform:translateY(3px)">Psalm points</button>
+      </div>
+    </div>
+
+    <div style="padding:6px 22px 24px;display:flex;justify-content:space-between;align-items:center;color:#F3E7D4">
+      <div role="button" tabindex="0" style="display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11px;font-weight:800;color:#FFC98E;min-width:56px;min-height:48px;justify-content:center;cursor:pointer">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v13l-4 4H4z"></path><path d="M8 9h8M8 13h5"></path></svg>
+        Today
+      </div>
+      <div role="button" tabindex="0" style="display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11px;font-weight:700;min-width:56px;min-height:48px;justify-content:center;cursor:pointer" style-hover="color:#FFC98E">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3v4M8 3v4"></path><rect x="3" y="7" width="18" height="14" rx="4"></rect><path d="M3 12h18"></path></svg>
+        Schedule
+      </div>
+      <div role="button" tabindex="0" style="display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11px;font-weight:700;min-width:56px;min-height:48px;justify-content:center;cursor:pointer" style-hover="color:#FFC98E">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20V10M9.5 20V4M16 20v-7M22 20H2"></path></svg>
+        Standings
+      </div>
+      <div role="button" tabindex="0" style="display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11px;font-weight:700;min-width:56px;min-height:48px;justify-content:center;cursor:pointer" style-hover="color:#FFC98E">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"></path></svg>
+        Team
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:430,&quot;height&quot;:1800}}">
+const ROSTER = [
+  ["7", "Marcus B.", true],
+  ["12", "Eli Ruiz", true],
+  ["3", "Jonah K.", true],
+  ["21", "Devin A.", false],
+  ["5", "Caleb M.", true],
+  ["9", "Sam Okafor", true],
+  ["14", "Tobias L.", true],
+  ["2", "Andre P.", false],
+  ["18", "Noah Vega", true],
+  ["6", "Levi Chen", true],
+  ["11", "Isaiah T.", false],
+  ["8", "Micah D.", true]
+];
+
+class Component extends DCLogic {
+  state = { present: [true, true, true, false, true, true, false, false, true, true, false, true] };
+
+  toggle(i) {
+    this.setState(s => {
+      const next = s.present.slice();
+      next[i] = !next[i];
+      return { present: next };
+    });
+  }
+
+  renderVals() {
+    const present = this.state.present;
+    const players = ROSTER.map(([num, name, verse], i) => {
+      const here = present[i];
+      return {
+        num, name,
+        verseMark: verse ? "✓" : "—",
+        nameColor: here ? "#241F1C" : "#5E534A",
+        strike: "none",
+        boxBorder: here ? "#EE6B2D" : "#C9B49A",
+        boxBg: here ? "#EE6B2D" : "transparent",
+        tickOpacity: here ? "1" : "0",
+        toggle: () => this.toggle(i)
+      };
+    });
+    return { players, checkedCount: present.filter(Boolean).length };
+  }
+}
+
+</script>
+</body>
+</html>
