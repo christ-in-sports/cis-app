@@ -136,6 +136,11 @@ These are hard rules, not preferences. If a task conflicts with one of these, st
 | Merge to `main` | Production (auto-deploy) |
 | Local | `.env.local` + Supabase local dev |
 
+**Decision logs (keep them current as you go, not later):**
+- If a Linear issue's acceptance criteria knowingly diverges from `prd.docx`, log it in [`docs/decisions.md`](./docs/decisions.md) when the issue is created or edited.
+- If a technical/architecture decision is made or changed, add an entry to [`docs/arch_decisions.md`](./docs/arch_decisions.md) and update `project_spec.md` Part 2 in the same PR.
+- Product/scope goes in `decisions.md`; technical goes in `arch_decisions.md` — don't mix them. If a change is genuinely both, log it in each and cross-link.
+
 **Working with AI assistants specifically:**
 - Work in **small, scoped tasks** — one ticket, one feature, or one bug fix per session. Break "build the attendance module" into schema → server action → UI → tests rather than doing it all in one shot.
 - Treat AI-generated PRs like a junior developer's PR — review line by line, don't rubber-stamp.
@@ -204,6 +209,8 @@ Every PR that touches the items in the "non-negotiable" list must include or upd
 |---|---|
 | [`project_spec.md`](./project_spec.md) | Full product requirements + technical design — the "what and why" |
 | [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md) | Full design system — color tokens, typography, spacing/radii, anti-patterns, component inventory. Read before any UI work. |
+| [`docs/decisions.md`](./docs/decisions.md) | Product/scope decisions that deviate from `prd.docx` — read it to see what's now different from the PRD; add to it when a Linear issue diverges |
+| [`docs/arch_decisions.md`](./docs/arch_decisions.md) | ADR-style log of technical/architecture decisions — the reasoning and alternatives behind what `project_spec.md` Part 2 records as current state |
 | `CLAUDE.local.md` *(gitignored, optional)* | Your personal scratch notes — not shared, not a source of truth |
 | `/supabase/migrations/` | Full schema history — read this before writing a new migration |
 | `/design/tokens.css`, `/design/tokens.json` | Literal design tokens — import directly, don't reinterpret |
@@ -213,4 +220,4 @@ Every PR that touches the items in the "non-negotiable" list must include or upd
 ---
 
 *Last updated: keep this line current — if you edit this file, update the date below.*
-**Last updated:** *(set on next edit)*
+**Last updated:** 2026-09-18

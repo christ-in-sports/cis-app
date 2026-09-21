@@ -222,3 +222,7 @@ differential, independent of sort — the rank number never changes on re-sort.
 - Confirm this direction holds up at data-dense edges (full roster view, equipment list) before
   treating it as fully validated — see the step-by-step validation pass in the team's process
   notes.
+
+---
+
+*Product/scope decisions that deviate from `prd.docx` are logged in [`docs/decisions.md`](./docs/decisions.md); technical/architecture decisions are logged in [`docs/arch_decisions.md`](./docs/arch_decisions.md).*
