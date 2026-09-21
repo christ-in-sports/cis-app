@@ -261,3 +261,5 @@ Trunk-based development, not GitFlow — appropriate for a 2-developer team with
 ---
 
 *This spec should evolve alongside the project. Update it whenever a technical decision changes — it is the contract between the product intent and the code being written.*
+
+*Product/scope decisions that deviate from `prd.docx` are logged in [`docs/decisions.md`](./docs/decisions.md); technical/architecture decisions, with their reasoning and alternatives, are logged in [`docs/arch_decisions.md`](./docs/arch_decisions.md).*
