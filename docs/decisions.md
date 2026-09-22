@@ -28,6 +28,12 @@ issue holds the detail; this file is the index of "what's now different from the
 
 ## Decisions
 
+### 2026-09-22 — Imported consent is surfaced for review, never recorded as consent
+- **PRD reference:** §7.3 Non-Functional Requirements (privacy: parental consent required); refines the 2026-09-21 entry below
+- **What changed:** The registration form does ask about consent, so the 2026-09-21 entry's reason ("consent isn't captured in the CSV yet") no longer holds — but `consent_given_at` still stays null on import. The answer is instead read into a per-row `consentClaim` flag (`claimed` / `not-claimed` / `inconsistent` / `unknown`) shown on the Admin's review screen, so the Admin can chase the parents who still owe a form. Considered and rejected: recording the form's submission timestamp as `consent_given_at` whenever the parent answered "Yes".
+- **Why:** Two reasons from the real 2026-27 export (149 rows). First, the timestamp would be wrong: the "Yes" option reads "I attended camp last September/October and submitted a completed consent form", so it refers to a paper form handed in months before the registration timestamps of 17 Jan – 8 Feb 2026. Second, the answer is not reliable enough to act on: 34 of 149 rows answer the two consent questions inconsistently — claiming a form was already submitted while also selecting that they will submit one later. Recording those as consented would put the system on record as holding consent for minors that the parent themselves did not claim. Under-claiming is the safer failure here; the flag keeps the signal without the assertion.
+- **Linear:** [ENG-5](https://linear.app/cis-app/issue/ENG-5/kid-registration-admin-csv-import)
+
 ### 2026-09-22 — Program Team may view home address and emergency contact
 - **PRD reference:** §5.2 Role-Feature Permission Matrix; supersedes the 2026-09-21 entry below
 - **What changed:** Program Team can now view a kid's home address and emergency contact, alongside Admin, the coach of the kid's team, and the linked parent. The 2026-09-21 entry said the opposite — that Program Team, Prayer Team and Kids could not. Prayer Team and Kids still cannot.

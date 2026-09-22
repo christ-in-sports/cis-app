@@ -29,11 +29,28 @@ export interface RowError {
   message: string;
 }
 
+/**
+ * What the form says about parental consent, for the Admin's review screen.
+ *
+ * - `claimed`      both questions agree that a form was already submitted
+ * - `not-claimed`  the parent says they still have to submit one
+ * - `inconsistent` the two questions contradict each other
+ * - `unknown`      the columns are absent or blank
+ */
+export type ConsentClaim = 'claimed' | 'not-claimed' | 'inconsistent' | 'unknown';
+
 export interface ParsedRow {
   rowNumber: number;
   /** Null when the row failed validation. */
   data: KidRegistrationInput | null;
   errors: RowError[];
+  /**
+   * Self-reported consent status. Deliberately kept OUT of `data`: it never
+   * reaches `consent_given_at`, which stays null on import
+   * (`docs/decisions.md`, 2026-09-22). It exists so the review screen can show
+   * the Admin who still owes a paper form.
+   */
+  consentClaim: ConsentClaim;
 }
 
 /** Trims a cell and collapses "no answer" spellings to null. */
@@ -167,6 +184,53 @@ export function parseDivisionChoice(value: unknown): Division | null {
   return null;
 }
 
+/**
+ * Reads the two consent questions together.
+ *
+ * They are cross-checked rather than taken at face value because they disagree
+ * often: in the 2026-27 export, 21 of the 117 rows answering "Yes, I already
+ * submitted a consent form" went on to say in the next question that they would
+ * submit one later, and 4 did the reverse. Reporting a bare "Yes" would tell an
+ * Admin 21 kids were covered when the parent themselves indicated otherwise.
+ *
+ * This never produces a `consent_given_at`. The "Yes" wording refers to a paper
+ * form handed in months earlier ("I attended camp last September/October"), so
+ * the only timestamp the CSV offers -- when the registration form was filled in
+ * -- is not when consent was given.
+ */
+export function parseConsentClaim(
+  claim: unknown,
+  method: unknown,
+): ConsentClaim {
+  const said = cleanCell(claim)?.toLowerCase() ?? null;
+  const how = cleanCell(method)?.toLowerCase() ?? null;
+
+  // The "how" question is a multi-select, so its answer can contain several
+  // options at once -- including mutually exclusive ones. Both signals are
+  // therefore read independently rather than as a single either/or.
+  const saysDone = how !== null && how.includes('already submitted');
+  const saysLater =
+    how !== null && (how.includes('will submit') || how.includes('will print'));
+
+  // Ticked "already submitted" AND "will submit later" in the same answer.
+  if (saysDone && saysLater) return 'inconsistent';
+
+  const fromMethod: ConsentClaim | null = saysDone
+    ? 'claimed'
+    : saysLater
+      ? 'not-claimed'
+      : null;
+
+  const fromClaim: ConsentClaim | null =
+    said === null ? null : said.startsWith('yes') ? 'claimed' : 'not-claimed';
+
+  if (fromClaim === null && fromMethod === null) return 'unknown';
+  if (fromClaim === null) return fromMethod!;
+  if (fromMethod === null) return fromClaim;
+
+  return fromClaim === fromMethod ? fromClaim : 'inconsistent';
+}
+
 /** Splits a multi-select answer ("Soccer, Basketball") into its options. */
 export function parseList(value: unknown): string[] | null {
   const text = cleanCell(value);
@@ -282,10 +346,16 @@ export function parseRow(
   mapping: HeaderMapping,
   rowNumber: number,
 ): ParsedRow {
+  const at = (field: CsvField): string | null => {
+    const index = mapping.columnOf[field];
+    return index === undefined ? null : (cells[index] ?? null);
+  };
+
+  const consentClaim = parseConsentClaim(at('consent_claim'), at('consent_method'));
   const result = kidRegistrationSchema.safeParse(buildCandidate(cells, mapping));
 
   if (result.success) {
-    return { rowNumber, data: result.data, errors: [] };
+    return { rowNumber, data: result.data, errors: [], consentClaim };
   }
 
   const errors = result.error.issues.map((issue): RowError => {
@@ -298,7 +368,7 @@ export function parseRow(
     };
   });
 
-  return { rowNumber, data: null, errors };
+  return { rowNumber, data: null, errors, consentClaim };
 }
 
 /** Validates every data row. `rows` excludes the header. */

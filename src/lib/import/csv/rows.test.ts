@@ -7,6 +7,7 @@ import {
   parseTshirtSize,
   parseDivisionChoice,
   parseList,
+  parseConsentClaim,
   parseRow,
   parseRows,
   identityKey,
@@ -309,6 +310,75 @@ describe('parseRow top sports', () => {
 
   it('is null when neither column was answered', () => {
     expect(parseRow(row({ Grade: '5' }), mapping, 2).data?.registration.top_sports).toBeNull();
+  });
+});
+
+/**
+ * Consent is read for the Admin's review screen only. It never reaches
+ * `consent_given_at`, which stays null on import (docs/decisions.md 2026-09-22).
+ */
+describe('consent claim', () => {
+  const YES = 'Yes, I attended camp last September/October and submitted a completed consent form.';
+  const NO = 'No, I will use the link provided below to submit one.';
+  const DONE = 'I have already submitted one for camp this summer 2025.';
+  const LATER = 'I will submit form with cash payment to Admin team member: Maria Meawad';
+  const EMAIL_LATER = 'I will print, sign and email form to CISSTANTONIOS@GMAIL.COM';
+
+  it('reports a claim only when both questions agree', () => {
+    expect(parseConsentClaim(YES, DONE)).toBe('claimed');
+  });
+
+  it('reports no claim when the parent says they still owe one', () => {
+    expect(parseConsentClaim(NO, LATER)).toBe('not-claimed');
+    expect(parseConsentClaim(NO, EMAIL_LATER)).toBe('not-claimed');
+  });
+
+  // 21 of the 117 "Yes" rows in the real export did exactly this. Taking the
+  // "Yes" at face value would mark them as covered when the parent said
+  // otherwise one question later.
+  it('flags a Yes that is contradicted by the follow-up as inconsistent', () => {
+    expect(parseConsentClaim(YES, LATER)).toBe('inconsistent');
+    expect(parseConsentClaim(YES, EMAIL_LATER)).toBe('inconsistent');
+  });
+
+  it('flags a No that is contradicted by the follow-up as inconsistent', () => {
+    expect(parseConsentClaim(NO, DONE)).toBe('inconsistent');
+  });
+
+  // The "how" question is a multi-select: 10 rows in the real export ticked
+  // mutually exclusive options together.
+  it('flags a self-contradictory multi-select answer', () => {
+    expect(parseConsentClaim(YES, `${LATER}, ${DONE}`)).toBe('inconsistent');
+    expect(parseConsentClaim(NO, `${LATER}, ${DONE}`)).toBe('inconsistent');
+    expect(parseConsentClaim('', `${LATER}, ${DONE}`)).toBe('inconsistent');
+  });
+
+  it('accepts a multi-select of several compatible options', () => {
+    expect(parseConsentClaim(NO, `${LATER}, ${EMAIL_LATER}`)).toBe('not-claimed');
+  });
+
+  it('falls back to whichever question was answered', () => {
+    expect(parseConsentClaim(YES, '')).toBe('claimed');
+    expect(parseConsentClaim('', DONE)).toBe('claimed');
+    expect(parseConsentClaim('', LATER)).toBe('not-claimed');
+  });
+
+  it('is unknown when neither column is present', () => {
+    expect(parseConsentClaim(null, null)).toBe('unknown');
+    expect(parseConsentClaim('', '')).toBe('unknown');
+  });
+
+  it('is surfaced on the parsed row but never written to the registration', () => {
+    const withConsent = mapHeaders([...HEADERS, 'Have you filled out a consent form?']);
+    const result = parseRow([...row(), YES], withConsent, 2);
+
+    expect(result.consentClaim).toBe('claimed');
+    // consent_given_at is not part of the validated shape at all.
+    expect(result.data?.registration).not.toHaveProperty('consent_given_at');
+  });
+
+  it('is unknown when the export has no consent columns', () => {
+    expect(parseRow(row(), mapping, 2).consentClaim).toBe('unknown');
   });
 });
 

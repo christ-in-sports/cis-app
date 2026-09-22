@@ -87,12 +87,16 @@ describe('mapHeaders on the expected form export', () => {
     expect(mapping.columnOf.kid_email).toBe(FORM_HEADERS.indexOf('Youth email:'));
   });
 
-  it('skips the payment and consent columns', () => {
-    // Payment is a separate ticket, and imported registrations leave
-    // consent_given_at null (docs/decisions.md).
-    expect(mapping.ignored).toContain('Have you filled out a consent form?');
-    expect(mapping.ignored).toContain("Please use the below link for the Parent's Consent form.");
+  it('skips the payment column', () => {
+    // Payment is a separate ticket, out of scope for ENG-5.
     expect(mapping.ignored.some((h) => h.startsWith('Paypal'))).toBe(true);
+  });
+
+  it('reads both consent columns, for the review screen rather than the database', () => {
+    // They are cross-checked against each other, so both are needed -- see the
+    // consent tests in rows.test.ts. Neither reaches consent_given_at.
+    expect(mapping.columnOf.consent_claim).toBe(21);
+    expect(mapping.columnOf.consent_method).toBe(22);
   });
 
   it('picks up the two columns the previous importer ignored', () => {

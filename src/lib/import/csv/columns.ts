@@ -43,7 +43,12 @@ export type CsvField =
   // The form asks for top sports twice, once per division. Kids do not reliably
   // answer only the one meant for them, so both are read and `rows.ts` picks.
   | 'top_sports_ambassadors'
-  | 'top_sports_juniors';
+  | 'top_sports_juniors'
+  // Read for the Admin's review screen only, never written to the database.
+  // The two consent questions disagree often enough that both are needed to
+  // tell a real claim from a contradictory one -- see `consentClaim` in rows.ts.
+  | 'consent_claim'
+  | 'consent_method';
 
 /**
  * Human-readable names used in row-level error messages when the CSV's own
@@ -69,6 +74,8 @@ export const FIELD_LABEL: Record<CsvField, string> = {
   tshirt_size: 'Youth tshirt size',
   top_sports_ambassadors: 'Top sports (Ambassadors)',
   top_sports_juniors: 'Top sports (Juniors)',
+  consent_claim: 'Have you filled out a consent form?',
+  consent_method: 'How the consent form will be returned',
 };
 
 /**
@@ -80,24 +87,18 @@ export const FIELD_LABEL: Record<CsvField, string> = {
  * kid's in 13 of the 88 rows that have one. It is whoever happened to be signed
  * in, so it is dropped in favour of the two explicit questions.
  *
- * The consent columns are dropped because consent is recorded server-side and
- * imported registrations leave `consent_given_at` null for now
- * (`docs/decisions.md`, 2026-09-21). They record how a parent intends to return
- * a paper form, not a consent event we could timestamp. Payment is out of scope
- * for ENG-5 entirely.
+ * Payment is out of scope for ENG-5 entirely.
+ *
+ * The consent columns are NOT ignored -- see `consent_claim` / `consent_method`
+ * below. They are read for the review screen but never written to the database.
  */
-const IGNORED_HEADERS = new Set([
-  'timestamp',
-  'emailaddress',
-  'haveyoufilledoutaconsentform',
-  'pleaseusethebelowlinkfortheparentsconsentform',
-]);
+const IGNORED_HEADERS = new Set(['timestamp', 'emailaddress']);
 
 /**
  * Ignored columns whose header is too long or too volatile to pin down exactly
  * -- the payment question embeds account handles and line breaks.
  */
-const IGNORED_PATTERNS: RegExp[] = [/paypal|venmo/, /consentform/];
+const IGNORED_PATTERNS: RegExp[] = [/paypal|venmo/];
 
 /** Exact header matches, keyed by normalised form. Checked before the patterns. */
 const EXACT: Record<string, CsvField> = {
@@ -118,6 +119,8 @@ const EXACT: Record<string, CsvField> = {
   parentguardianemail: 'guardian_email',
   emergencycontactname: 'emergency_contact_name',
   emergencycontactnumber: 'emergency_contact_phone',
+  haveyoufilledoutaconsentform: 'consent_claim',
+  pleaseusethebelowlinkfortheparentsconsentform: 'consent_method',
   '7thgradeonlypleasechoosewhichsessionyoudliketoattend': 'division_choice',
 };
 
@@ -130,6 +133,9 @@ const PATTERNS: [RegExp, CsvField][] = [
   // division name and "sports", and the division is what distinguishes them.
   [/ambassador.*sport/, 'top_sports_ambassadors'],
   [/junior.*sport/, 'top_sports_juniors'],
+  // Before the bare /consentform/ rule, which would otherwise take both.
+  [/(haveyou|filledout|completed).*consentform/, 'consent_claim'],
+  [/consentform/, 'consent_method'],
   [/session|division|juniorsorambassadors/, 'division_choice'],
   [/tshirt|shirtsize/, 'tshirt_size'],
   [/(picture|photo|selfie|headshot)/, 'photo_link'],
