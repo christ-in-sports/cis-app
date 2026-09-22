@@ -27,3 +27,33 @@ issue holds the detail; this file is the index of "what's now different from the
 ---
 
 ## Decisions
+
+### 2026-09-21 — CSV-imported registrations may have no consent recorded
+- **PRD reference:** §7.3 Non-Functional Requirements (privacy: parental consent required), §3.5 US-PA-01 (liability waiver before submitting)
+- **What changed:** For the interim CSV import, `consent_given_at` may be null on imported registrations for now. The parent self-service form still requires consent before it can be submitted.
+- **Why:** Team decision on 2026-09-21 for the interim import path; consent isn't captured in the CSV yet.
+- **Linear:** [ENG-5](https://linear.app/cis-app/issue/ENG-5/kid-registration-admin-csv-import)
+
+### 2026-09-21 — Home address and emergency contact visible to Admin, own-team Coach, and linked Parent only
+- **PRD reference:** §5.2 Role-Feature Permission Matrix (no row exists for this data)
+- **What changed:** New matrix row. Admin, the coach of the kid's team, and the kid's linked parent can view a kid's home address and emergency contact. Program Team, Prayer Team and Kids cannot. Program Team can still view the full roster without these fields.
+- **Why:** Minors' contact data is sensitive; access is limited to the people responsible for that kid.
+- **Linear:** [ENG-4](https://linear.app/cis-app/issue/ENG-4/kid-registration-parent-self-service-form), [ENG-5](https://linear.app/cis-app/issue/ENG-5/kid-registration-admin-csv-import)
+
+### 2026-09-21 — New kid registration field set
+- **PRD reference:** §3.5 US-PA-01 (form captures full name, DOB, grade, division, contact info, allergies, sports preferences/skills), §6 Core Data Model (`Kid`)
+- **What changed:** Name is split into first and last. Added photo, gender (Male or Female), T-shirt size (YS, YM, YL, XS, S, M, L, XL, XXL), home address, emergency contact name and phone, and guardian name, phone and email (guardian email required). The kid's own email and phone are optional, as are top sports. Consent is recorded as a timestamp instead of a yes/no. Allergies are kept. Grade, division, T-shirt size, top sports and consent are stored per season, not on the kid.
+- **Why:** Team-defined field list from the 2026-09-21 Kid schema review; most of these fields are not covered by the PRD.
+- **Linear:** [ENG-4](https://linear.app/cis-app/issue/ENG-4/kid-registration-parent-self-service-form), [ENG-5](https://linear.app/cis-app/issue/ENG-5/kid-registration-admin-csv-import)
+
+### 2026-09-21 — 7th graders may choose Juniors or Ambassadors
+- **PRD reference:** §1 Overview (divisions), §3.6 Kids (Ambassadors only), §6 Core Data Model (`division`)
+- **What changed:** The PRD has Juniors as Grades 4–6 and Ambassadors as Grades 7–12. Now grade < 7 must be Juniors, grade > 7 must be Ambassadors, and grade 7 chooses either.
+- **Why:** Team decision in the 2026-09-21 Kid schema review; rationale not captured at the time — fill in.
+- **Linear:** [ENG-4](https://linear.app/cis-app/issue/ENG-4/kid-registration-parent-self-service-form), [ENG-5](https://linear.app/cis-app/issue/ENG-5/kid-registration-admin-csv-import)
+
+### 2026-09-18 — Parent registration has no approval step or notifications
+- **PRD reference:** §3.5 US-PA-01 (submission triggers a confirmation to the parent and a review alert to Admin; parent receives confirmation upon Admin approval)
+- **What changed:** Submission writes directly to the registration table and is complete on submit. There is no confirmation notification to the parent, no review alert to Admin, and no Admin-approval-gated confirmation step.
+- **Why:** Per the Director/Admin decision recorded in ENG-4: an approval workflow is not needed for this phase. Logged retroactively on 2026-09-21.
+- **Linear:** [ENG-4](https://linear.app/cis-app/issue/ENG-4/kid-registration-parent-self-service-form)
