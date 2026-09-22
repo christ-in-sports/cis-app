@@ -32,6 +32,9 @@ async function currentSeasonId(client: PoolClient): Promise<string> {
 
 let kidSeq = 0;
 
+let suffixSeq = 0;
+const randomSuffix = () => `${Date.now()}-${(suffixSeq += 1)}`;
+
 /** Creates a kid as superuser (bypassing RLS) for test setup. */
 async function createKid(
   client: PoolClient,
@@ -446,6 +449,27 @@ describe('attendance functions after the kid/registration split', () => {
   }
 
   /**
+   * Runs populate_attendance_day as a freshly-granted coach.
+   *
+   * It is gated on is_coach(), which reads auth.uid() -- so calling it as the
+   * superuser (where auth.uid() is null) is now rejected, exactly as an
+   * anonymous PostgREST request would be.
+   */
+  async function populateAsCoach(client: PoolClient, dayId: string): Promise<number> {
+    const coachId = await createProfile(client, {
+      email: `populate-coach-${randomSuffix()}@test.local`,
+    });
+    await grantRole(client, coachId, 'coach');
+    return asUser(client, coachId, async () => {
+      const r = await client.query<{ populate_attendance_day: number }>(
+        'select populate_attendance_day($1)',
+        [dayId]
+      );
+      return r.rows[0].populate_attendance_day;
+    });
+  }
+
+  /**
    * Which of the given kids ended up on the day's roster.
    *
    * Assertions are about membership rather than row counts: the database may
@@ -466,6 +490,48 @@ describe('attendance functions after the kid/registration split', () => {
     return r.rows.map((x) => x.kid_id);
   }
 
+  // populate_attendance_day is SECURITY DEFINER and PostgREST exposes it at
+  // /rest/v1/rpc/, so without an explicit gate an unauthenticated caller could
+  // write attendance_records. Regression guard for that fix.
+  it('populate_attendance_day refuses an anonymous caller', async () => {
+    await withTx(pool, async (client) => {
+      const dayId = await createDay(client);
+
+      // Rolled back and the role explicitly reset: a failed statement aborts the
+      // transaction, and without restoring the superuser role afterwards the
+      // *next* test's setup fails with "permission denied for table users".
+      await client.query('SAVEPOINT anon_probe');
+      await client.query('SET LOCAL ROLE anon');
+      let message = '';
+      try {
+        await client.query('select populate_attendance_day($1)', [dayId]);
+      } catch (err) {
+        message = (err as Error).message;
+      }
+      await client.query('ROLLBACK TO SAVEPOINT anon_probe');
+      await client.query('RESET ROLE');
+
+      expect(message).toMatch(/coach or staff only/i);
+    });
+  });
+
+  it('populate_attendance_day refuses a signed-in user who is neither coach nor staff', async () => {
+    await withTx(pool, async (client) => {
+      const parentId = await createProfile(client, { email: 'parent-populate@test.local' });
+      await grantRole(client, parentId, 'parent');
+      const dayId = await createDay(client);
+
+      // Deliberately calls the function directly as the parent -- not through
+      // populateAsCoach, which would grant the coach role this test is checking
+      // the absence of.
+      const attempt = asUser(client, parentId, async () => {
+        await client.query('select populate_attendance_day($1)', [dayId]);
+      });
+
+      await expect(attempt).rejects.toThrow(/coach or staff only/i);
+    });
+  });
+
   it('populate_attendance_day selects registrations by division and grade', async () => {
     await withTx(pool, async (client) => {
       const junior = await createKid(client, { lastName: 'Junior' });
@@ -474,7 +540,7 @@ describe('attendance functions after the kid/registration split', () => {
       await createRegistration(client, ambassador, { grade: 9, division: 'ambassadors' });
 
       const dayId = await createDay(client, { session: 'juniors' });
-      await client.query('select populate_attendance_day($1)', [dayId]);
+      await populateAsCoach(client, dayId);
 
       const rostered = await rosteredKids(client, dayId, [junior, ambassador]);
       expect(rostered).toEqual([junior]);
@@ -489,7 +555,7 @@ describe('attendance functions after the kid/registration split', () => {
       await createRegistration(client, outOfRange, { grade: 12, division: 'ambassadors' });
 
       const dayId = await createDay(client, { gradeMin: 4, gradeMax: 6 });
-      await client.query('select populate_attendance_day($1)', [dayId]);
+      await populateAsCoach(client, dayId);
 
       const rostered = await rosteredKids(client, dayId, [inRange, outOfRange]);
       expect(rostered).toEqual([inRange]);
@@ -512,7 +578,7 @@ describe('attendance functions after the kid/registration split', () => {
       );
 
       const dayId = await createDay(client);
-      await client.query('select populate_attendance_day($1)', [dayId]);
+      await populateAsCoach(client, dayId);
 
       const rostered = await rosteredKids(client, dayId, [kidId]);
       expect(rostered).toEqual([]);
