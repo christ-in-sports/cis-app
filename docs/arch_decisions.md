@@ -36,6 +36,13 @@ heading followed by:
 
 ## Decisions
 
+### 2026-09-22 — Roles modeled as a `user_roles` join table, not a `role[]` array on `User`
+- **Status:** Accepted
+- **Context:** `project_spec.md`'s original Core Data Model sketch put `role[]` directly on `User`. The live schema instead only had two booleans (`profiles.is_staff`, `profiles.is_coach`), which cannot express "Admin only, not Program Team" -- a requirement of ENG-5's CSV import (only Admin may run it). A real role model was needed as a foundation before that importer's RLS could be written correctly.
+- **Decision:** Added `user_roles` (`user_id`, `role app_role`, `granted_at`, `granted_by`) as a join table, an `app_role` enum (`admin`, `program`, `coach`, `prayer`, `parent`, `kid`), and a `has_role(role)` SQL helper (`SECURITY DEFINER`, mirroring the existing `is_staff()`/`is_coach()` style) -- rather than a `role[]` array column on `profiles`. `is_staff()` is redefined as `has_role('admin')` only and `is_coach()` as `is_staff() OR has_role('coach')`, which is behaviorally identical to every existing RLS policy that calls them, since this migration does not backfill anyone into `'program'` yet -- widening `is_staff()` to include Program Team is left as a deliberate follow-up once that role has real members, not a side effect of this change.
+- **Consequences / tradeoffs:** A join table gets its own RLS (who can grant/revoke roles), an audit trail (`granted_at`/`granted_by`), and a real enum + FK, none of which a `text[]`/`role[]` column offers cleanly. It costs one extra join per role check, mitigated by `has_role()` being the single call site. It needed backfilling: from `profiles.is_staff`/`is_coach` (data-driven, not hardcoded ids), plus an explicit admin grant for the project's Director (`joseph.nabil07@gmail.com`), whose `is_staff` flag was false and would otherwise have been locked out of the Admin-only screens this role model gates. RLS is tested against a real local Postgres (`supabase/tests/roles.test.ts`, run via `npm run test:db`, backed by a new CI job that runs `supabase start` -- Docker ships preinstalled on GitHub-hosted runners) rather than mocked, per `AGENTS.md` §7's non-negotiable coverage for role-based access control.
+- **Reference:** `project_spec.md` §1.4, §1.5, §2.4 (`User`/`UserRole`); Linear [ENG-5](https://linear.app/cis-app/issue/ENG-5/kid-registration-admin-csv-import)
+
 ### 2026-09-21 — Store kid photos in a private Storage bucket
 - **Status:** Accepted
 - **Context:** The registration form collects a photo of each kid, who are minors. `AGENTS.md` §4 treats kid data as sensitive. The interim CSV import gets photos as Google Drive links (parents upload them through a Google Form), whose sharing we don't control.

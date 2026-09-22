@@ -201,7 +201,8 @@ Divisions (`juniors` / `ambassadors`) are an attribute on `Registration` and `Te
 
 | Entity | Key Fields | Relationships |
 |---|---|---|
-| `User` | id, name, email, phone, role[], created_at | has many `Kid` (as parent), belongs to `Team` (as coach) |
+| `User` | id, name, email, phone, created_at | has many `Kid` (as parent), belongs to `Team` (as coach), has many roles via `UserRole` |
+| `UserRole` | user_id, role, granted_at, granted_by | belongs to `User` |
 | `Kid` | id, first_name, last_name, photo_path, email?, phone?, gender, dob, allergies, home_address, emergency_contact_name, emergency_contact_phone, guardian_name, guardian_phone, guardian_email, skill_tags[], parent_user_id? | has many `Registration`, belongs to `User` (parent) |
 | `Registration` | id, kid_id, season_id, grade, division, tshirt_size, top_sports[]?, consent_given_at?, consent_by_user_id?, team_id?, created_at | belongs to `Kid`, `Season`, `Team` |
 | `Team` | id, name, sport, division, coach_user_id, season_id | has many `Registration`, belongs to `Season` |

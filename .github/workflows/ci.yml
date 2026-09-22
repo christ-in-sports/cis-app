@@ -31,6 +31,31 @@ jobs:
 
       - run: npm run build
 
+  db-tests:
+    name: Database (RLS policy tests)
+    runs-on: ubuntu-latest
+    # Docker ships preinstalled on GitHub-hosted runners, so `supabase start` can
+    # spin up a real local Postgres here even though the CLI needs Docker to do it
+    # (see docs/arch_decisions.md for why RLS is tested against a real database
+    # rather than mocked). This runs against a throwaway local stack only -- it
+    # never touches the linked production project.
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx supabase start
+
+      - run: npm run test:db
+
+      - if: always()
+        run: npx supabase stop
+
   e2e:
     name: End-to-end (Playwright)
     runs-on: ubuntu-latest
