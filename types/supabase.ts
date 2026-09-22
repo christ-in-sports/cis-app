@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -236,6 +231,80 @@ export type Database = {
             columns: ["tournament_id"]
             isOneToOne: false
             referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kids: {
+        Row: {
+          allergies: string | null
+          created_at: string
+          dob: string
+          email: string | null
+          emergency_contact_name: string
+          emergency_contact_phone: string
+          first_name: string
+          gender: string
+          guardian_email: string
+          guardian_name: string
+          guardian_phone: string
+          home_address: string
+          id: string
+          last_name: string
+          parent_user_id: string | null
+          phone: string | null
+          photo_path: string | null
+          skill_tags: string[]
+          updated_at: string
+        }
+        Insert: {
+          allergies?: string | null
+          created_at?: string
+          dob: string
+          email?: string | null
+          emergency_contact_name: string
+          emergency_contact_phone: string
+          first_name: string
+          gender: string
+          guardian_email: string
+          guardian_name: string
+          guardian_phone: string
+          home_address: string
+          id?: string
+          last_name: string
+          parent_user_id?: string | null
+          phone?: string | null
+          photo_path?: string | null
+          skill_tags?: string[]
+          updated_at?: string
+        }
+        Update: {
+          allergies?: string | null
+          created_at?: string
+          dob?: string
+          email?: string | null
+          emergency_contact_name?: string
+          emergency_contact_phone?: string
+          first_name?: string
+          gender?: string
+          guardian_email?: string
+          guardian_name?: string
+          guardian_phone?: string
+          home_address?: string
+          id?: string
+          last_name?: string
+          parent_user_id?: string | null
+          phone?: string | null
+          photo_path?: string | null
+          skill_tags?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kids_parent_user_id_fkey"
+            columns: ["parent_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -556,89 +625,63 @@ export type Database = {
       registrations: {
         Row: {
           active: boolean
-          address: string | null
-          attendance: Json
-          attendance_archive: Json
-          created_at: string | null
+          consent_by_user_id: string | null
+          consent_given_at: string | null
+          created_at: string
           created_by: string | null
-          dob: string | null
-          email: string | null
-          emergency_contact_name: string | null
-          emergency_contact_phone: string | null
-          first_name: string
-          gender: string | null
-          grade: string | null
-          guardian_email: string | null
-          guardian_name: string | null
-          guardian_phone: string | null
+          division: string
+          grade: number
           id: string
-          last_name: string
-          notes: string | null
-          qr_token: string | null
-          session: string | null
+          kid_id: string
+          season_id: string
           source: string
           team_id: string | null
-          updated_at: string | null
-          youth_email: string | null
-          youth_phone: string | null
+          top_sports: string[] | null
+          tshirt_size: string
+          updated_at: string
         }
         Insert: {
           active?: boolean
-          address?: string | null
-          attendance?: Json
-          attendance_archive?: Json
-          created_at?: string | null
+          consent_by_user_id?: string | null
+          consent_given_at?: string | null
+          created_at?: string
           created_by?: string | null
-          dob?: string | null
-          email?: string | null
-          emergency_contact_name?: string | null
-          emergency_contact_phone?: string | null
-          first_name: string
-          gender?: string | null
-          grade?: string | null
-          guardian_email?: string | null
-          guardian_name?: string | null
-          guardian_phone?: string | null
+          division: string
+          grade: number
           id?: string
-          last_name: string
-          notes?: string | null
-          qr_token?: string | null
-          session?: string | null
+          kid_id: string
+          season_id: string
           source?: string
           team_id?: string | null
-          updated_at?: string | null
-          youth_email?: string | null
-          youth_phone?: string | null
+          top_sports?: string[] | null
+          tshirt_size: string
+          updated_at?: string
         }
         Update: {
           active?: boolean
-          address?: string | null
-          attendance?: Json
-          attendance_archive?: Json
-          created_at?: string | null
+          consent_by_user_id?: string | null
+          consent_given_at?: string | null
+          created_at?: string
           created_by?: string | null
-          dob?: string | null
-          email?: string | null
-          emergency_contact_name?: string | null
-          emergency_contact_phone?: string | null
-          first_name?: string
-          gender?: string | null
-          grade?: string | null
-          guardian_email?: string | null
-          guardian_name?: string | null
-          guardian_phone?: string | null
+          division?: string
+          grade?: number
           id?: string
-          last_name?: string
-          notes?: string | null
-          qr_token?: string | null
-          session?: string | null
+          kid_id?: string
+          season_id?: string
           source?: string
           team_id?: string | null
-          updated_at?: string | null
-          youth_email?: string | null
-          youth_phone?: string | null
+          top_sports?: string[] | null
+          tshirt_size?: string
+          updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "registrations_consent_by_user_id_fkey"
+            columns: ["consent_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "registrations_created_by_fkey"
             columns: ["created_by"]
@@ -647,7 +690,21 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "registrations_team_fk"
+            foreignKeyName: "registrations_kid_id_fkey"
+            columns: ["kid_id"]
+            isOneToOne: false
+            referencedRelation: "kids"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registrations_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "registrations_team_id_fkey"
             columns: ["team_id"]
             isOneToOne: false
             referencedRelation: "ministry_teams"
@@ -932,6 +989,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          granted_at: string
+          granted_by: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          granted_at?: string
+          granted_by?: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          granted_at?: string
+          granted_by?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_roles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -958,13 +1051,20 @@ export type Database = {
         }[]
       }
       can_mark: { Args: { p_reg: string }; Returns: boolean }
+      can_read_kid: { Args: { p_kid: string }; Returns: boolean }
+      can_read_kid_photo: { Args: { p_path: string }; Returns: boolean }
       check_in_by_token: {
         Args: { p_day: string; p_method?: string; p_token: string }
         Returns: Json
       }
+      coaches_kid: { Args: { p_kid: string }; Returns: boolean }
       default_session: { Args: { g: string }; Returns: string }
       get_my_tournament_ids: { Args: never; Returns: string[] }
       grade_num: { Args: { g: string }; Returns: number }
+      has_role: {
+        Args: { p_role: Database["public"]["Enums"]["app_role"] }
+        Returns: boolean
+      }
       is_coach: { Args: never; Returns: boolean }
       is_staff: { Args: never; Returns: boolean }
       parse_session_choice: {
@@ -975,7 +1075,7 @@ export type Database = {
       start_new_season: { Args: { p_name: string }; Returns: string }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "program" | "coach" | "prayer" | "parent" | "kid"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1105,6 +1205,9 @@ export const Constants = {
     Enums: {},
   },
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "program", "coach", "prayer", "parent", "kid"],
+    },
   },
 } as const
+

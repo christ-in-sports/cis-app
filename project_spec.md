@@ -64,7 +64,7 @@ The app supports **6 roles**. A person may hold more than one role simultaneousl
 | Update verse/psalm points | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ |
 | View verses & psalms | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Register kids | ✓ | ✗ | ✗ | ✗ | ✓ | ✓ (self) |
-| View kid home address & emergency contact | ✓ | ✗ | ✓ (own team) | ✗ | ✓ (own kids) | ✗ |
+| View kid home address & emergency contact | ✓ | ✓ | ✓ (own team) | ✗ | ✓ (own kids) | ✗ |
 | Process payments | ✓ | ✗ | ✗ | ✗ | ✓ | ✗ |
 | AI team generation | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
 | View equipment list | ✓ | ✓ | ✗ | ✓ | ✗ | ✗ |
@@ -275,7 +275,7 @@ Trunk-based development, not GitFlow — appropriate for a 2-developer team with
 - What exact payment amounts / installment structures should Stripe be configured with?
 - Are coach-entered kid attributes/ratings visible to parents?
 - Is a registration waitlist needed if a division/team fills up?
-- How do we enforce that only Admin, the kid's coach and the linked parent can see `home_address` and the emergency contact? RLS is per row, not per column, and Program Team can view the full roster. Options: a 1:1 `KidContact` table with its own RLS (recommended), or a view plus column-level grants.
+- ~~How do we enforce that only Admin, the kid's coach and the linked parent can see `home_address` and the emergency contact?~~ **Resolved 2026-09-22:** Program Team may see them too (`docs/decisions.md`), so the set of readers for the contact fields is the same as for the roster row. A plain row-level policy on `kids` is therefore sufficient, and the proposed 1:1 `KidContact` table is not needed.
 - How does the server read the Google Drive photos during CSV import? Form uploads are usually not public, so this likely needs Drive API access (e.g., a service account the photos are shared with). Set up before the importer is built.
 - Should `Payment` reference `registration_id` instead of `kid_id`, so payments are scoped to a season?
 

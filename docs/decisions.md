@@ -28,6 +28,18 @@ issue holds the detail; this file is the index of "what's now different from the
 
 ## Decisions
 
+### 2026-09-22 — Program Team may view home address and emergency contact
+- **PRD reference:** §5.2 Role-Feature Permission Matrix; supersedes the 2026-09-21 entry below
+- **What changed:** Program Team can now view a kid's home address and emergency contact, alongside Admin, the coach of the kid's team, and the linked parent. The 2026-09-21 entry said the opposite — that Program Team, Prayer Team and Kids could not. Prayer Team and Kids still cannot.
+- **Why:** Program Team already has full roster access, and splitting contact fields away from the roster could not be expressed in Postgres RLS, which is row-level rather than column-level. Allowing it removes the need for the separate `KidContact` table that `project_spec.md` §2.8 proposed.
+- **Linear:** [ENG-4](https://linear.app/cis-app/issue/ENG-4/kid-registration-parent-self-service-form), [ENG-5](https://linear.app/cis-app/issue/ENG-5/kid-registration-admin-csv-import)
+
+### 2026-09-22 — The interim roster data is discarded rather than migrated
+- **PRD reference:** §4.1/§4.3 (CSV import as the MVP path for populating the roster)
+- **What changed:** The 144 rows in the old flat `registrations` table are dropped rather than migrated into the new `Kid` + `Registration` schema. The roster will be repopulated through the CSV importer.
+- **Why:** Confirmed on 2026-09-22 that those rows were dummy test data. They also had no T-shirt size, which the new `Registration` requires, so migrating them would have meant either inventing values or relaxing the schema.
+- **Linear:** [ENG-5](https://linear.app/cis-app/issue/ENG-5/kid-registration-admin-csv-import)
+
 ### 2026-09-21 — CSV-imported registrations may have no consent recorded
 - **PRD reference:** §7.3 Non-Functional Requirements (privacy: parental consent required), §3.5 US-PA-01 (liability waiver before submitting)
 - **What changed:** For the interim CSV import, `consent_given_at` may be null on imported registrations for now. The parent self-service form still requires consent before it can be submitted.

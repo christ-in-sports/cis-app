@@ -36,6 +36,27 @@ heading followed by:
 
 ## Decisions
 
+### 2026-09-22 — Replace the flat `registrations` table rather than migrate it
+- **Status:** Accepted
+- **Context:** The 2026-09-21 decision to split `Kid` from a per-season `Registration` still had to be applied to a live schema whose single flat `registrations` table held one row per kid, with no season concept, plus columns the new model has no place for (`qr_token`, and `attendance` / `attendance_archive` jsonb mirrors).
+- **Decision:** Drop the flat table and create `kids` + `registrations` fresh. Its 144 rows were confirmed as dummy data and are discarded; the roster is repopulated via CSV import (see `decisions.md`). `qr_token` and both jsonb columns are dropped with it.
+- **Consequences / tradeoffs:** The schema now matches `project_spec.md` §2.4 with no migration shim, and `grade` becomes a real integer (it was text), which also fixes the comparison against `attendance_groups.grade_min`/`grade_max`. In exchange, QR check-in loses its token column, and the jsonb attendance mirror is gone — `attendance_records` is now the only record of attendance, which it already was in practice.
+- **Reference:** `project_spec.md` §2.4, §2.5; Linear [ENG-5](https://linear.app/cis-app/issue/ENG-5/kid-registration-admin-csv-import)
+
+### 2026-09-22 — The kid identity index is deliberately not unique
+- **Status:** Accepted
+- **Context:** The CSV importer matches returning kids on first name + last name + DOB, case-insensitively and whitespace-trimmed. The old flat table enforced that combination with a UNIQUE index (`registrations_identity_key`).
+- **Decision:** `kids_identity_idx` indexes the same expression but is **not** unique. More than one match is reported as a row-level import error for an Admin to resolve.
+- **Consequences / tradeoffs:** Twins, who legitimately share all three values, can both be registered — under a unique index the second would abort an entire import commit. The cost is that the importer must handle the ambiguous case explicitly instead of relying on the database to guarantee a single match.
+- **Reference:** `project_spec.md` §2.5; Linear [ENG-5](https://linear.app/cis-app/issue/ENG-5/kid-registration-admin-csv-import)
+
+### 2026-09-22 — Attendance functions the app calls were rewritten, not deferred
+- **Status:** Accepted
+- **Context:** Six database functions read the flat `registrations` table. The initial intent was to leave them all broken and fix each under its own ticket, but four are invoked from the UI, so that would have taken the whole attendance module down — and `main` auto-deploys to production.
+- **Decision:** Rewrite the three the app calls (`attendance_summary`, `populate_attendance_day`, `start_new_season`) in the same migration. Drop the `attendance_records_sync` trigger, since it wrote to a column that no longer exists and would have made every attendance write fail hard. Leave `check_in_by_token` broken: nothing calls it, and where the QR token should now live is a genuine open question.
+- **Consequences / tradeoffs:** Attendance keeps working, and `attendance_summary` / `populate_attendance_day` are now correctly scoped to a season, which the flat table could not express. `start_new_season` gets simpler — it no longer archives a jsonb blob, because per-season registrations preserve history by construction. QR check-in stays broken until its own ticket.
+- **Reference:** `project_spec.md` §2.4; Linear [ENG-5](https://linear.app/cis-app/issue/ENG-5/kid-registration-admin-csv-import)
+
 ### 2026-09-22 — Roles modeled as a `user_roles` join table, not a `role[]` array on `User`
 - **Status:** Accepted
 - **Context:** `project_spec.md`'s original Core Data Model sketch put `role[]` directly on `User`. The live schema instead only had two booleans (`profiles.is_staff`, `profiles.is_coach`), which cannot express "Admin only, not Program Team" -- a requirement of ENG-5's CSV import (only Admin may run it). A real role model was needed as a foundation before that importer's RLS could be written correctly.

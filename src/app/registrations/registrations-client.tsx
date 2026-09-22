@@ -1,10 +1,9 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Papa from 'papaparse';
 import { createClient } from '@/lib/supabase/client';
-import { SESSION_LABEL, type Session } from '@/lib/attendance';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,41 +11,72 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/toast';
 import {
-  mapHeaders,
-  parseRows,
-  type RegistrationInput,
-  type ParsedRow,
-} from '@/lib/registration-csv';
+  type Division,
+  DIVISION_LABEL,
+  REGISTRATION_GRADES,
+  defaultDivision,
+  divisionAllowedForGrade,
+} from '@/lib/attendance';
 
-export interface Registration extends RegistrationInput {
+/** Mirrors the registrations_tshirt_size_values CHECK constraint. */
+const TSHIRT_SIZES = ['YS', 'YM', 'YL', 'XS', 'S', 'M', 'L', 'XL', 'XXL'] as const;
+
+export interface Kid {
   id: string;
-  notes: string | null;
-  active: boolean;
-  source: string;
-  created_at: string;
-  updated_at: string;
+  first_name: string;
+  last_name: string;
+  dob: string;
+  gender: string;
+  allergies: string | null;
+  home_address: string;
+  email: string | null;
+  phone: string | null;
+  emergency_contact_name: string;
+  emergency_contact_phone: string;
+  guardian_name: string;
+  guardian_phone: string;
+  guardian_email: string;
 }
 
-const EMPTY: RegistrationInput & { notes: string | null } = {
-  first_name: '',
-  last_name: '',
-  email: null,
-  gender: null,
-  dob: null,
-  grade: null,
-  address: null,
-  youth_phone: null,
-  youth_email: null,
-  guardian_name: null,
-  guardian_phone: null,
-  guardian_email: null,
-  emergency_contact_name: null,
-  emergency_contact_phone: null,
-  notes: null,
-  session: null,
-};
+/** A kid plus their registration for the active season. */
+export interface RosterEntry {
+  registration_id: string;
+  grade: number;
+  division: Division;
+  tshirt_size: string;
+  top_sports: string[] | null;
+  active: boolean;
+  consent_given_at: string | null;
+  team_id: string | null;
+  kid: Kid;
+}
 
-const GRADES = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+interface FormState {
+  first_name: string;
+  last_name: string;
+  dob: string;
+  gender: string;
+  allergies: string;
+  home_address: string;
+  email: string;
+  phone: string;
+  emergency_contact_name: string;
+  emergency_contact_phone: string;
+  guardian_name: string;
+  guardian_phone: string;
+  guardian_email: string;
+  grade: string;
+  division: string;
+  tshirt_size: string;
+}
+
+const EMPTY: FormState = {
+  first_name: '', last_name: '', dob: '', gender: '', allergies: '',
+  home_address: '', email: '', phone: '',
+  emergency_contact_name: '', emergency_contact_phone: '',
+  guardian_name: '', guardian_phone: '', guardian_email: '',
+  grade: '', division: '', tshirt_size: '',
+};
 
 function fmtDate(iso: string | null) {
   if (!iso) return '—';
@@ -54,230 +84,258 @@ function fmtDate(iso: string | null) {
   return `${parseInt(m, 10)}/${parseInt(d, 10)}/${y}`;
 }
 
+const nullIfBlank = (v: string) => (v.trim() === '' ? null : v.trim());
+
+/**
+ * Rebuilds a roster entry from the two rows a write returns. The list keeps its
+ * own state, so it is updated from the write rather than by re-fetching --
+ * `router.refresh()` alone would not help, since `rows` is seeded from a prop
+ * and useState ignores later prop changes.
+ */
+function toEntry(reg: RosterEntry_Row, kid: Kid): RosterEntry {
+  return {
+    registration_id: reg.id,
+    grade: reg.grade,
+    division: reg.division,
+    tshirt_size: reg.tshirt_size,
+    top_sports: reg.top_sports,
+    active: reg.active,
+    consent_given_at: reg.consent_given_at,
+    team_id: reg.team_id,
+    kid,
+  };
+}
+
+/** The `registrations` columns a write returns, before the kid is attached. */
+interface RosterEntry_Row {
+  id: string;
+  grade: number;
+  division: Division;
+  tshirt_size: string;
+  top_sports: string[] | null;
+  active: boolean;
+  consent_given_at: string | null;
+  team_id: string | null;
+}
+
+const sortRows = (rows: RosterEntry[]) =>
+  [...rows].sort(
+    (a, b) =>
+      a.kid.last_name.localeCompare(b.kid.last_name) ||
+      a.kid.first_name.localeCompare(b.kid.first_name)
+  );
+
 export default function RegistrationsClient({
   initial,
   isStaff,
+  season,
 }: {
-  initial: Registration[];
+  initial: RosterEntry[];
   isStaff: boolean;
+  season: { id: string; name: string } | null;
 }) {
   const router = useRouter();
   const supabase = createClient();
   const { toast } = useToast();
-  const fileRef = useRef<HTMLInputElement>(null);
 
-  const [rows, setRows] = useState<Registration[]>(initial);
+  const [rows, setRows] = useState<RosterEntry[]>(initial);
   const [search, setSearch] = useState('');
   const [gradeFilter, setGradeFilter] = useState('all');
   const [saving, setSaving] = useState(false);
 
-  const [editing, setEditing] = useState<Registration | null>(null);
-  const [form, setForm] = useState<typeof EMPTY>(EMPTY);
+  const [editing, setEditing] = useState<RosterEntry | null>(null);
+  const [form, setForm] = useState<FormState>(EMPTY);
   const [showForm, setShowForm] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  const [preview, setPreview] = useState<{
-    parsed: ParsedRow[];
-    ignored: string[];
-    unrecognized: string[];
-    fileName: string;
-  } | null>(null);
-  const [importMode, setImportMode] = useState<'update' | 'skip'>('update');
-  const [importing, setImporting] = useState(false);
-
-  // ---------- filtering ----------
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return rows.filter((r) => {
-      if (gradeFilter !== 'all' && (r.grade ?? '') !== gradeFilter) return false;
+      if (gradeFilter !== 'all' && String(r.grade) !== gradeFilter) return false;
       if (!q) return true;
       return [
-        r.first_name, r.last_name, r.email, r.guardian_name,
-        r.guardian_phone, r.guardian_email, r.youth_phone, r.grade,
+        r.kid.first_name, r.kid.last_name, r.kid.guardian_name,
+        r.kid.guardian_phone, r.kid.guardian_email, r.kid.phone,
       ].some((v) => v?.toLowerCase().includes(q));
     });
   }, [rows, search, gradeFilter]);
 
   const gradeCounts = useMemo(() => {
-    const m = new Map<string, number>();
-    rows.forEach((r) => {
-      const g = r.grade ?? 'Unknown';
-      m.set(g, (m.get(g) ?? 0) + 1);
-    });
+    const m = new Map<number, number>();
+    rows.forEach((r) => m.set(r.grade, (m.get(r.grade) ?? 0) + 1));
     return m;
   }, [rows]);
 
-  // ---------- form ----------
   const openNew = () => {
     setEditing(null);
     setForm(EMPTY);
     setShowForm(true);
   };
 
-  const openEdit = (r: Registration) => {
+  const openEdit = (r: RosterEntry) => {
     setEditing(r);
     setForm({
-      first_name: r.first_name, last_name: r.last_name, email: r.email,
-      gender: r.gender, dob: r.dob, grade: r.grade, address: r.address,
-      youth_phone: r.youth_phone, youth_email: r.youth_email,
-      guardian_name: r.guardian_name, guardian_phone: r.guardian_phone,
-      guardian_email: r.guardian_email,
-      emergency_contact_name: r.emergency_contact_name,
-      emergency_contact_phone: r.emergency_contact_phone,
-      notes: r.notes,
-      session: r.session,
+      first_name: r.kid.first_name,
+      last_name: r.kid.last_name,
+      dob: r.kid.dob,
+      gender: r.kid.gender,
+      allergies: r.kid.allergies ?? '',
+      home_address: r.kid.home_address,
+      email: r.kid.email ?? '',
+      phone: r.kid.phone ?? '',
+      emergency_contact_name: r.kid.emergency_contact_name,
+      emergency_contact_phone: r.kid.emergency_contact_phone,
+      guardian_name: r.kid.guardian_name,
+      guardian_phone: r.kid.guardian_phone,
+      guardian_email: r.kid.guardian_email,
+      grade: String(r.grade),
+      division: r.division,
+      tshirt_size: r.tshirt_size,
     });
     setShowForm(true);
   };
 
-  const set = (k: keyof typeof EMPTY, v: string) =>
-    setForm((p) => ({ ...p, [k]: v === '' ? null : v }));
+  const set = (k: keyof FormState, v: string) => {
+    setForm((p) => {
+      const next = { ...p, [k]: v };
+      // Grade determines division for every grade except 7, which may choose.
+      // Keeping them in step here means the database CHECK constraint never
+      // has to reject what the form allowed.
+      if (k === 'grade') {
+        const implied = defaultDivision(parseInt(v, 10) || null);
+        if (implied) next.division = implied;
+        else if (p.division && !divisionAllowedForGrade(parseInt(v, 10), p.division as Division)) {
+          next.division = '';
+        }
+      }
+      return next;
+    });
+  };
 
-  const setSession = (v: string) =>
-    setForm((p) => ({ ...p, session: v === '' ? null : (v as Session) }));
+  const kidPayload = () => ({
+    first_name: form.first_name.trim(),
+    last_name: form.last_name.trim(),
+    dob: form.dob,
+    gender: form.gender,
+    allergies: nullIfBlank(form.allergies),
+    home_address: form.home_address.trim(),
+    email: nullIfBlank(form.email),
+    phone: nullIfBlank(form.phone),
+    emergency_contact_name: form.emergency_contact_name.trim(),
+    emergency_contact_phone: form.emergency_contact_phone.trim(),
+    guardian_name: form.guardian_name.trim(),
+    guardian_phone: form.guardian_phone.trim(),
+    guardian_email: form.guardian_email.trim(),
+  });
+
+  const registrationPayload = () => ({
+    grade: parseInt(form.grade, 10),
+    division: form.division,
+    tshirt_size: form.tshirt_size,
+  });
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.first_name?.trim() || !form.last_name?.trim()) {
-      toast({ title: 'First and last name are required', variant: 'destructive' });
+    if (!season) {
+      toast({ title: 'No active season', variant: 'destructive' });
       return;
     }
     setSaving(true);
 
     if (editing) {
-      const { data, error } = await supabase
-        .from('registrations')
-        .update(form)
-        .eq('id', editing.id)
-        .select()
-        .single();
-
-      if (error) {
-        toast({ title: 'Update failed', description: error.message, variant: 'destructive' });
-      } else {
-        setRows((p) => p.map((r) => (r.id === data.id ? data : r)));
-        toast({ title: 'Saved' });
-        setShowForm(false);
+      const { data: kid, error: kidErr } = await supabase
+        .from('kids').update(kidPayload()).eq('id', editing.kid.id).select().single();
+      if (kidErr) {
+        toast({ title: 'Update failed', description: kidErr.message, variant: 'destructive' });
+        setSaving(false);
+        return;
       }
-    } else {
-      const { data, error } = await supabase
-        .from('registrations')
-        .insert({ ...form, source: 'manual' })
-        .select()
-        .single();
-
-      if (error) {
-        const dup = error.code === '23505' || /duplicate/i.test(error.message);
-        toast({
-          title: dup ? 'Already registered' : 'Could not add',
-          description: dup
-            ? 'A kid with this name and date of birth already exists.'
-            : error.message,
-          variant: 'destructive',
-        });
-      } else {
-        setRows((p) => [...p, data].sort(
-          (a, b) => a.last_name.localeCompare(b.last_name) ||
-                    a.first_name.localeCompare(b.first_name)
-        ));
-        toast({ title: 'Registration added' });
-        setShowForm(false);
+      const { data: reg, error: regErr } = await supabase
+        .from('registrations').update(registrationPayload())
+        .eq('id', editing.registration_id).select().single();
+      if (regErr) {
+        toast({ title: 'Update failed', description: regErr.message, variant: 'destructive' });
+        setSaving(false);
+        return;
       }
+      setRows((p) => sortRows(
+        p.map((r) => (r.registration_id === editing.registration_id
+          ? { ...r, ...toEntry(reg, kid) }
+          : r))
+      ));
+      toast({ title: 'Saved' });
+      setShowForm(false);
+      setSaving(false);
+      return;
     }
+
+    // A new roster entry spans two tables and the Supabase client has no
+    // transaction, so on a failed registration insert the just-created kid is
+    // removed again rather than left orphaned with no season registration.
+    const { data: kid, error: kidErr } = await supabase
+      .from('kids').insert(kidPayload()).select().single();
+    if (kidErr) {
+      toast({ title: 'Could not add', description: kidErr.message, variant: 'destructive' });
+      setSaving(false);
+      return;
+    }
+
+    const { data: reg, error: regErr } = await supabase.from('registrations').insert({
+      ...registrationPayload(),
+      kid_id: kid.id,
+      season_id: season.id,
+      source: 'manual',
+    }).select().single();
+
+    if (regErr) {
+      await supabase.from('kids').delete().eq('id', kid.id);
+      const dup = regErr.code === '23505';
+      toast({
+        title: dup ? 'Already registered' : 'Could not add',
+        description: dup
+          ? 'This kid already has a registration for the current season.'
+          : regErr.message,
+        variant: 'destructive',
+      });
+      setSaving(false);
+      return;
+    }
+
+    setRows((p) => sortRows([...p, toEntry(reg, kid)]));
+    toast({ title: 'Registration added' });
+    setShowForm(false);
     setSaving(false);
   };
 
-  const remove = async (r: Registration) => {
-    if (!window.confirm(`Delete ${r.first_name} ${r.last_name}? This cannot be undone.`)) return;
-    const { error } = await supabase.from('registrations').delete().eq('id', r.id);
+  const remove = async (r: RosterEntry) => {
+    if (!window.confirm(
+      `Remove ${r.kid.first_name} ${r.kid.last_name} from ${season?.name ?? 'this season'}? ` +
+      `Their record is kept for other seasons.`
+    )) return;
+
+    const { error } = await supabase
+      .from('registrations').delete().eq('id', r.registration_id);
     if (error) {
       toast({ title: 'Delete failed', description: error.message, variant: 'destructive' });
     } else {
-      setRows((p) => p.filter((x) => x.id !== r.id));
-      toast({ title: 'Deleted' });
+      setRows((p) => p.filter((x) => x.registration_id !== r.registration_id));
+      toast({ title: 'Removed from season' });
     }
-  };
-
-  // ---------- CSV ----------
-  const onFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    Papa.parse<string[]>(file, {
-      skipEmptyLines: 'greedy',
-      complete: (res) => {
-        const all = res.data.filter((r) => r.some((c) => String(c ?? '').trim() !== ''));
-        if (all.length < 2) {
-          toast({ title: 'Empty file', description: 'Need a header row plus at least one entry.', variant: 'destructive' });
-          return;
-        }
-        const [header, ...body] = all;
-        const mapping = mapHeaders(header);
-
-        if (!Object.values(mapping.mapped).includes('first_name') ||
-            !Object.values(mapping.mapped).includes('last_name')) {
-          toast({
-            title: 'Could not find name columns',
-            description: 'Expected "CISer First Name" and "CISer Last Name".',
-            variant: 'destructive',
-          });
-          return;
-        }
-
-        setPreview({
-          parsed: parseRows(body, mapping),
-          ignored: mapping.ignored,
-          unrecognized: mapping.unrecognized,
-          fileName: file.name,
-        });
-      },
-      error: (err) =>
-        toast({ title: 'Could not read file', description: err.message, variant: 'destructive' }),
-    });
-
-    if (fileRef.current) fileRef.current.value = '';
-  };
-
-  const runImport = async () => {
-    if (!preview) return;
-    const good = preview.parsed.filter((p) => p.data).map((p) => p.data!);
-    if (good.length === 0) {
-      toast({ title: 'Nothing valid to import', variant: 'destructive' });
-      return;
-    }
-
-    setImporting(true);
-    const res = await fetch('/api/registrations/import', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rows: good, mode: importMode }),
-    });
-    const json = await res.json().catch(() => ({}));
-    setImporting(false);
-
-    if (!res.ok) {
-      toast({ title: 'Import failed', description: json.error ?? 'Unknown error', variant: 'destructive' });
-      return;
-    }
-
-    toast({
-      title: 'Import complete',
-      description: `${json.inserted} added, ${json.updated} updated` +
-        (json.duplicatesInFile ? `, ${json.duplicatesInFile} duplicate rows in file skipped` : ''),
-    });
-    setPreview(null);
-    router.refresh();
   };
 
   const exportCsv = () => {
-    const cols: (keyof Registration)[] = [
-      'first_name', 'last_name', 'email', 'gender', 'dob', 'grade', 'address',
-      'youth_phone', 'youth_email', 'guardian_name', 'guardian_phone',
-      'guardian_email', 'emergency_contact_name', 'emergency_contact_phone', 'notes',
-    ];
     const csv = Papa.unparse({
-      fields: cols as string[],
-      data: filtered.map((r) => cols.map((c) => r[c] ?? '')),
+      fields: [
+        'first_name', 'last_name', 'dob', 'gender', 'grade', 'division', 'tshirt_size',
+        'home_address', 'email', 'phone', 'guardian_name', 'guardian_phone',
+        'guardian_email', 'emergency_contact_name', 'emergency_contact_phone', 'allergies',
+      ],
+      data: filtered.map((r) => [
+        r.kid.first_name, r.kid.last_name, r.kid.dob, r.kid.gender, r.grade, r.division,
+        r.tshirt_size, r.kid.home_address, r.kid.email ?? '', r.kid.phone ?? '',
+        r.kid.guardian_name, r.kid.guardian_phone, r.kid.guardian_email,
+        r.kid.emergency_contact_name, r.kid.emergency_contact_phone, r.kid.allergies ?? '',
+      ]),
     });
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
     const a = document.createElement('a');
@@ -287,14 +345,12 @@ export default function RegistrationsClient({
     URL.revokeObjectURL(url);
   };
 
-  // ---------- not staff ----------
   if (!isStaff) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="max-w-sm w-full">
           <CardHeader className="text-center">
-            <div className="text-4xl mb-2">🔒</div>
-            <CardTitle>Staff Only</CardTitle>
+            <CardTitle>Staff only</CardTitle>
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <p className="text-sm text-muted-foreground">
@@ -302,7 +358,7 @@ export default function RegistrationsClient({
               limited to approved staff.
             </p>
             <Button variant="outline" className="w-full h-12" onClick={() => router.push('/')}>
-              ← Back
+              Back
             </Button>
           </CardContent>
         </Card>
@@ -310,160 +366,54 @@ export default function RegistrationsClient({
     );
   }
 
-  const validCount = preview?.parsed.filter((p) => p.data).length ?? 0;
-  const badRows = preview?.parsed.filter((p) => !p.data) ?? [];
+  // Grade 7 is the only grade that may pick; every other grade is implied by the
+  // grade itself, so the select is locked to the one legal value.
+  const gradeNumber = parseInt(form.grade, 10);
+  const divisionLocked = !!form.grade && gradeNumber !== 7;
 
   return (
     <div className="min-h-screen pb-32 safe-top safe-bottom">
-      {/* Header */}
       <div className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur border-b border-muted p-4">
         <div className="max-w-3xl mx-auto">
-          <Button variant="ghost" size="sm" onClick={() => router.push('/')}>← Back</Button>
+          <Button variant="ghost" size="sm" onClick={() => router.push('/')}>Back</Button>
           <div className="flex items-center justify-between mt-1">
             <div>
-              <h1 className="text-xl font-bold">📋 Registration</h1>
+              <h1 className="text-xl font-bold">Registration</h1>
               <p className="text-sm text-muted-foreground">
-                {rows.length} registered
+                {season ? season.name : 'No active season'}
+                {' • '}{rows.length} registered
                 {filtered.length !== rows.length && ` • ${filtered.length} shown`}
               </p>
             </div>
-            <Button className="h-12 px-5" onClick={openNew}>+ Add</Button>
+            <Button className="h-12 px-5" onClick={openNew} disabled={!season}>Add</Button>
           </div>
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto p-4 space-y-4">
-        {/* Import / export */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">Import from Google Form</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <p className="text-xs text-muted-foreground">
-              In Google Sheets: <strong>File → Download → Comma Separated Values (.csv)</strong>,
-              then upload it here. Re-uploading is safe — existing kids are matched by
-              name and date of birth, not duplicated.
-            </p>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".csv,text/csv"
-              onChange={onFile}
-              className="hidden"
-            />
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1 h-12"
-                onClick={() => fileRef.current?.click()}
-              >
-                📄 Choose CSV
-              </Button>
-              <Button
-                variant="outline"
-                className="h-12"
-                onClick={exportCsv}
-                disabled={filtered.length === 0}
-              >
-                ⬇️ Export
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Import preview */}
-        {preview && (
-          <Card className="border-primary/50">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">
-                Preview — {preview.fileName}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-2 flex-wrap">
-                <Badge className="bg-green-500/20 text-green-400">
-                  {validCount} ready
-                </Badge>
-                {badRows.length > 0 && (
-                  <Badge className="bg-red-500/20 text-red-400">
-                    {badRows.length} with problems
-                  </Badge>
-                )}
-                {preview.ignored.length > 0 && (
-                  <Badge variant="outline">{preview.ignored.length} columns ignored</Badge>
-                )}
-              </div>
-
-              {preview.unrecognized.length > 0 && (
-                <div className="bg-amber-500/10 border border-amber-500/40 rounded-lg p-3">
-                  <p className="text-xs text-amber-400 font-medium mb-1">
-                    Unrecognized columns (will not be imported):
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {preview.unrecognized.join(', ')}
-                  </p>
-                </div>
-              )}
-
-              {badRows.length > 0 && (
-                <div className="bg-red-500/10 border border-red-500/40 rounded-lg p-3 max-h-40 overflow-auto">
-                  <p className="text-xs text-red-400 font-medium mb-1">Skipped rows:</p>
-                  {badRows.slice(0, 12).map((b) => (
-                    <p key={b.rowNumber} className="text-xs text-muted-foreground">
-                      Row {b.rowNumber}: {b.errors.join('; ')}
-                    </p>
-                  ))}
-                  {badRows.length > 12 && (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      …and {badRows.length - 12} more
-                    </p>
-                  )}
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label className="text-xs">If a kid already exists</Label>
-                <select
-                  value={importMode}
-                  onChange={(e) => setImportMode(e.target.value as 'update' | 'skip')}
-                  className="w-full h-12 rounded-lg border border-input bg-background px-3 text-base"
-                >
-                  <option value="update">Update with the new info</option>
-                  <option value="skip">Leave existing record alone</option>
-                </select>
-              </div>
-
-              <div className="max-h-48 overflow-auto border border-muted rounded-lg">
-                {preview.parsed.filter((p) => p.data).slice(0, 25).map((p) => (
-                  <div key={p.rowNumber} className="px-3 py-2 border-b border-muted/30 last:border-0 text-xs">
-                    <span className="font-medium">
-                      {p.data!.first_name} {p.data!.last_name}
-                    </span>
-                    <span className="text-muted-foreground">
-                      {' '}• {p.data!.grade ? `Grade ${p.data!.grade}` : 'no grade'}
-                      {' '}• {fmtDate(p.data!.dob)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex gap-2">
-                <Button variant="outline" className="flex-1 h-12" onClick={() => setPreview(null)}>
-                  Cancel
-                </Button>
-                <Button
-                  className="flex-1 h-12"
-                  onClick={runImport}
-                  disabled={importing || validCount === 0}
-                >
-                  {importing ? 'Importing…' : `✓ Import ${validCount}`}
-                </Button>
-              </div>
+        {!season && (
+          <Card className="border-dashed">
+            <CardContent className="py-8 text-center text-muted-foreground">
+              <p className="text-sm">
+                No season is marked current, so nobody can be registered yet.
+              </p>
             </CardContent>
           </Card>
         )}
 
-        {/* Search + filter */}
+        <Card>
+          <CardContent className="pt-4">
+            <Button
+              variant="outline"
+              className="w-full h-12"
+              onClick={exportCsv}
+              disabled={filtered.length === 0}
+            >
+              Export CSV
+            </Button>
+          </CardContent>
+        </Card>
+
         <div className="flex gap-2">
           <Input
             placeholder="Search name, guardian, phone…"
@@ -477,13 +427,12 @@ export default function RegistrationsClient({
             className="h-12 rounded-lg border border-input bg-background px-3 text-base"
           >
             <option value="all">All grades</option>
-            {GRADES.filter((g) => gradeCounts.has(g)).map((g) => (
-              <option key={g} value={g}>Grade {g} ({gradeCounts.get(g)})</option>
+            {REGISTRATION_GRADES.filter((g) => gradeCounts.has(g)).map((g) => (
+              <option key={g} value={String(g)}>Grade {g} ({gradeCounts.get(g)})</option>
             ))}
           </select>
         </div>
 
-        {/* List */}
         {filtered.length === 0 ? (
           <Card className="border-dashed">
             <CardContent className="py-12 text-center text-muted-foreground">
@@ -491,9 +440,7 @@ export default function RegistrationsClient({
                 {rows.length === 0 ? 'No registrations yet' : 'No matches'}
               </p>
               <p className="text-sm">
-                {rows.length === 0
-                  ? 'Upload your Google Form CSV or tap + Add'
-                  : 'Try a different search'}
+                {rows.length === 0 ? 'Tap Add to register a kid' : 'Try a different search'}
               </p>
             </CardContent>
           </Card>
@@ -501,24 +448,20 @@ export default function RegistrationsClient({
           <Card>
             <CardContent className="p-0">
               {filtered.map((r) => {
-                const open = expanded === r.id;
+                const open = expanded === r.registration_id;
                 return (
-                  <div key={r.id} className="border-b border-muted/30 last:border-0">
+                  <div key={r.registration_id} className="border-b border-muted/30 last:border-0">
                     <button
-                      onClick={() => setExpanded(open ? null : r.id)}
+                      onClick={() => setExpanded(open ? null : r.registration_id)}
                       className="w-full flex items-center justify-between px-4 py-4 text-left"
                     >
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate">
-                          {r.last_name}, {r.first_name}
+                          {r.kid.last_name}, {r.kid.first_name}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {r.grade ? `Grade ${r.grade}` : 'No grade'}
-                          {r.dob && ` • ${fmtDate(r.dob)}`}
-                          {r.session
-                            ? ` • ${r.session === 'juniors' ? 'Juniors' : 'Ambassadors'}`
-                            : ' • ⚠️ no session'}
-                          {r.source === 'import' && ' • imported'}
+                          Grade {r.grade} • {fmtDate(r.kid.dob)}
+                          {' • '}{r.division === 'juniors' ? 'Juniors' : 'Ambassadors'}
                         </p>
                       </div>
                       <span className="text-muted-foreground text-xs ml-2">
@@ -528,38 +471,38 @@ export default function RegistrationsClient({
 
                     {open && (
                       <div className="px-4 pb-4 space-y-3">
-                        {/* Session — shown even when unset, since that's a problem */}
-                        <div className="flex items-center gap-2">
-                          {r.session ? (
-                            <Badge
-                              className={`text-xs ${
-                                r.session === 'juniors'
-                                  ? 'bg-cyan-500/20 text-cyan-400'
-                                  : 'bg-purple-500/20 text-purple-400'
-                              }`}
-                            >
-                              {SESSION_LABEL[r.session]}
-                            </Badge>
-                          ) : (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Badge
+                            className={`text-xs ${
+                              r.division === 'juniors'
+                                ? 'bg-cyan-500/20 text-cyan-400'
+                                : 'bg-purple-500/20 text-purple-400'
+                            }`}
+                          >
+                            {DIVISION_LABEL[r.division]}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            Shirt {r.tshirt_size}
+                          </Badge>
+                          {!r.consent_given_at && (
                             <Badge className="text-xs bg-amber-500/20 text-amber-400">
-                              ⚠️ No session — won&apos;t appear on attendance
+                              No consent recorded
                             </Badge>
                           )}
                         </div>
 
                         <dl className="grid grid-cols-1 gap-1.5 text-xs">
                           {[
-                            ['Kid email', r.email],
-                            ['Youth phone', r.youth_phone],
-                            ['Youth email', r.youth_email],
-                            ['Gender', r.gender],
-                            ['Guardian', r.guardian_name],
-                            ['Guardian phone', r.guardian_phone],
-                            ['Guardian email', r.guardian_email],
-                            ['Address', r.address],
-                            ['Emergency contact', r.emergency_contact_name],
-                            ['Emergency phone', r.emergency_contact_phone],
-                            ['Notes', r.notes],
+                            ['Kid email', r.kid.email],
+                            ['Kid phone', r.kid.phone],
+                            ['Gender', r.kid.gender],
+                            ['Guardian', r.kid.guardian_name],
+                            ['Guardian phone', r.kid.guardian_phone],
+                            ['Guardian email', r.kid.guardian_email],
+                            ['Address', r.kid.home_address],
+                            ['Emergency contact', r.kid.emergency_contact_name],
+                            ['Emergency phone', r.kid.emergency_contact_phone],
+                            ['Allergies', r.kid.allergies],
                           ].filter(([, v]) => v).map(([k, v]) => (
                             <div key={k as string} className="flex gap-2">
                               <dt className="text-muted-foreground w-32 flex-shrink-0">{k}</dt>
@@ -568,15 +511,13 @@ export default function RegistrationsClient({
                           ))}
                         </dl>
                         <div className="flex gap-2">
-                          <Button variant="outline" className="flex-1 h-11 text-sm" onClick={() => openEdit(r)}>
-                            ✏️ Edit
+                          <Button variant="outline" className="flex-1 h-11 text-sm"
+                                  onClick={() => openEdit(r)}>
+                            Edit
                           </Button>
-                          <Button
-                            variant="ghost"
-                            className="h-11 text-sm text-red-400"
-                            onClick={() => remove(r)}
-                          >
-                            🗑️ Delete
+                          <Button variant="ghost" className="h-11 text-sm text-red-400"
+                                  onClick={() => remove(r)}>
+                            Remove
                           </Button>
                         </div>
                       </div>
@@ -589,14 +530,13 @@ export default function RegistrationsClient({
         )}
       </div>
 
-      {/* Add / edit sheet */}
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
           <div className="fixed inset-0 bg-black/80" onClick={() => setShowForm(false)} />
           <div className="relative z-50 w-full max-w-md max-h-[88vh] overflow-auto rounded-t-2xl sm:rounded-2xl border bg-background p-6 pb-32 shadow-lg">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-bold">
-                {editing ? 'Edit Registration' : 'New Registration'}
+                {editing ? 'Edit registration' : 'New registration'}
               </h2>
               <button onClick={() => setShowForm(false)} className="text-2xl p-2">✕</button>
             </div>
@@ -604,104 +544,135 @@ export default function RegistrationsClient({
             <form onSubmit={save} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label>First Name *</Label>
-                  <Input value={form.first_name ?? ''} onChange={(e) => set('first_name', e.target.value)} required className="h-12 text-base" />
+                  <Label htmlFor="first_name">First name *</Label>
+                  <Input id="first_name" value={form.first_name} required className="h-12 text-base"
+                         onChange={(e) => set('first_name', e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Last Name *</Label>
-                  <Input value={form.last_name ?? ''} onChange={(e) => set('last_name', e.target.value)} required className="h-12 text-base" />
+                  <Label htmlFor="last_name">Last name *</Label>
+                  <Input id="last_name" value={form.last_name} required className="h-12 text-base"
+                         onChange={(e) => set('last_name', e.target.value)} />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-2">
-                  <Label>Date of Birth</Label>
-                  <Input type="date" value={form.dob ?? ''} onChange={(e) => set('dob', e.target.value)} className="h-12 text-base" />
+                  <Label htmlFor="dob">Date of birth *</Label>
+                  <Input id="dob" type="date" value={form.dob} required className="h-12 text-base"
+                         onChange={(e) => set('dob', e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Grade</Label>
+                  <Label htmlFor="gender">Gender *</Label>
                   <select
-                    value={form.grade ?? ''}
+                    id="gender" value={form.gender} required
+                    onChange={(e) => set('gender', e.target.value)}
+                    className="w-full h-12 rounded-lg border border-input bg-background px-3 text-base"
+                  >
+                    <option value="">—</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="grade">Grade *</Label>
+                  <select
+                    id="grade" value={form.grade} required
                     onChange={(e) => set('grade', e.target.value)}
                     className="w-full h-12 rounded-lg border border-input bg-background px-3 text-base"
                   >
                     <option value="">—</option>
-                    {GRADES.map((g) => <option key={g} value={g}>{g}</option>)}
+                    {REGISTRATION_GRADES.map((g) => (
+                      <option key={g} value={String(g)}>{g}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tshirt_size">T-shirt size *</Label>
+                  <select
+                    id="tshirt_size" value={form.tshirt_size} required
+                    onChange={(e) => set('tshirt_size', e.target.value)}
+                    className="w-full h-12 rounded-lg border border-input bg-background px-3 text-base"
+                  >
+                    <option value="">—</option>
+                    {TSHIRT_SIZES.map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label>Session</Label>
+                <Label htmlFor="division">Division *</Label>
                 <select
-                  value={form.session ?? ''}
-                  onChange={(e) => setSession(e.target.value)}
-                  className="w-full h-12 rounded-lg border border-input bg-background px-3 text-base"
+                  id="division" value={form.division} required disabled={divisionLocked}
+                  onChange={(e) => set('division', e.target.value)}
+                  className="w-full h-12 rounded-lg border border-input bg-background px-3 text-base disabled:opacity-70"
                 >
-                  <option value="">— not set —</option>
-                  <option value="juniors">Juniors (4th–7th)</option>
-                  <option value="ambassadors">Ambassadors (7th–12th)</option>
+                  <option value="">—</option>
+                  <option value="juniors">Juniors</option>
+                  <option value="ambassadors">Ambassadors</option>
                 </select>
                 <p className="text-xs text-muted-foreground">
-                  Normally filled in from the registration form.
+                  {gradeNumber === 7
+                    ? 'Grade 7 may choose either division.'
+                    : 'Set automatically from the grade.'}
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <Label>Gender</Label>
-                <select
-                  value={form.gender ?? ''}
-                  onChange={(e) => set('gender', e.target.value)}
-                  className="w-full h-12 rounded-lg border border-input bg-background px-3 text-base"
-                >
-                  <option value="">—</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Kid Email (from form)</Label>
-                <Input type="email" value={form.email ?? ''} onChange={(e) => set('email', e.target.value)} className="h-12 text-base" />
-              </div>
-
               <div className="pt-2 border-t border-muted">
-                <p className="text-xs font-medium text-muted-foreground mb-3">YOUTH CONTACT (optional)</p>
+                <p className="text-xs font-medium text-muted-foreground mb-3">Kid contact (optional)</p>
                 <div className="space-y-3">
-                  <Input placeholder="Youth phone" value={form.youth_phone ?? ''} onChange={(e) => set('youth_phone', e.target.value)} className="h-12 text-base" />
-                  <Input placeholder="Youth email" type="email" value={form.youth_email ?? ''} onChange={(e) => set('youth_email', e.target.value)} className="h-12 text-base" />
+                  <Input placeholder="Kid email" aria-label="Kid email" type="email" value={form.email}
+                         className="h-12 text-base"
+                         onChange={(e) => set('email', e.target.value)} />
+                  <Input placeholder="Kid phone" aria-label="Kid phone" value={form.phone} className="h-12 text-base"
+                         onChange={(e) => set('phone', e.target.value)} />
                 </div>
               </div>
 
               <div className="pt-2 border-t border-muted">
-                <p className="text-xs font-medium text-muted-foreground mb-3">PARENT / GUARDIAN</p>
+                <p className="text-xs font-medium text-muted-foreground mb-3">Parent / guardian *</p>
                 <div className="space-y-3">
-                  <Input placeholder="Guardian name" value={form.guardian_name ?? ''} onChange={(e) => set('guardian_name', e.target.value)} className="h-12 text-base" />
-                  <Input placeholder="Guardian phone" value={form.guardian_phone ?? ''} onChange={(e) => set('guardian_phone', e.target.value)} className="h-12 text-base" />
-                  <Input placeholder="Guardian email" type="email" value={form.guardian_email ?? ''} onChange={(e) => set('guardian_email', e.target.value)} className="h-12 text-base" />
+                  <Input placeholder="Guardian name" aria-label="Guardian name" value={form.guardian_name} required
+                         className="h-12 text-base"
+                         onChange={(e) => set('guardian_name', e.target.value)} />
+                  <Input placeholder="Guardian phone" aria-label="Guardian phone" value={form.guardian_phone} required
+                         className="h-12 text-base"
+                         onChange={(e) => set('guardian_phone', e.target.value)} />
+                  <Input placeholder="Guardian email" aria-label="Guardian email" type="email" value={form.guardian_email}
+                         required className="h-12 text-base"
+                         onChange={(e) => set('guardian_email', e.target.value)} />
                 </div>
               </div>
 
               <div className="pt-2 border-t border-muted">
-                <p className="text-xs font-medium text-muted-foreground mb-3">EMERGENCY CONTACT</p>
+                <p className="text-xs font-medium text-muted-foreground mb-3">Emergency contact *</p>
                 <div className="space-y-3">
-                  <Input placeholder="Emergency contact name" value={form.emergency_contact_name ?? ''} onChange={(e) => set('emergency_contact_name', e.target.value)} className="h-12 text-base" />
-                  <Input placeholder="Emergency contact number" value={form.emergency_contact_phone ?? ''} onChange={(e) => set('emergency_contact_phone', e.target.value)} className="h-12 text-base" />
+                  <Input placeholder="Emergency contact name" aria-label="Emergency contact name" required
+                         value={form.emergency_contact_name} className="h-12 text-base"
+                         onChange={(e) => set('emergency_contact_name', e.target.value)} />
+                  <Input placeholder="Emergency contact number" aria-label="Emergency contact number" required
+                         value={form.emergency_contact_phone} className="h-12 text-base"
+                         onChange={(e) => set('emergency_contact_phone', e.target.value)} />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label>Home Address</Label>
-                <Input value={form.address ?? ''} onChange={(e) => set('address', e.target.value)} className="h-12 text-base" />
+                <Label htmlFor="home_address">Home address *</Label>
+                <Input id="home_address" value={form.home_address} required className="h-12 text-base"
+                       onChange={(e) => set('home_address', e.target.value)} />
               </div>
 
               <div className="space-y-2">
-                <Label>Notes</Label>
-                <Input placeholder="Allergies, pickup instructions…" value={form.notes ?? ''} onChange={(e) => set('notes', e.target.value)} className="h-12 text-base" />
+                <Label htmlFor="allergies">Allergies and medical notes</Label>
+                <Input id="allergies" placeholder="Allergies, medication…" value={form.allergies}
+                       className="h-12 text-base"
+                       onChange={(e) => set('allergies', e.target.value)} />
               </div>
 
               <Button type="submit" className="w-full h-14 text-base" disabled={saving}>
-                {saving ? 'Saving…' : editing ? '✓ Save Changes' : '✓ Add Registration'}
+                {saving ? 'Saving…' : editing ? 'Save changes' : 'Add registration'}
               </Button>
             </form>
           </div>

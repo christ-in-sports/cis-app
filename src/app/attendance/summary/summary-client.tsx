@@ -11,7 +11,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/toast';
 import {
-  type Season, type SummaryRow, type Session, type MinistryTeam,
+  type Season, type SummaryRow, type Division, type MinistryTeam,
 } from '@/lib/attendance';
 
 type SortKey = 'attended' | 'pct' | 'name';
@@ -37,7 +37,8 @@ export default function SummaryClient({
   const [loading, setLoading] = useState(false);
 
   const [search, setSearch] = useState('');
-  const [sessionFilter, setSessionFilter] = useState<'all' | Session | 'none'>('all');
+  // Division is NOT NULL on registrations, so there is no longer a "none" case.
+  const [sessionFilter, setSessionFilter] = useState<'all' | Division>('all');
   const [teamFilter, setTeamFilter] = useState<'all' | string>('all');
   const [sort, setSort] = useState<SortKey>('attended');
 
@@ -96,9 +97,8 @@ export default function SummaryClient({
   const shown = useMemo(() => {
     const q = search.trim().toLowerCase();
     const list = rows.filter((r) => {
-      if (sessionFilter === 'none' && r.session) return false;
       if ((sessionFilter === 'juniors' || sessionFilter === 'ambassadors')
-          && r.session !== sessionFilter) return false;
+          && r.division !== sessionFilter) return false;
       if (teamFilter !== 'all') {
         if (teamFilter === 'noteam' ? !!r.team_id : r.team_id !== teamFilter) return false;
       }
@@ -154,9 +154,9 @@ export default function SummaryClient({
 
   const exportCsv = () => {
     const csv = Papa.unparse({
-      fields: ['Rank','First','Last','Grade','Session','Team','Attended','Late','Absent','Excused','Days','Percent'],
+      fields: ['Rank','First','Last','Grade','Division','Team','Attended','Late','Absent','Excused','Days','Percent'],
       data: shown.map((r, i) => [
-        i + 1, r.first_name, r.last_name, r.grade ?? '', r.session ?? '',
+        i + 1, r.first_name, r.last_name, r.grade, r.division,
         r.team_name ?? '', r.attended, r.late, r.absent, r.excused, r.eligible, r.pct,
       ]),
     });
@@ -274,10 +274,9 @@ export default function SummaryClient({
         <div className="flex gap-2">
           <select value={sessionFilter} onChange={(e) => setSessionFilter(e.target.value as any)}
                   className="flex-1 h-12 rounded-lg border border-input bg-background px-3 text-sm">
-            <option value="all">All sessions</option>
+            <option value="all">All divisions</option>
             <option value="juniors">Juniors</option>
             <option value="ambassadors">Ambassadors</option>
-            <option value="none">No session</option>
           </select>
           <select value={teamFilter} onChange={(e) => setTeamFilter(e.target.value)}
                   className="flex-1 h-12 rounded-lg border border-input bg-background px-3 text-sm">
@@ -327,8 +326,8 @@ export default function SummaryClient({
                       {r.first_name} {r.last_name}
                     </p>
                     <p className="text-xs text-muted-foreground truncate">
-                      {r.grade ? `Grade ${r.grade}` : 'No grade'}
-                      {r.session && ` • ${r.session === 'juniors' ? 'Juniors' : 'Ambassadors'}`}
+                      Grade {r.grade}
+                      {` • ${r.division === 'juniors' ? 'Juniors' : 'Ambassadors'}`}
                       {r.team_name && ` • ${r.team_name}`}
                     </p>
                     {(r.late > 0 || r.excused > 0) && (
