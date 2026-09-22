@@ -208,7 +208,9 @@ const FIELD_OF_PATH: Record<string, CsvField> = {
   // an Admin would edit to fix it.
   'registration.division': 'division_choice',
   'registration.tshirt_size': 'tshirt_size',
-  'registration.top_sports': 'top_sports',
+  // Merged from two columns; name the Ambassadors one, which is the more
+  // commonly filled of the pair.
+  'registration.top_sports': 'top_sports_ambassadors',
 };
 
 /**
@@ -227,6 +229,20 @@ function buildCandidate(cells: string[], mapping: HeaderMapping) {
 
   const grade = gradeNum(cell('grade'));
   const division = parseDivisionChoice(cell('division_choice')) ?? defaultDivision(grade);
+
+  // The form asks for top sports twice, once per division, and kids do not
+  // reliably answer only the one meant for them: in the 2026-27 export, 11
+  // filled both and 10 filled only the column for the other division. Prefer
+  // the answer for the division they are actually registering in, but fall back
+  // to the other rather than discarding a preference they did express.
+  const ambassadorsSports = cell('top_sports_ambassadors');
+  const juniorsSports = cell('top_sports_juniors');
+  const ownDivisionSports =
+    division === 'ambassadors'
+      ? ambassadorsSports
+      : division === 'juniors'
+        ? juniorsSports
+        : null;
 
   return {
     kid: {
@@ -250,7 +266,7 @@ function buildCandidate(cells: string[], mapping: HeaderMapping) {
       grade,
       division,
       tshirt_size: parseTshirtSize(cell('tshirt_size')),
-      top_sports: parseList(cell('top_sports')),
+      top_sports: parseList(ownDivisionSports ?? ambassadorsSports ?? juniorsSports),
     },
   };
 }
@@ -295,9 +311,21 @@ export function parseRows(rows: string[][], mapping: HeaderMapping): ParsedRow[]
  * and whitespace-trimmed (`project_spec.md` §2.5).
  *
  * Mirrors the `kids_identity_idx` expression index so the importer's in-memory
- * duplicate detection and the database's lookup agree. That index is
- * deliberately non-unique -- twins share all three values -- so more than one
- * match is a row-level error for an Admin to resolve, never an arbitrary pick.
+ * duplicate detection and the database's lookup agree.
+ *
+ * That index is deliberately non-unique, and the real export shows why: it
+ * contains 5 pairs of rows sharing a key, which look like repeat submissions of
+ * the same kid (same gender, grade and usually address, different timestamps)
+ * rather than distinct people. A unique constraint would abort an entire
+ * import on data the Admin considers ordinary.
+ *
+ * Note this key does NOT collide for twins -- they share a surname and a
+ * birthday but not a first name. The migration's comment claims otherwise; it
+ * reaches the right design for the wrong reason. Corrected there separately.
+ *
+ * Because a key can legitimately repeat, the importer must never silently pick
+ * one match: within a file, duplicates need collapsing or flagging, and against
+ * the database, more than one match is a row-level error for an Admin.
  */
 export function identityKey(kid: {
   first_name: string;

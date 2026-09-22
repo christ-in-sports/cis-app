@@ -11,13 +11,14 @@
  * holds which field", so that `rows.ts` can pull cells out by field name and
  * hand them to `src/lib/validation/kid.ts`.
  *
- * !! The header table below is derived from the previous importer's mapping
- * (removed in 5ae28fb) plus the fields ENG-5 adds. It has NOT been checked
- * against a real export -- the ticket's "Pre-development data needed" section
- * asks the Admin for a sample roster CSV, which has not been supplied. Expect
- * to correct these once real data lands; `unmapped` on the result exists so the
- * review screen can show an Admin exactly which of their columns were not
- * understood rather than failing silently.
+ * The header table below was checked against a real 149-row export of the
+ * 2026-27 form on 2026-09-22. Headers are still matched loosely rather than
+ * exactly, because the form's wording drifts between seasons -- the real export
+ * already differs from the previous importer's table (for example the photo
+ * question is now "Please upload a picture/selfie of the CISer"), and several
+ * headers carry stray trailing spaces and colons. `unmapped` on the result
+ * exists so the review screen can show an Admin exactly which of their columns
+ * were not understood, rather than failing silently.
  */
 
 /** A field the importer can read out of a CSV row. */
@@ -39,7 +40,10 @@ export type CsvField =
   | 'grade'
   | 'division_choice'
   | 'tshirt_size'
-  | 'top_sports';
+  // The form asks for top sports twice, once per division. Kids do not reliably
+  // answer only the one meant for them, so both are read and `rows.ts` picks.
+  | 'top_sports_ambassadors'
+  | 'top_sports_juniors';
 
 /**
  * Human-readable names used in row-level error messages when the CSV's own
@@ -62,20 +66,38 @@ export const FIELD_LABEL: Record<CsvField, string> = {
   photo_link: 'Picture or selfie of CISer',
   grade: 'Grade',
   division_choice: 'Session choice (7th grade only)',
-  tshirt_size: 'Youth t-shirt size',
-  top_sports: 'Top sports',
+  tshirt_size: 'Youth tshirt size',
+  top_sports_ambassadors: 'Top sports (Ambassadors)',
+  top_sports_juniors: 'Top sports (Juniors)',
 };
 
 /**
  * Columns that exist in the export but hold nothing the schema wants.
  *
- * `emailaddress` is Google Forms' automatic respondent field. The previous
- * importer read it as the *kid's* email, which looks wrong: the respondent is
- * the parent filling the form in, and the parent's address already has its own
- * question (`parentguardianemail`). It is ignored here rather than guessed at
- * -- flagged for confirmation against a real export.
+ * `emailaddress` is Google Forms' automatic respondent field, and the previous
+ * importer read it as the *kid's* email. Measured against the real export, that
+ * is wrong: it equals the parent's address in only 78 of 149 rows, and the
+ * kid's in 13 of the 88 rows that have one. It is whoever happened to be signed
+ * in, so it is dropped in favour of the two explicit questions.
+ *
+ * The consent columns are dropped because consent is recorded server-side and
+ * imported registrations leave `consent_given_at` null for now
+ * (`docs/decisions.md`, 2026-09-21). They record how a parent intends to return
+ * a paper form, not a consent event we could timestamp. Payment is out of scope
+ * for ENG-5 entirely.
  */
-const IGNORED_HEADERS = new Set(['timestamp', 'emailaddress']);
+const IGNORED_HEADERS = new Set([
+  'timestamp',
+  'emailaddress',
+  'haveyoufilledoutaconsentform',
+  'pleaseusethebelowlinkfortheparentsconsentform',
+]);
+
+/**
+ * Ignored columns whose header is too long or too volatile to pin down exactly
+ * -- the payment question embeds account handles and line breaks.
+ */
+const IGNORED_PATTERNS: RegExp[] = [/paypal|venmo/, /consentform/];
 
 /** Exact header matches, keyed by normalised form. Checked before the patterns. */
 const EXACT: Record<string, CsvField> = {
@@ -88,7 +110,9 @@ const EXACT: Record<string, CsvField> = {
   youthemail: 'kid_email',
   youthphonenumber: 'kid_phone',
   youthtshirtsize: 'tshirt_size',
-  pictureorselfieofciser: 'photo_link',
+  pleaseuploadapictureselfieoftheciser: 'photo_link',
+  forambassadorsonlypickyourtop4onlycissports: 'top_sports_ambassadors',
+  forjuniorsonlypickyourtop4onlycissports: 'top_sports_juniors',
   parentguardian: 'guardian_name',
   parentguardianphonenumber: 'guardian_phone',
   parentguardianemail: 'guardian_email',
@@ -102,11 +126,15 @@ const EXACT: Record<string, CsvField> = {
  * "parent guardian email" would otherwise be caught by the bare /email/ rule.
  */
 const PATTERNS: [RegExp, CsvField][] = [
+  // Checked before the generic sports rules: these headers contain both a
+  // division name and "sports", and the division is what distinguishes them.
+  [/ambassador.*sport/, 'top_sports_ambassadors'],
+  [/junior.*sport/, 'top_sports_juniors'],
   [/session|division|juniorsorambassadors/, 'division_choice'],
   [/tshirt|shirtsize/, 'tshirt_size'],
   [/(picture|photo|selfie|headshot)/, 'photo_link'],
   [/allerg|medical/, 'allergies'],
-  [/(top|favorite|preferred).*sport|sportspreference/, 'top_sports'],
+  [/(top|favorite|preferred).*sport|sportspreference/, 'top_sports_ambassadors'],
   [/emergency.*(name)/, 'emergency_contact_name'],
   [/emergency.*(number|phone|cell)/, 'emergency_contact_phone'],
   [/(parent|guardian).*(email)/, 'guardian_email'],
@@ -127,8 +155,9 @@ const PATTERNS: [RegExp, CsvField][] = [
  *
  * These back NOT NULL columns with no derivable default. `division_choice` is
  * absent on purpose: division is normally derived from grade, and is only
- * required for 7th graders (handled per-row, not per-file). `allergies`,
- * `top_sports`, `kid_email`, `kid_phone` and `photo_link` are all optional.
+ * required for 7th graders (handled per-row, not per-file). `allergies`, the
+ * two top-sports columns, `kid_email`, `kid_phone` and `photo_link` are all
+ * optional -- and the real export has no allergies question at all.
  */
 export const REQUIRED_FIELDS: readonly CsvField[] = [
   'first_name',
@@ -180,7 +209,7 @@ export function mapHeaders(headers: string[]): HeaderMapping {
     const key = normalizeHeader(raw);
     if (key === '') return;
 
-    if (IGNORED_HEADERS.has(key)) {
+    if (IGNORED_HEADERS.has(key) || IGNORED_PATTERNS.some((p) => p.test(key))) {
       ignored.push(raw);
       return;
     }

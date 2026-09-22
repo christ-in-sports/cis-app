@@ -1,29 +1,34 @@
 import { mapHeaders, normalizeHeader, headerFor, REQUIRED_FIELDS } from './columns';
 
 /**
- * The Google Form's questions, as they appear in an export. Derived from the
- * previous importer's mapping -- see the caveat in columns.ts: no real export
- * has been supplied yet, so these are the best available approximation.
+ * The 2026-27 registration form's questions, verbatim from a real 149-row
+ * export. Note the stray trailing spaces and colons -- they are reproduced on
+ * purpose, since matching has to survive them.
  */
 const FORM_HEADERS = [
   'Timestamp',
   'Email Address',
   'CISer First Name',
-  'CISer Last Name',
-  'Picture or Selfie of CISer',
-  'Parent/Guardian',
-  'Parent/Guardian Phone Number',
-  'Parent/Guardian Email',
-  'Youth Phone Number',
-  'Youth Email',
-  'Youth T-Shirt Size',
+  'CISer Last Name ',
+  'Please upload a picture/selfie of the CISer',
+  'Parent/Guardian ',
+  'Parent/Guardian Phone number',
+  'Parent/Guardian email:',
+  'Youth phone number:',
+  'Youth email:',
+  'Youth tshirt size',
   'Gender',
   'DOB',
   'Grade',
+  "7th Grade ONLY - Please choose which session you'd like to attend.",
+  'For AMBASSADORS ONLY - Pick your TOP 4 ONLY CIS Sports',
+  'For JUNIORS ONLY - Pick your TOP 4 ONLY CIS Sports',
   'Home Address',
-  'Emergency Contact Name',
-  'Emergency Contact Number',
-  "7th Grade ONLY - Please choose which session you'd like to attend",
+  'Emergency Contact Name:',
+  'Emergency contact Number:',
+  'Paypal: paypal.me/ChristinSports/85\nVenmo: @CIS-stantonios\nCash to Sandy Boutros or Maria Meawad',
+  'Have you filled out a consent form?',
+  "Please use the below link for the Parent's Consent form.",
 ];
 
 describe('normalizeHeader', () => {
@@ -55,24 +60,39 @@ describe('mapHeaders on the expected form export', () => {
     ['gender', 11],
     ['dob', 12],
     ['grade', 13],
-    ['home_address', 14],
-    ['emergency_contact_name', 15],
-    ['emergency_contact_phone', 16],
-    ['division_choice', 17],
+    ['division_choice', 14],
+    ['top_sports_ambassadors', 15],
+    ['top_sports_juniors', 16],
+    ['home_address', 17],
+    ['emergency_contact_name', 18],
+    ['emergency_contact_phone', 19],
   ] as const)('maps %s to column %i', (field, index) => {
     expect(mapping.columnOf[field]).toBe(index);
+  });
+
+  it('understands every column in the export', () => {
+    expect(mapping.unmapped).toEqual([]);
   });
 
   it('skips the automatic Timestamp column', () => {
     expect(mapping.ignored).toContain('Timestamp');
   });
 
-  // Google Forms' own respondent field. The previous importer read it as the
-  // kid's email; that looks wrong, since the parent is the one filling the form
-  // in and their address has its own question. Ignored pending confirmation.
+  // Google Forms' own respondent field is whoever happened to be signed in: in
+  // the real export it matches the parent's address in 78 of 149 rows and the
+  // kid's in 13 of the 88 that have one. Both have their own question, so this
+  // one is dropped rather than guessed at.
   it('skips the automatic Email Address column rather than guessing whose it is', () => {
     expect(mapping.ignored).toContain('Email Address');
-    expect(mapping.columnOf.kid_email).toBe(FORM_HEADERS.indexOf('Youth Email'));
+    expect(mapping.columnOf.kid_email).toBe(FORM_HEADERS.indexOf('Youth email:'));
+  });
+
+  it('skips the payment and consent columns', () => {
+    // Payment is a separate ticket, and imported registrations leave
+    // consent_given_at null (docs/decisions.md).
+    expect(mapping.ignored).toContain('Have you filled out a consent form?');
+    expect(mapping.ignored).toContain("Please use the below link for the Parent's Consent form.");
+    expect(mapping.ignored.some((h) => h.startsWith('Paypal'))).toBe(true);
   });
 
   it('picks up the two columns the previous importer ignored', () => {
@@ -82,10 +102,20 @@ describe('mapHeaders on the expected form export', () => {
     expect(mapping.columnOf.photo_link).toBeDefined();
   });
 
+  it('keeps the two per-division sports columns apart', () => {
+    expect(mapping.columnOf.top_sports_ambassadors)
+      .not.toBe(mapping.columnOf.top_sports_juniors);
+  });
+
+  it('matches headers despite trailing spaces and colons', () => {
+    expect(mapping.columnOf.last_name).toBe(FORM_HEADERS.indexOf('CISer Last Name '));
+    expect(mapping.columnOf.guardian_email).toBe(FORM_HEADERS.indexOf('Parent/Guardian email:'));
+  });
+
   it('records the verbatim header for each field, for error messages', () => {
     expect(headerFor(mapping, 'grade')).toBe('Grade');
     expect(headerFor(mapping, 'division_choice'))
-      .toBe("7th Grade ONLY - Please choose which session you'd like to attend");
+      .toBe("7th Grade ONLY - Please choose which session you'd like to attend.");
   });
 });
 
@@ -115,6 +145,16 @@ describe('mapHeaders resilience', () => {
     expect(mapping.columnOf.kid_email).toBe(1);
   });
 
+  it('separates the sports columns by division even if reworded', () => {
+    const mapping = mapHeaders([
+      'Juniors: pick your favourite sports',
+      'Ambassadors: pick your favourite sports',
+    ]);
+    expect(mapping.columnOf.top_sports_juniors).toBe(0);
+    expect(mapping.columnOf.top_sports_ambassadors).toBe(1);
+    expect(mapping.unmapped).toEqual([]);
+  });
+
   it('reports headers it does not understand instead of dropping them', () => {
     const mapping = mapHeaders([...FORM_HEADERS, 'Favourite ice cream']);
     expect(mapping.unmapped).toEqual(['Favourite ice cream']);
@@ -140,7 +180,7 @@ describe('mapHeaders resilience', () => {
   });
 
   it('falls back to a readable label when a field has no column', () => {
-    expect(headerFor(mapHeaders([]), 'tshirt_size')).toBe('Youth t-shirt size');
+    expect(headerFor(mapHeaders([]), 'tshirt_size')).toBe('Youth tshirt size');
   });
 
   it('does not treat the optional fields as required', () => {
