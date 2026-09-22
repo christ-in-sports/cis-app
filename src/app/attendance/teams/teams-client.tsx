@@ -9,12 +9,19 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/toast';
-import { type RosterKid, type Session, SESSION_LABEL } from '@/lib/attendance';
+import {
+  type RosterKid,
+  type Division,
+  DIVISION_LABEL,
+  divisionAllowedForGrade,
+} from '@/lib/attendance';
 
 interface Team {
   id: string;
   name: string;
-  session: Session | null;
+  // `ministry_teams` still spells this `session` in the database; only
+  // `registrations` was renamed to `division`.
+  session: Division | null;
   active: boolean;
 }
 
@@ -49,13 +56,15 @@ export default function TeamsClient({
   const [kids, setKids] = useState(initialKids);
   const [links, setLinks] = useState(initialLinks);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [filter, setFilter] = useState<'all' | Session | 'unassigned' | 'noteam'>('all');
+  // No 'unassigned' option any more: division is NOT NULL on registrations, so
+  // every kid on the roster now has one.
+  const [filter, setFilter] = useState<'all' | Division | 'noteam'>('all');
   const [search, setSearch] = useState('');
   const [busy, setBusy] = useState(false);
 
   const [showTeam, setShowTeam] = useState(false);
   const [tName, setTName] = useState('');
-  const [tSession, setTSession] = useState<'' | Session>('');
+  const [tSession, setTSession] = useState<'' | Division>('');
   const [tCoaches, setTCoaches] = useState<Set<string>>(new Set());
 
   const [manageCoaches, setManageCoaches] = useState<string | null>(null);
@@ -74,15 +83,13 @@ export default function TeamsClient({
   const shown = useMemo(() => {
     const q = search.trim().toLowerCase();
     return kids.filter((k) => {
-      if (filter === 'unassigned' && k.session) return false;
       if (filter === 'noteam' && k.team_id) return false;
-      if ((filter === 'juniors' || filter === 'ambassadors') && k.session !== filter) return false;
+      if ((filter === 'juniors' || filter === 'ambassadors') && k.division !== filter) return false;
       if (!q) return true;
       return `${k.first_name} ${k.last_name}`.toLowerCase().includes(q);
     });
   }, [kids, filter, search]);
 
-  const unassignedCount = kids.filter((k) => !k.session).length;
   const teamName = (id: string | null) => teams.find((t) => t.id === id)?.name ?? null;
 
   const toggleKid = (id: string) =>
@@ -92,16 +99,48 @@ export default function TeamsClient({
       return n;
     });
 
-  const bulk = async (patch: { session?: Session | null; team_id?: string | null }) => {
+  const bulk = async (patch: { division?: Division; team_id?: string | null }) => {
     if (selected.size === 0) return;
+
+    // A kid's grade constrains which division they may be in
+    // (registrations_division_matches_grade). Moving a 9th grader to Juniors is
+    // rejected by the database, so skip those rows and say so, rather than
+    // letting the whole batch fail on a constraint error.
+    let ids = [...selected];
+    let skipped = 0;
+    if (patch.division) {
+      const eligible = ids.filter((id) => {
+        const kid = kids.find((k) => k.id === id);
+        return kid ? divisionAllowedForGrade(kid.grade, patch.division!) : false;
+      });
+      skipped = ids.length - eligible.length;
+      ids = eligible;
+    }
+
+    if (ids.length === 0) {
+      toast({
+        title: 'Nothing to update',
+        description: `Their grade does not allow ${
+          patch.division ? DIVISION_LABEL[patch.division] : 'that change'
+        }.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setBusy(true);
-    const ids = [...selected];
     const { error } = await supabase.from('registrations').update(patch).in('id', ids);
     if (error) {
       toast({ title: 'Update failed', description: error.message, variant: 'destructive' });
     } else {
-      setKids((p) => p.map((k) => (selected.has(k.id) ? { ...k, ...patch } as RosterKid : k)));
-      toast({ title: `Updated ${ids.length} kid${ids.length === 1 ? '' : 's'}` });
+      const applied = new Set(ids);
+      setKids((p) => p.map((k) => (applied.has(k.id) ? { ...k, ...patch } as RosterKid : k)));
+      toast({
+        title: `Updated ${ids.length} kid${ids.length === 1 ? '' : 's'}`,
+        description: skipped
+          ? `${skipped} skipped — their grade does not allow that division.`
+          : undefined,
+      });
       setSelected(new Set());
     }
     setBusy(false);
@@ -204,20 +243,6 @@ export default function TeamsClient({
       </div>
 
       <div className="max-w-3xl mx-auto p-4 space-y-4">
-        {unassignedCount > 0 && (
-          <Card className="border-amber-500/50">
-            <CardContent className="py-4 space-y-2">
-              <p className="text-sm text-amber-400">
-                ⚠️ {unassignedCount} kid{unassignedCount === 1 ? '' : 's'} have no session — they
-                won&apos;t appear on any attendance roster.
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Sessions come from the registration form. Re-upload your CSV with
-                &ldquo;Update with the new info&rdquo; to fill these in, or set them below.
-              </p>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Teams */}
         <Card>
@@ -341,7 +366,6 @@ export default function TeamsClient({
             <option value="all">All</option>
             <option value="juniors">Juniors</option>
             <option value="ambassadors">Ambassadors</option>
-            <option value="unassigned">No session</option>
             <option value="noteam">No team</option>
           </select>
         </div>
@@ -368,11 +392,9 @@ export default function TeamsClient({
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium truncate">{k.last_name}, {k.first_name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {k.grade ? `Grade ${k.grade}` : 'No grade'}
+                      Grade {k.grade}
                       {' • '}
-                      {k.session
-                        ? SESSION_LABEL[k.session].split(' ')[0]
-                        : <span className="text-amber-400">no session</span>}
+                      {DIVISION_LABEL[k.division].split(' ')[0]}
                     </p>
                   </div>
                   {k.team_id && (
@@ -394,9 +416,9 @@ export default function TeamsClient({
             <p className="text-xs text-muted-foreground">{selected.size} selected</p>
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1 h-11 text-xs" disabled={busy}
-                      onClick={() => bulk({ session: 'juniors' })}>→ Juniors</Button>
+                      onClick={() => bulk({ division: 'juniors' })}>→ Juniors</Button>
               <Button variant="outline" className="flex-1 h-11 text-xs" disabled={busy}
-                      onClick={() => bulk({ session: 'ambassadors' })}>→ Ambassadors</Button>
+                      onClick={() => bulk({ division: 'ambassadors' })}>→ Ambassadors</Button>
             </div>
             <select
               className="w-full h-11 rounded-lg border border-input bg-background px-3 text-sm"
