@@ -10,8 +10,10 @@
 
 Christ in Sports (CIS) is a church-based program serving kids ages 10–18 at St. Antonious Coptic Orthodox Church in Hayward, CA. The program is organized into two divisions:
 
-- **Juniors** — Grades 4–6
-- **Ambassadors** — Grades 7–12
+- **Juniors** — Grades 4–6, plus 7th graders who choose it
+- **Ambassadors** — Grades 8–12, plus 7th graders who choose it
+
+Grades 4–6 must register as Juniors and grades 8–12 as Ambassadors. Grade 7 is the only grade that may choose either division.
 
 CIS combines competitive sports with spiritual development. Kids memorize Bible verses and psalms and are expected to demonstrate Christ-centered sportsmanship toward teammates and opponents. The program is run by ~30 volunteer servants across five functional groups: **Admin/Directors, Program Team, Coaches, Prayer Team**, plus the **Parents** and **Kids** who participate.
 
@@ -62,6 +64,7 @@ The app supports **6 roles**. A person may hold more than one role simultaneousl
 | Update verse/psalm points | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ |
 | View verses & psalms | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Register kids | ✓ | ✗ | ✗ | ✗ | ✓ | ✓ (self) |
+| View kid home address & emergency contact | ✓ | ✗ | ✓ (own team) | ✗ | ✓ (own kids) | ✗ |
 | Process payments | ✓ | ✗ | ✗ | ✗ | ✓ | ✗ |
 | AI team generation | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
 | View equipment list | ✓ | ✓ | ✗ | ✓ | ✗ | ✗ |
@@ -194,13 +197,14 @@ Most state in this app is **server state** — rosters, standings, attendance, c
 
 ### 2.4 Core Data Model
 
-Divisions (`juniors` / `ambassadors`) are an attribute on `Kid` and `Team`, not separate tables.
+Divisions (`juniors` / `ambassadors`) are an attribute on `Registration` and `Team`, not separate tables. Kids return across seasons, so anything that changes season to season (grade, division, T-shirt size, team, consent) lives on `Registration`, not `Kid`.
 
 | Entity | Key Fields | Relationships |
 |---|---|---|
 | `User` | id, name, email, phone, role[], created_at | has many `Kid` (as parent), belongs to `Team` (as coach) |
-| `Kid` | id, full_name, dob, grade, division, allergies, skill_tags[], team_id, parent_user_id | belongs to `Team`, belongs to `User` |
-| `Team` | id, name, sport, division, coach_user_id, season_id | has many `Kid`, belongs to `Season` |
+| `Kid` | id, first_name, last_name, photo_path, email?, phone?, gender, dob, allergies, home_address, emergency_contact_name, emergency_contact_phone, guardian_name, guardian_phone, guardian_email, skill_tags[], parent_user_id? | has many `Registration`, belongs to `User` (parent) |
+| `Registration` | id, kid_id, season_id, grade, division, tshirt_size, top_sports[]?, consent_given_at?, consent_by_user_id?, team_id?, created_at | belongs to `Kid`, `Season`, `Team` |
+| `Team` | id, name, sport, division, coach_user_id, season_id | has many `Registration`, belongs to `Season` |
 | `Season` | id, name, start_date, end_date, is_active | has many `Event`, `Team` |
 | `Event` | id, season_id, title, date, time, location, type | belongs to `Season` |
 | `Attendance_Kid` | id, kid_id, event_id, status, note, logged_by_user_id | belongs to `Kid`, `Event` |
@@ -211,13 +215,26 @@ Divisions (`juniors` / `ambassadors`) are an attribute on `Kid` and `Team`, not 
 | `Payment` | id, kid_id, parent_user_id, total_amount, plan, amount_paid, status | belongs to `Kid`, `User` |
 | `Equipment` | id, item_name, quantity, requested_by_user_id, status | belongs to `User` |
 
+`?` marks an optional (nullable) field. Field notes for `Kid` and `Registration`:
+
+- **Contact fields:** `Kid.email` and `Kid.phone` are the kid's own and optional. `guardian_name`, `guardian_phone` and `guardian_email` are required. `emergency_contact_name` and `emergency_contact_phone` are required.
+- **`parent_user_id`** is nullable so a kid can exist (e.g., from CSV import) before the parent has an account. It is linked when a `User` signs up with a matching `guardian_email`. The inline guardian fields stay as the contact snapshot either way.
+- **`allergies`** holds allergies and medical notes. It is retained from the earlier schema.
+- **`grade`** is an integer from 4 to 12. **`division`** must be `juniors` when grade < 7, `ambassadors` when grade > 7, and either when grade = 7. Enforce this with a database `CHECK` constraint on `Registration`; the Zod schema mirrors it for form errors.
+- **`tshirt_size`** is one of `YS`, `YM`, `YL`, `XS`, `S`, `M`, `L`, `XL`, `XXL`.
+- **`gender`** is an enum: `male` or `female`.
+- **`consent_given_at`** replaces a yes/no flag. `null` means no consent, and a registration is not complete until it is set. It is set server-side, together with `consent_by_user_id`. CSV-imported registrations may leave it null for now; the parent registration form always sets it.
+- **`photo_path`** is a path in a **private** Supabase Storage bucket, never a public URL. Serve it through short-lived signed URLs, with storage policies that match who can read the `Kid` row. For CSV import, the CSV carries a Google Drive link; the importer downloads the photo server-side and stores it in the bucket. A failed download is a row-level import error.
+- **`home_address` and the emergency contact** are visible only to Admin, the coach of the kid's team, and the kid's linked parent (see the §1.5 matrix). Postgres RLS is row-level, so this needs a design decision before the migration (see §2.8).
+- **`Registration` is unique on (`kid_id`, `season_id`).** `Attendance_Kid`, `SpiritualRecord` and `Payment` still reference `kid_id` for now.
+
 ### 2.5 Engineering Requirements
 
 - **RLS policies are mandatory** on every table containing user data — write them alongside the table, not after.
 - **Zod schemas** should be the single source of truth for a shape's validation and, where practical, its TypeScript type (`z.infer`).
 - **Server Actions preferred** over client-side fetch + API route for mutations, unless a stable REST endpoint is genuinely needed (e.g., Stripe webhooks).
 - **No secrets in client code** — Stripe secret key, Claude API key, Supabase service role key stay server-side only.
-- **CSV import (MVP)**: build as a server-side parser + validator that maps rows to the `Kid` schema, reports row-level errors, and requires Admin review before committing to the database.
+- **CSV import (MVP)**: build as a server-side parser + validator that maps each row to a `Kid` plus a `Registration` for the active season (matching returning kids to existing `Kid` records on first name + last name + DOB, case-insensitive and whitespace-trimmed, instead of creating duplicates), copies each photo from its Google Drive link into the private Storage bucket, reports row-level errors, and requires Admin review before committing to the database.
 - **Migrations**: use Supabase CLI migrations, committed to the repo — never make schema changes directly in the Supabase dashboard for anything beyond prototyping.
 
 ### 2.6 Git Workflow
@@ -257,6 +274,9 @@ Trunk-based development, not GitFlow — appropriate for a 2-developer team with
 - What exact payment amounts / installment structures should Stripe be configured with?
 - Are coach-entered kid attributes/ratings visible to parents?
 - Is a registration waitlist needed if a division/team fills up?
+- How do we enforce that only Admin, the kid's coach and the linked parent can see `home_address` and the emergency contact? RLS is per row, not per column, and Program Team can view the full roster. Options: a 1:1 `KidContact` table with its own RLS (recommended), or a view plus column-level grants.
+- How does the server read the Google Drive photos during CSV import? Form uploads are usually not public, so this likely needs Drive API access (e.g., a service account the photos are shared with). Set up before the importer is built.
+- Should `Payment` reference `registration_id` instead of `kid_id`, so payments are scoped to a season?
 
 ---
 

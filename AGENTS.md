@@ -60,7 +60,7 @@ Stripe (payments, v1.0)    Claude API (AI team generation, v1.0)
 | Hosting | Vercel |
 | Error tracking | Sentry |
 
-**Core entities:** `User`, `Kid`, `Team`, `Season`, `Event`, `Attendance_Kid`, `Attendance_Coach`, `Verse`, `SpiritualRecord`, `GameScore`, `Payment`, `Equipment`. Full field list and relationships: `project_spec.md` §2.3.
+**Core entities:** `User`, `Kid`, `Registration`, `Team`, `Season`, `Event`, `Attendance_Kid`, `Attendance_Coach`, `Verse`, `SpiritualRecord`, `GameScore`, `Payment`, `Equipment`. Full field list and relationships: `project_spec.md` §2.3.
 
 **Six roles:** Admin/Director, Program Team, Coaches, Prayer Team, Parents, Kids (Ambassadors only). A user can hold multiple roles. Full permission matrix: `project_spec.md` §1.5.
 
@@ -220,4 +220,4 @@ Every PR that touches the items in the "non-negotiable" list must include or upd
 ---
 
 *Last updated: keep this line current — if you edit this file, update the date below.*
-**Last updated:** 2026-09-18
+**Last updated:** 2026-09-21
