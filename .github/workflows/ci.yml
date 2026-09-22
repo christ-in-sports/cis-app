@@ -34,6 +34,12 @@ jobs:
   e2e:
     name: End-to-end (Playwright)
     runs-on: ubuntu-latest
+    # NEXT_PUBLIC_* vars are shipped to the browser bundle by design (Next.js convention) and
+    # protected by RLS, not secrecy — safe to set directly here rather than as repo secrets.
+    # Without them, createServerSupabaseClient() throws on every request and the app never boots.
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://lbvfrplrujisypndgtin.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: sb_publishable_rAsGATxkK481IX-C3gA6Lg_KvNzkqba
     steps:
       - uses: actions/checkout@v4
 
