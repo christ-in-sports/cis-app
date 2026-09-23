@@ -47,3 +47,7 @@ next-env.d.ts
 # misc
 prd.docx
 *.local.md
+
+# Claude Code: personal, per-machine settings (permission grants etc).
+# launch.json is intentionally NOT ignored -- it is shared dev-server config.
+.claude/settings.local.json
