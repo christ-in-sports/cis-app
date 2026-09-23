@@ -50,7 +50,6 @@ describe('mapHeaders on the expected form export', () => {
   it.each([
     ['first_name', 2],
     ['last_name', 3],
-    ['photo_link', 4],
     ['guardian_name', 5],
     ['guardian_phone', 6],
     ['guardian_email', 7],
@@ -70,8 +69,11 @@ describe('mapHeaders on the expected form export', () => {
     expect(mapping.columnOf[field]).toBe(index);
   });
 
-  it('understands every column in the export', () => {
-    expect(mapping.unmapped).toEqual([]);
+  // The photo question is the one column in the real export the importer
+  // deliberately does not use, since kid photos were dropped on 2026-09-23
+  // (docs/decisions.md). Everything else must be understood.
+  it('understands every column in the export except the photo question', () => {
+    expect(mapping.unmapped).toEqual(['Please upload a picture/selfie of the CISer']);
   });
 
   it('skips the automatic Timestamp column', () => {
@@ -99,11 +101,19 @@ describe('mapHeaders on the expected form export', () => {
     expect(mapping.columnOf.consent_method).toBe(22);
   });
 
-  it('picks up the two columns the previous importer ignored', () => {
-    // Both are required by ENG-5: t-shirt size is a registration field, and the
-    // photo link is what the Drive copy step will read.
+  it('picks up the t-shirt size the previous importer ignored', () => {
     expect(mapping.columnOf.tshirt_size).toBeDefined();
-    expect(mapping.columnOf.photo_link).toBeDefined();
+  });
+
+  // Kid photos were dropped on 2026-09-23 (docs/decisions.md). The form still
+  // asks for one, so the column must be reported as unrecognised rather than
+  // silently matched to something.
+  it('does not map the form photo question to anything', () => {
+    const withPhoto = mapHeaders([
+      ...FORM_HEADERS,
+      'Please upload a picture/selfie of the CISer',
+    ]);
+    expect(withPhoto.unmapped).toContain('Please upload a picture/selfie of the CISer');
   });
 
   it('keeps the two per-division sports columns apart', () => {
@@ -161,7 +171,7 @@ describe('mapHeaders resilience', () => {
 
   it('reports headers it does not understand instead of dropping them', () => {
     const mapping = mapHeaders([...FORM_HEADERS, 'Favourite ice cream']);
-    expect(mapping.unmapped).toEqual(['Favourite ice cream']);
+    expect(mapping.unmapped).toContain('Favourite ice cream');
   });
 
   it('keeps the first of two columns claiming the same field', () => {
@@ -189,7 +199,7 @@ describe('mapHeaders resilience', () => {
 
   it('does not treat the optional fields as required', () => {
     // Per the ticket: kid email, kid phone and top sports are optional.
-    // `allergies` and `photo_link` are nullable in the merged schema too.
+    // `allergies` is nullable in the merged schema too.
     expect(REQUIRED_FIELDS).not.toContain('kid_email');
     expect(REQUIRED_FIELDS).not.toContain('kid_phone');
     expect(REQUIRED_FIELDS).not.toContain('top_sports');

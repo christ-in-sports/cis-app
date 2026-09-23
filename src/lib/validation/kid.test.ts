@@ -60,7 +60,6 @@ describe('kidSchema', () => {
       email: null,
       phone: null,
       allergies: null,
-      photo_path: null,
       skill_tags: [],
     });
   });

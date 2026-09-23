@@ -265,7 +265,6 @@ const FIELD_OF_PATH: Record<string, CsvField> = {
   'kid.guardian_name': 'guardian_name',
   'kid.guardian_phone': 'guardian_phone',
   'kid.guardian_email': 'guardian_email',
-  'kid.photo_path': 'photo_link',
   'registration.grade': 'grade',
   // Division is never read straight from a column -- it is either derived from
   // grade or taken from the 7th-grade choice -- so that choice column is what
@@ -314,7 +313,6 @@ function buildCandidate(cells: string[], mapping: HeaderMapping) {
       last_name: cell('last_name'),
       dob: parseDate(cell('dob')),
       gender: parseGender(cell('gender')),
-      photo_path: null, // Drive links are fetched in a later PR; never the raw URL.
       email: cell('kid_email'),
       phone: normalizePhone(cell('kid_phone')),
       allergies: cell('allergies'),

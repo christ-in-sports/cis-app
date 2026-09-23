@@ -36,7 +36,7 @@ Supabase (PostgreSQL)
   ├─ Auth — email/OTP or magic link, JWT carries role claims
   ├─ Row Level Security — the real permission boundary (see §4)
   ├─ Realtime — live standings/attendance updates
-  ├─ Storage — profile photos, documents
+  ├─ Storage — documents (kid photos dropped 2026-09-23)
   └─ Edge Functions — push notification triggers, scheduled jobs
 
         │
