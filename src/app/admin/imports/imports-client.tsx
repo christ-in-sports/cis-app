@@ -18,6 +18,7 @@ import { useRouter } from 'next/navigation';
 
 import { Sheet, SheetHeading, SheetRule } from '@/components/cis/sheet';
 import { PrimaryButton, SecondaryButton } from '@/components/cis/button';
+import { PageShell } from '@/components/cis/page-shell';
 import { commitImportBatch } from './actions';
 
 export interface ReviewRow {
@@ -50,12 +51,10 @@ function statusText(row: ReviewRow): string {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-cis-page px-4 py-6 font-cis-body text-cis-ink">
-      <div className="mx-auto flex w-full max-w-[420px] flex-col gap-cis-4">
-        <h1 className="font-cis-display text-cis-xl font-normal leading-[1.1]">Roster import</h1>
-        {children}
-      </div>
-    </div>
+    <PageShell className="max-w-[460px]">
+      <h1 className="font-cis-display text-cis-xl font-normal leading-[1.1]">Roster import</h1>
+      {children}
+    </PageShell>
   );
 }
 

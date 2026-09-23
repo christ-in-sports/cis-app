@@ -15,6 +15,15 @@
   --cis-ember: #C4341C;         /* scores, game chips, live + final states */
   --cis-ember-tint: #FDF0DC;    /* leader row wash */
 
+  /* Destructive — deliberately a DIFFERENT red from ember, and separated by
+     usage as well as hue: danger only ever appears on an action (delete,
+     remove), ember never does. See DESIGN_SYSTEM.md §4. */
+  --cis-danger: #8E1F17;        /* 8.7:1 as text on paper-light */
+  --cis-danger-hover: #A3231A;
+  --cis-danger-press: #761A13;
+  --cis-danger-tint: #F7E4E0;   /* hover wash behind an outlined danger action */
+  --cis-ink-on-danger: #FFF6EE; /* text on a danger fill — 8.3:1 */
+
   /* Spiritual */
   --cis-sage: #6F8457;          /* verse + psalm-point actions */
   --cis-sage-hover: #7C946A;

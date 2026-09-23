@@ -16,6 +16,20 @@ export default async function RegistrationsPage() {
 
   const isStaff = !!profile?.is_staff;
 
+  // Deliberately NOT `isStaff`. That reads the legacy `profiles.is_staff`
+  // column, which the signup flow still writes; the roles migration made
+  // `has_role('admin')` the real thing, and /admin/imports checks exactly that.
+  // Gating the import link on the column would offer it to someone the import
+  // page then redirects away -- or hide it from an Admin who can use it.
+  const { data: adminRole } = await supabase
+    .from('user_roles')
+    .select('role')
+    .eq('user_id', user.id)
+    .eq('role', 'admin')
+    .maybeSingle();
+
+  const isAdmin = adminRole !== null;
+
   // A roster row is a kid plus their registration for the active season. The
   // season has to be resolved first because registrations are per-season now.
   const { data: season } = await supabase
@@ -60,6 +74,7 @@ export default async function RegistrationsPage() {
     <RegistrationsClient
       initial={entries}
       isStaff={isStaff}
+      isAdmin={isAdmin}
       season={season ?? null}
     />
   );
