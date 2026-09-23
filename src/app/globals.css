@@ -1,90 +1,14 @@
+/* Design tokens are LITERAL (DESIGN_SYSTEM.md §1): imported from the single
+   source of truth rather than copied. They were previously duplicated here and
+   had drifted -- six tokens present in design/tokens.css were missing, including
+   --cis-rule-dash, which the CSV import review screen needs. Importing removes
+   that whole class of bug: the copy cannot fall behind if there is no copy. */
+@import "../../design/tokens.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Christ In Sports — design tokens
-   Derived from the CIS logo (orange fish mark) on the Organic design system.
-   Fonts: Caprasimo (display) + Figtree (UI/body), both Google Fonts. */
-:root {
-  /* Brand */
-  --cis-orange: #EE6B2D;        /* primary: buttons, active nav, progress */
-  --cis-orange-hover: #F98244;
-  --cis-orange-press: #DC5D22;
-  --cis-orange-shadow: #B14E1C; /* 4px offset "stamp" shadow under buttons */
-  --cis-orange-text: #C2531B;   /* orange for text on light grounds (>=4.5:1) */
-  --cis-orange-deep: #9C3E12;   /* text-on-tint, link hover */
-
-  /* Sport / competition */
-  --cis-ember: #C4341C;         /* scores, game chips, live + final states */
-  --cis-ember-tint: #FDF0DC;    /* leader row wash */
-
-  /* Spiritual */
-  --cis-sage: #6F8457;          /* verse + psalm-point actions */
-  --cis-sage-hover: #7C946A;
-  --cis-sage-press: #5E7149;
-  --cis-sage-tint: #E4EAD8;
-  --cis-sage-text: #4C5C3B;     /* sage-coloured copy on light grounds */
-  --cis-sage-ink: #3F4C31;      /* headings inside sage tints */
-
-  /* Warm neutrals */
-  --cis-apricot: #FFC98E;       /* highlights on dark grounds */
-  --cis-apricot-tint: #FFE3C4;  /* chip fill, pairs with --cis-orange-deep text */
-  --cis-page: #E9DCC6;          /* app backdrop */
-  --cis-paper: #F3E7D4;         /* secondary sheet */
-  --cis-paper-light: #FFFCF6;   /* primary sheet / card */
-  --cis-rule: #E3D4B8;          /* 1px row rules on paper */
-  --cis-rule-soft: #DFCFAF;     /* ruled-paper gradient line */
-  --cis-track: #E0D2B8;         /* progress track */
-
-  /* Ink */
-  --cis-ink: #241F1C;           /* body text */
-  --cis-ink-dark: #201E1D;      /* dark surfaces, scoreboard ground */
-  --cis-ink-muted: #5E534A;     /* secondary text (5.9:1 on --cis-paper-light) */
-  --cis-ink-on-dark: #F3E7D4;   /* text on ink/board */
-  --cis-ink-on-dark-muted: #C9B9A0;
-
-  /* Clipboard direction only */
-  --cis-board: #6F5133;         /* hardboard backdrop */
-  --cis-board-tab: #7A5C3C;     /* inactive tab on board */
-  --cis-board-hole: #41301E;
-
-  /* Type */
-  --cis-font-display: "Caprasimo", cursive;
-  --cis-font-body: "Figtree", system-ui, sans-serif;
-  --cis-text-xs: 12px;   /* meta, footnotes */
-  --cis-text-sm: 13px;   /* chips, secondary rows */
-  --cis-text-base: 15px;
-  --cis-text-md: 17px;   /* table rows, roster names */
-  --cis-text-lg: 18px;   /* section headings (display) */
-  --cis-text-xl: 22px;
-  --cis-display-md: 26px;
-  --cis-display-lg: 34px; /* matchup names */
-
-  /* Radius — 12 for chips/stamps, 26 for sheets, 40 for the app shell,
-     999 for buttons only (per Organic). Do not introduce new steps. */
-  --cis-radius-chip: 12px;
-  --cis-radius-box: 14px;   /* attendance tick box */
-  --cis-radius-sheet: 26px;
-  --cis-radius-shell: 40px;
-  --cis-radius-pill: 999px;
-
-  /* Spacing (4px base; sheets pad 20–26) */
-  --cis-space-1: 4px;
-  --cis-space-2: 8px;
-  --cis-space-3: 12px;
-  --cis-space-4: 16px;
-  --cis-space-5: 20px;
-  --cis-space-6: 26px;
-
-  /* Elevation */
-  --cis-shadow-sheet: 0 6px 14px rgba(40,22,8,.25);
-  --cis-shadow-shell: 0 18px 44px rgba(60,35,15,.26);
-  --cis-shadow-press: 0 4px 0 var(--cis-orange-shadow);
-
-  /* Targets */
-  --cis-tap-min: 44px;
-  --cis-tap-primary: 58px;
-}
 
 @layer base {
   :root {

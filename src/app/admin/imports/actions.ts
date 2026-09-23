@@ -73,7 +73,11 @@ export async function commitImportBatch(batchId: string): Promise<CommitResult> 
     skipped_with_errors: number;
   };
 
-  revalidatePath('/admin/imports');
+  // Only the roster. Revalidating /admin/imports would re-render this page with
+  // the batch now `committed`, which the page treats as nothing to review -- so
+  // the component would remount and discard the summary the Admin is about to
+  // be shown. The page is `force-dynamic` anyway, so there is no cached copy of
+  // it to bust; the next navigation re-renders regardless.
   revalidatePath('/registrations');
 
   return {

@@ -13,7 +13,8 @@
  * one identity key defined in `./csv/rows.ts`.
  */
 
-import { identityKey, type ParsedRow } from './csv/rows';
+import { identityKey, cleanCell, type ParsedRow } from './csv/rows';
+import type { HeaderMapping } from './csv/columns';
 
 /** The subset of a `kids` row needed to match against an incoming CSV row. */
 export interface KidIdentity {
@@ -36,6 +37,25 @@ export interface ImportRowInput {
   matched_kid_id: string | null;
   action: ImportAction;
   duplicate_of_row: number | null;
+  display_name: string | null;
+}
+
+/**
+ * The name to show for a row on the review screen.
+ *
+ * Read from the raw cells rather than from `parsed`, because the rows that most
+ * need identifying are the ones that failed validation and so have no `parsed`
+ * at all. Null when both name cells are missing or blank -- the screen says
+ * "Name missing" rather than rendering an empty cell.
+ */
+export function displayNameFor(cells: string[], mapping: HeaderMapping): string | null {
+  const cell = (field: 'first_name' | 'last_name'): string | null => {
+    const index = mapping.columnOf[field];
+    return index === undefined ? null : cleanCell(cells[index]);
+  };
+
+  const name = [cell('first_name'), cell('last_name')].filter(Boolean).join(' ').trim();
+  return name === '' ? null : name;
 }
 
 /**
@@ -95,6 +115,7 @@ export function resolveImportRows(
   parsedRows: ParsedRow[],
   rawRows: string[][],
   existingKids: KidIdentity[],
+  mapping: HeaderMapping,
 ): ImportRowInput[] {
   const byIdentity = indexKidsByIdentity(existingKids);
 
@@ -104,6 +125,7 @@ export function resolveImportRows(
 
   return parsedRows.map((row, index): ImportRowInput => {
     const raw = rawRows[index] ?? [];
+    const displayName = displayNameFor(raw, mapping);
 
     if (row.data === null) {
       return {
@@ -115,6 +137,7 @@ export function resolveImportRows(
         matched_kid_id: null,
         action: 'error',
         duplicate_of_row: null,
+        display_name: displayName,
       };
     }
 
@@ -137,6 +160,7 @@ export function resolveImportRows(
         matched_kid_id: null,
         action: 'error',
         duplicate_of_row: duplicateOfRow,
+        display_name: displayName,
       };
     }
 
@@ -154,6 +178,7 @@ export function resolveImportRows(
       matched_kid_id: matchedKidId,
       action: isUpdate ? 'update' : 'insert',
       duplicate_of_row: duplicateOfRow,
+      display_name: displayName,
     };
   });
 }

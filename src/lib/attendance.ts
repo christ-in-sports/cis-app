@@ -90,6 +90,19 @@ export const DIVISION_LABEL: Record<Division, string> = {
 };
 
 /**
+ * The division on its own, for tabular contexts.
+ *
+ * `DIVISION_LABEL` spells out the grade range, which is what a form select
+ * needs -- someone choosing a division is deciding partly on grade. In a table
+ * the grade is already its own column, so the range is both redundant and long
+ * enough to wrap the cell onto two lines.
+ */
+export const DIVISION_SHORT: Record<Division, string> = {
+  juniors: 'Juniors',
+  ambassadors: 'Ambassadors',
+};
+
+/**
  * The only grades a kid can register in. Constrained in the database too
  * (`registrations_grade_range`), since registrations also arrive via CSV import
  * and the parent form, not just this UI.

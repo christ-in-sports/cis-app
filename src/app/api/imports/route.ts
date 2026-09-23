@@ -168,6 +168,7 @@ export async function POST(request: Request) {
     parseRows(dataRows, mapping),
     dataRows,
     (existingKids ?? []) as KidIdentity[],
+    mapping,
   );
   const counts = countRows(rows);
 
@@ -207,6 +208,7 @@ export async function POST(request: Request) {
       matched_kid_id: row.matched_kid_id,
       action: row.action,
       duplicate_of_row: row.duplicate_of_row,
+      display_name: row.display_name,
     })),
   );
 

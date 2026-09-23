@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <meta name="design_doc_mode" content="canvas">
+  <link rel="stylesheet" href="_ds/christ-in-sports-design-system-9886de67-82db-4a3d-94c5-051ed86df66a/tokens/fonts.css">
+  <link rel="stylesheet" href="_ds/christ-in-sports-design-system-9886de67-82db-4a3d-94c5-051ed86df66a/tokens/palette.css">
+  <link rel="stylesheet" href="_ds/christ-in-sports-design-system-9886de67-82db-4a3d-94c5-051ed86df66a/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/christ-in-sports-design-system-9886de67-82db-4a3d-94c5-051ed86df66a/tokens/shape.css">
+  <link rel="stylesheet" href="_ds/christ-in-sports-design-system-9886de67-82db-4a3d-94c5-051ed86df66a/tokens/base.css">
+  <link rel="stylesheet" href="_ds/christ-in-sports-design-system-9886de67-82db-4a3d-94c5-051ed86df66a/styles.css">
+  <script src="_ds/christ-in-sports-design-system-9886de67-82db-4a3d-94c5-051ed86df66a/_ds_bundle.js"></script>
+  <style>
+    body { margin: 0; background: #E9DCC6; }
+    a { color: #C2531B; } a:hover { color: #9C3E12; }
+    :focus-visible { outline: 2px solid #EE6B2D; outline-offset: 3px; }
+  </style>
+</helmet>
+<section style="padding: 48px; display: flex; flex-direction: column; gap: 28px; font-family: var(--cis-font-body); color: var(--cis-ink); background: var(--cis-page); min-height: 100vh; box-sizing: border-box;">
+  <div style="display: flex; flex-direction: column; gap: 6px; max-width: 760px;">
+    <h1 style="font-family: var(--cis-font-display); font-weight: 400; font-size: 34px; line-height: 1.1; margin: 0;">Roster import — /admin/imports</h1>
+    <p style="margin: 0; font-size: 15px; line-height: 1.5; color: var(--cis-ink-muted); text-wrap: pretty;">One route, three states. Status is plain text in its own column — no colour, no chip. Synthetic data.</p>
+  </div>
+  <div style="display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start;">
+
+    <div id="empty" data-screen-label="01 Empty" style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="font-size: 15px; font-weight: 800;">1 · Empty</div>
+      <x-import component-from-global-scope="ChristInSportsDesignSystem_9886de.PhoneShell" time="9:12" dc-props="{{ pShell }}" hint-size="390px,844px">
+        <h1 style="margin: 0; padding: 14px 24px 16px; font-family: var(--cis-font-display); font-weight: 400; font-size: 22px; line-height: 1.1; color: var(--cis-ink-on-dark);">Roster import</h1>
+        <div style="padding: 0 14px 14px; flex: 1; display: flex; flex-direction: column;">
+          <x-import component-from-global-scope="ChristInSportsDesignSystem_9886de.Sheet" tone="light" dc-props="{{ pCard }}" hint-size="100%,260px">
+            <x-import component-from-global-scope="ChristInSportsDesignSystem_9886de.SheetHeading" dc-props="{{ pH }}" hint-size="100%,26px">Import this year's roster</x-import>
+            <p style="margin: 0; font-size: 15px; line-height: 1.5; text-wrap: pretty;">Choose the roster CSV for Season 2026–27. You'll see every row before anything is saved.</p>
+            <label style="display: flex; margin-top: 8px;">
+              <input type="file" accept=".csv,text/csv" style="position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden;">
+              <span style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 58px; border-radius: 999px; background: var(--cis-orange); color: var(--cis-ink-dark); font-weight: 800; font-size: 18px; box-shadow: 0 4px 0 var(--cis-orange-shadow); cursor: pointer;" style-hover="background: var(--cis-orange-hover);">Choose CSV file</span>
+            </label>
+          </x-import>
+        </div>
+      </x-import>
+    </div>
+
+    <div id="review" data-screen-label="02 Review" style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="font-size: 15px; font-weight: 800;">2 · Review</div>
+      <x-import component-from-global-scope="ChristInSportsDesignSystem_9886de.PhoneShell" time="9:14" dc-props="{{ pShell }}" hint-size="390px,844px">
+        <h1 style="margin: 0; padding: 14px 24px 16px; font-family: var(--cis-font-display); font-weight: 400; font-size: 22px; line-height: 1.1; color: var(--cis-ink-on-dark);">Roster import</h1>
+        <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 0 14px 14px; display: flex; flex-direction: column; gap: 14px;">
+          <x-import component-from-global-scope="ChristInSportsDesignSystem_9886de.Sheet" tone="light" dc-props="{{ pSummary }}" hint-size="100%,220px">
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <x-import component-from-global-scope="ChristInSportsDesignSystem_9886de.SheetHeading" hint-size="100%,22px">roster-2026-27.csv</x-import>
+              <div style="font-size: 13px; font-weight: 600; color: var(--cis-ink-muted);">Into Season 2026–27</div>
+            </div>
+            <x-import component-from-global-scope="ChristInSportsDesignSystem_9886de.SheetRule" hint-size="100%,5px"></x-import>
+            <div style="font-size: 17px; font-weight: 800; line-height: 1.4;">117 rows · 114 ready · 3 problems · 12 returning kids</div>
+            <div style="display: flex; flex-direction: column; gap: 4px; font-size: 15px; line-height: 1.45;">
+              <div>18 still owe a consent form</div>
+              <div>5 rows repeat an earlier line — the later one wins</div>
+            </div>
+          </x-import>
+          <x-import component-from-global-scope="ChristInSportsDesignSystem_9886de.Sheet" tone="light" dc-props="{{ pRows }}" hint-size="100%,600px">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+              <x-import component-from-global-scope="ChristInSportsDesignSystem_9886de.SheetHeading" hint-size="100px,22px">Rows</x-import>
+              <div role="button" tabindex="0" aria-pressed="{{ problemsOnly }}" onClick="{{ toggle }}" onKeyDown="{{ toggleKey }}" style="display: flex; align-items: center; gap: 6px; border: 2px solid var(--cis-ink); background: {{ chipBg }}; color: {{ chipFg }}; font-size: 13px; font-weight: 700; padding: 7px 12px; border-radius: 12px; cursor: pointer; min-height: 36px; box-sizing: border-box; user-select: none;">Show only problems</div>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
+              <colgroup><col style="width: 34px;"><col><col style="width: 44px;"><col style="width: 84px;"></colgroup>
+              <thead>
+                <tr style="border-bottom: 4px solid var(--cis-ink-dark);">
+                  <th scope="col" style="padding: 0 0 8px; text-align: left; font-size: 13px; font-weight: 700; color: var(--cis-ink-muted);">Line</th>
+                  <th scope="col" style="padding: 0 0 8px; text-align: left; font-size: 13px; font-weight: 700; color: var(--cis-ink-muted);">Name</th>
+                  <th scope="col" style="padding: 0 0 8px; text-align: right; font-size: 13px; font-weight: 700; color: var(--cis-ink-muted);">Grade</th>
+                  <th scope="col" style="padding: 0 0 8px 12px; text-align: left; font-size: 13px; font-weight: 700; color: var(--cis-ink-muted);">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <sc-for list="{{ rows }}" as="r" hint-placeholder-count="8">
+                  <tr style="border-bottom: 1px solid var(--cis-rule); vertical-align: top;">
+                    <td style="padding: 10px 0; font-size: 13px; font-weight: 800; color: var(--cis-ink-muted); font-variant-numeric: tabular-nums;">{{ r.line }}</td>
+                    <td style="padding: 10px 6px 10px 0;">
+                      <div style="font-size: 15px; font-weight: 700; line-height: 1.3;">{{ r.name }}</div>
+                      <sc-if value="{{ r.note }}" hint-placeholder-val="{{ false }}">
+                        <div style="font-size: 12px; font-weight: 600; line-height: 1.4; color: var(--cis-ink-muted); margin-top: 2px; text-wrap: pretty;">{{ r.note }}</div>
+                      </sc-if>
+                    </td>
+                    <td style="padding: 10px 0; text-align: right; font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums;">{{ r.grade }}</td>
+                    <td style="padding: 10px 0 10px 12px; font-size: 13px; font-weight: {{ r.weight }}; line-height: 1.35;">{{ r.status }}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </x-import>
+        </div>
+        <div style="padding: 14px 14px 22px; display: flex; gap: 10px; background: var(--cis-board);">
+          <x-import component-from-global-scope="ChristInSportsDesignSystem_9886de.SecondaryButton" dc-props="{{ pCancel }}" hint-size="110px,52px">Cancel</x-import>
+          <x-import component-from-global-scope="ChristInSportsDesignSystem_9886de.PrimaryButton" size="md" dc-props="{{ pImport }}" hint-size="220px,52px">Import 114 rows</x-import>
+        </div>
+      </x-import>
+    </div>
+
+    <div id="done" data-screen-label="03 Done" style="display: flex; flex-direction: column; gap: 12px;">
+      <div style="font-size: 15px; font-weight: 800;">3 · Done</div>
+      <x-import component-from-global-scope="ChristInSportsDesignSystem_9886de.PhoneShell" time="9:16" dc-props="{{ pShell }}" hint-size="390px,844px">
+        <h1 style="margin: 0; padding: 14px 24px 16px; font-family: var(--cis-font-display); font-weight: 400; font-size: 22px; line-height: 1.1; color: var(--cis-ink-on-dark);">Roster import</h1>
+        <div style="padding: 0 14px 14px; flex: 1; display: flex; flex-direction: column;">
+          <x-import component-from-global-scope="ChristInSportsDesignSystem_9886de.Sheet" tone="light" dc-props="{{ pCard }}" hint-size="100%,320px">
+            <x-import component-from-global-scope="ChristInSportsDesignSystem_9886de.SheetHeading" dc-props="{{ pH }}" hint-size="100%,26px">Roster imported</x-import>
+            <div style="font-size: 13px; font-weight: 600; color: var(--cis-ink-muted);">roster-2026-27.csv · Season 2026–27</div>
+            <x-import component-from-global-scope="ChristInSportsDesignSystem_9886de.SheetRule" hint-size="100%,5px"></x-import>
+            <div style="font-family: var(--cis-font-display); font-size: 26px; line-height: 1.1;">97 created, 12 updated</div>
+            <div style="display: flex; flex-direction: column; gap: 6px; font-size: 15px; line-height: 1.5; text-wrap: pretty;">
+              <div>3 rows were skipped: lines 4, 41 and 88. Fix them in the spreadsheet and import it again.</div>
+              <div>18 kids still owe a consent form.</div>
+            </div>
+            <div style="height: 2px; border-top: 2px dashed var(--cis-rule-dash); margin: 4px 0;"></div>
+            <x-import component-from-global-scope="ChristInSportsDesignSystem_9886de.SecondaryButton" block="{{ true }}" hint-size="100%,52px">Import another file</x-import>
+          </x-import>
+        </div>
+      </x-import>
+    </div>
+
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { problemsOnly: false };
+  buildRows() {
+    const first = ['Mina','Marina','Peter','Abanoub','Mariam','Youssef','Kirollos','Christina','Mark','Veronica','George','Demiana','Andrew','Sarah','Bishoy','Irene','Philopater','Monica','David','Rebecca','John','Hannah','Samuel','Martha'];
+    const last = ['Guirguis','Habib','Sedra','Mikhail','Hanna','Botros','Shenouda','Wassef','Ghali','Tadros','Iskander','Aziz','Rizk','Fahmy','Malak','Naguib','Saad','Awad'];
+    const problems = {
+      4: 'Grade must be between 4 and 12 (column "Grade")',
+      41: 'Date of birth isn\u2019t a date (column "DOB")',
+      88: 'Parent email is missing (column "Parent email")',
+    };
+    const dupes = { 5: 2, 29: 17, 63: 50, 94: 71, 110: 102 };
+    const returning = new Set([3, 9, 14, 22, 30, 37, 45, 58, 66, 79, 97, 113]);
+    const byLine = {};
+    const rows = [];
+    for (let line = 2; line <= 118; line++) {
+      let name, grade = 4 + ((line * 7) % 9);
+      if (line === 2) { name = 'Mina Guirguis'; grade = 6; }
+      else if (line === 3) { name = 'Marina Habib'; grade = 8; }
+      else if (line === 4) name = 'Peter Sedra';
+      else if (dupes[line]) { name = byLine[dupes[line]].name; grade = byLine[dupes[line]].grade; }
+      else name = first[(line * 5) % first.length] + ' ' + last[(line * 11) % last.length];
+      const r = { line, name, grade, note: '', weight: 600 };
+      if (problems[line]) {
+        r.grade = line === 4 ? '\u2014' : grade;
+        r.status = 'Problem';
+        r.note = problems[line];
+        r.weight = 800;
+        r.problem = true;
+      } else {
+        r.status = (dupes[line] || returning.has(line)) ? 'Returning' : 'New';
+        if (dupes[line]) r.status += ' \u2014 also on line ' + dupes[line];
+      }
+      byLine[line] = r;
+      rows.push(r);
+    }
+    return rows;
+  }
+  renderVals() {
+    if (!this._rows) this._rows = this.buildRows();
+    const on = this.state.problemsOnly;
+    const toggle = () => this.setState(s => ({ problemsOnly: !s.problemsOnly }));
+    return {
+      rows: on ? this._rows.filter(r => r.problem) : this._rows,
+      problemsOnly: on,
+      chipBg: on ? 'var(--cis-ink)' : 'transparent',
+      chipFg: on ? 'var(--cis-paper-light)' : 'var(--cis-ink)',
+      toggle,
+      pShell: { style: { height: '844px' } },
+      pCard: { style: { padding: '36px 22px 26px', display: 'flex', flexDirection: 'column', gap: '14px' } },
+      pSummary: { style: { padding: '32px 22px 20px', display: 'flex', flexDirection: 'column', gap: '12px', flexShrink: 0 } },
+      pRows: { style: { padding: '20px 18px 16px', display: 'flex', flexDirection: 'column', gap: '14px', flexShrink: 0 } },
+      pH: { style: { fontSize: '22px' } },
+      pCancel: { style: { flex: '0 0 auto', padding: '13px 22px', background: 'var(--cis-paper-light)' } },
+      pImport: { style: { flex: 1 } },
+      toggleKey: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } },
+    };
+  }
+}
+</script>
+</body>
+</html>

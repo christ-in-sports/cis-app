@@ -1,18 +1,25 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Papa from 'papaparse';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/toast';
+import { Sheet, SheetHeading, SheetRule } from '@/components/cis/sheet';
+import { PageShell } from '@/components/cis/page-shell';
+import {
+  PrimaryButton,
+  SecondaryButton,
+  DangerButton,
+  secondaryButtonClasses,
+} from '@/components/cis/button';
+import Link from 'next/link';
 import {
   type Division,
-  DIVISION_LABEL,
+  DIVISION_SHORT,
   REGISTRATION_GRADES,
   defaultDivision,
   divisionAllowedForGrade,
@@ -128,10 +135,13 @@ const sortRows = (rows: RosterEntry[]) =>
 export default function RegistrationsClient({
   initial,
   isStaff,
+  isAdmin,
   season,
 }: {
   initial: RosterEntry[];
   isStaff: boolean;
+  /** Holds the `admin` role, so may run the CSV import. See page.tsx. */
+  isAdmin: boolean;
   season: { id: string; name: string } | null;
 }) {
   const router = useRouter();
@@ -347,21 +357,17 @@ export default function RegistrationsClient({
 
   if (!isStaff) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <Card className="max-w-sm w-full">
-          <CardHeader className="text-center">
-            <CardTitle>Staff only</CardTitle>
-          </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Registration records contain minors&apos; personal information and are
-              limited to approved staff.
-            </p>
-            <Button variant="outline" className="w-full h-12" onClick={() => router.push('/')}>
-              Back
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="flex min-h-screen items-center justify-center bg-cis-page p-4 font-cis-body text-cis-ink">
+        <Sheet className="flex w-full max-w-sm flex-col gap-cis-3 px-cis-5 pb-cis-6 pt-cis-6">
+          <SheetHeading className="text-cis-xl">Staff only</SheetHeading>
+          <p className="m-0 text-cis-base leading-[1.5]">
+            Registration records contain minors&apos; personal information and are limited
+            to approved staff.
+          </p>
+          <SecondaryButton block onClick={() => router.push('/')}>
+            Back
+          </SecondaryButton>
+        </Sheet>
       </div>
     );
   }
@@ -372,59 +378,47 @@ export default function RegistrationsClient({
   const divisionLocked = !!form.grade && gradeNumber !== 7;
 
   return (
-    <div className="min-h-screen pb-32 safe-top safe-bottom">
-      <div className="sticky top-0 z-40 bg-slate-950/95 backdrop-blur border-b border-muted p-4">
-        <div className="max-w-3xl mx-auto">
-          <Button variant="ghost" size="sm" onClick={() => router.push('/')}>Back</Button>
-          <div className="flex items-center justify-between mt-1">
-            <div>
-              <h1 className="text-xl font-bold">Registration</h1>
-              <p className="text-sm text-muted-foreground">
-                {season ? season.name : 'No active season'}
-                {' • '}{rows.length} registered
-                {filtered.length !== rows.length && ` • ${filtered.length} shown`}
-              </p>
-            </div>
-            <Button className="h-12 px-5" onClick={openNew} disabled={!season}>Add</Button>
+    <>
+      <PageShell>
+        <div className="flex items-end justify-between gap-cis-3">
+          <div className="flex flex-col gap-1">
+            <button
+              type="button"
+              onClick={() => router.push('/')}
+              className="self-start text-cis-sm font-bold text-cis-orange-text underline-offset-2 hover:text-cis-orange-deep hover:underline"
+            >
+              Back
+            </button>
+            <h1 className="font-cis-display text-cis-xl font-normal leading-[1.1]">Registration</h1>
+            <p className="m-0 text-cis-sm font-semibold text-cis-ink-muted">
+              {season ? season.name : 'No active season'} · {rows.length} registered
+              {filtered.length !== rows.length && ` · ${filtered.length} shown`}
+            </p>
           </div>
+          <PrimaryButton className="px-5" onClick={openNew} disabled={!season}>
+            Add
+          </PrimaryButton>
         </div>
-      </div>
 
-      <div className="max-w-3xl mx-auto p-4 space-y-4">
         {!season && (
-          <Card className="border-dashed">
-            <CardContent className="py-8 text-center text-muted-foreground">
-              <p className="text-sm">
-                No season is marked current, so nobody can be registered yet.
-              </p>
-            </CardContent>
-          </Card>
+          <Sheet tone="paper" className="px-cis-5 py-cis-5">
+            <p className="m-0 text-cis-base leading-[1.5]">
+              No season is marked current, so nobody can be registered yet.
+            </p>
+          </Sheet>
         )}
 
-        <Card>
-          <CardContent className="pt-4">
-            <Button
-              variant="outline"
-              className="w-full h-12"
-              onClick={exportCsv}
-              disabled={filtered.length === 0}
-            >
-              Export CSV
-            </Button>
-          </CardContent>
-        </Card>
-
-        <div className="flex gap-2">
+        <div className="flex gap-cis-2">
           <Input
             placeholder="Search name, guardian, phone…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-12 text-base"
+            className="h-12 rounded-cis-chip border-2 border-cis-ink bg-cis-paper-light text-cis-base text-cis-ink placeholder:text-cis-ink-muted"
           />
           <select
             value={gradeFilter}
             onChange={(e) => setGradeFilter(e.target.value)}
-            className="h-12 rounded-lg border border-input bg-background px-3 text-base"
+            className="h-12 rounded-cis-chip border-2 border-cis-ink bg-cis-paper-light px-3 text-cis-base font-bold text-cis-ink"
           >
             <option value="all">All grades</option>
             {REGISTRATION_GRADES.filter((g) => gradeCounts.has(g)).map((g) => (
@@ -434,101 +428,164 @@ export default function RegistrationsClient({
         </div>
 
         {filtered.length === 0 ? (
-          <Card className="border-dashed">
-            <CardContent className="py-12 text-center text-muted-foreground">
-              <p className="text-lg mb-2">
-                {rows.length === 0 ? 'No registrations yet' : 'No matches'}
+          <Sheet className="flex flex-col gap-cis-2 px-cis-5 pb-cis-6 pt-cis-6 text-center">
+            <SheetHeading className="text-cis-xl">
+              {rows.length === 0 ? 'No registrations yet' : 'No matches'}
+            </SheetHeading>
+            <p className="m-0 text-cis-base leading-[1.5] text-cis-ink-muted">
+              {rows.length === 0 ? 'Tap Add to register a kid.' : 'Try a different search.'}
+            </p>
+            {/* The roster is empty at the start of a season, which is exactly
+                when the once-a-year import matters. Saying so here is what makes
+                the feature findable without anyone having to remember it. */}
+            {rows.length === 0 && isAdmin && (
+              <p className="m-0 text-cis-base leading-[1.5]">
+                Registering a whole season?{' '}
+                <Link
+                  href="/admin/imports"
+                  className="font-bold text-cis-orange-text underline underline-offset-2 hover:text-cis-orange-deep"
+                >
+                  Import this year&apos;s roster from a CSV
+                </Link>
+                .
               </p>
-              <p className="text-sm">
-                {rows.length === 0 ? 'Tap Add to register a kid' : 'Try a different search'}
-              </p>
-            </CardContent>
-          </Card>
+            )}
+          </Sheet>
         ) : (
-          <Card>
-            <CardContent className="p-0">
-              {filtered.map((r) => {
-                const open = expanded === r.registration_id;
-                return (
-                  <div key={r.registration_id} className="border-b border-muted/30 last:border-0">
-                    <button
-                      onClick={() => setExpanded(open ? null : r.registration_id)}
-                      className="w-full flex items-center justify-between px-4 py-4 text-left"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {r.kid.last_name}, {r.kid.first_name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Grade {r.grade} • {fmtDate(r.kid.dob)}
-                          {' • '}{r.division === 'juniors' ? 'Juniors' : 'Ambassadors'}
-                        </p>
-                      </div>
-                      <span className="text-muted-foreground text-xs ml-2">
-                        {open ? '▲' : '▼'}
-                      </span>
-                    </button>
+          <Sheet className="flex flex-col gap-cis-3 px-cis-4 pb-cis-4 pt-cis-5">
+            <SheetHeading>Roster</SheetHeading>
 
-                    {open && (
-                      <div className="px-4 pb-4 space-y-3">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Badge
-                            className={`text-xs ${
-                              r.division === 'juniors'
-                                ? 'bg-cyan-500/20 text-cyan-400'
-                                : 'bg-purple-500/20 text-purple-400'
-                            }`}
+            {/* A real table, per DESIGN_SYSTEM.md §3 -- a roster is tabular data,
+                so it is not a grid of cards. Details expand into a row beneath
+                rather than opening a second screen, which keeps the whole record
+                reachable in one tap on a phone. */}
+            <table className="w-full table-fixed border-collapse">
+              <colgroup>
+                <col />
+                <col className="w-[52px]" />
+                <col className="w-[112px]" />
+              </colgroup>
+              <thead>
+                <tr className="border-b-4 border-cis-ink-dark">
+                  <th scope="col" className="pb-2 text-left text-cis-sm font-bold text-cis-ink-muted">
+                    Name
+                  </th>
+                  <th scope="col" className="pb-2 text-right text-cis-sm font-bold text-cis-ink-muted">
+                    Grade
+                  </th>
+                  <th scope="col" className="pb-2 pl-3 text-left text-cis-sm font-bold text-cis-ink-muted">
+                    Division
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((r) => {
+                  const open = expanded === r.registration_id;
+                  const panelId = `roster-${r.registration_id}`;
+
+                  return (
+                    <Fragment key={r.registration_id}>
+                      <tr className={open ? 'align-top' : 'border-b border-cis-rule align-top'}>
+                        <td className="py-[10px] pr-[6px]">
+                          <button
+                            type="button"
+                            aria-expanded={open}
+                            aria-controls={panelId}
+                            onClick={() => setExpanded(open ? null : r.registration_id)}
+                            className="text-left text-cis-base font-bold leading-[1.3] hover:underline"
                           >
-                            {DIVISION_LABEL[r.division]}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            Shirt {r.tshirt_size}
-                          </Badge>
-                          {!r.consent_given_at && (
-                            <Badge className="text-xs bg-amber-500/20 text-amber-400">
-                              No consent recorded
-                            </Badge>
-                          )}
-                        </div>
+                            {r.kid.last_name}, {r.kid.first_name}
+                          </button>
+                          <div className="text-cis-xs font-semibold text-cis-ink-muted">
+                            {fmtDate(r.kid.dob)}
+                          </div>
+                        </td>
+                        <td className="py-[10px] text-right text-cis-base font-extrabold tabular-nums">
+                          {r.grade}
+                        </td>
+                        <td className="py-[10px] pl-3 text-cis-sm font-semibold leading-[1.35]">
+                          {DIVISION_SHORT[r.division]}
+                        </td>
+                      </tr>
 
-                        <dl className="grid grid-cols-1 gap-1.5 text-xs">
-                          {[
-                            ['Kid email', r.kid.email],
-                            ['Kid phone', r.kid.phone],
-                            ['Gender', r.kid.gender],
-                            ['Guardian', r.kid.guardian_name],
-                            ['Guardian phone', r.kid.guardian_phone],
-                            ['Guardian email', r.kid.guardian_email],
-                            ['Address', r.kid.home_address],
-                            ['Emergency contact', r.kid.emergency_contact_name],
-                            ['Emergency phone', r.kid.emergency_contact_phone],
-                            ['Allergies', r.kid.allergies],
-                          ].filter(([, v]) => v).map(([k, v]) => (
-                            <div key={k as string} className="flex gap-2">
-                              <dt className="text-muted-foreground w-32 flex-shrink-0">{k}</dt>
-                              <dd className="min-w-0 break-words">{v}</dd>
+                      {open && (
+                        <tr id={panelId} className="border-b border-cis-rule">
+                          <td colSpan={3} className="pb-cis-4">
+                            <SheetRule className="mb-cis-3 h-[2px] rounded-none" />
+
+                            <dl className="m-0 grid grid-cols-1 gap-[6px] text-cis-sm">
+                              {(
+                                [
+                                  ['T-shirt', r.tshirt_size],
+                                  ['Consent', r.consent_given_at ? fmtDate(r.consent_given_at.slice(0, 10)) : 'Not recorded'],
+                                  ['Kid email', r.kid.email],
+                                  ['Kid phone', r.kid.phone],
+                                  ['Gender', r.kid.gender],
+                                  ['Guardian', r.kid.guardian_name],
+                                  ['Guardian phone', r.kid.guardian_phone],
+                                  ['Guardian email', r.kid.guardian_email],
+                                  ['Address', r.kid.home_address],
+                                  ['Emergency contact', r.kid.emergency_contact_name],
+                                  ['Emergency phone', r.kid.emergency_contact_phone],
+                                  ['Allergies', r.kid.allergies],
+                                ] as Array<[string, string | null]>
+                              )
+                                .filter(([, v]) => v)
+                                .map(([k, v]) => (
+                                  <div key={k} className="flex gap-cis-2">
+                                    <dt className="w-36 flex-shrink-0 font-semibold text-cis-ink-muted">
+                                      {k}
+                                    </dt>
+                                    <dd className="m-0 min-w-0 break-words">{v}</dd>
+                                  </div>
+                                ))}
+                            </dl>
+
+                            <div className="mt-cis-3 flex gap-cis-2">
+                              <SecondaryButton
+                                className="min-h-cis-tap-min flex-1 px-4 text-cis-base"
+                                onClick={() => openEdit(r)}
+                              >
+                                Edit
+                              </SecondaryButton>
+                              <DangerButton
+                                className="min-h-cis-tap-min px-4 text-cis-base"
+                                onClick={() => remove(r)}
+                              >
+                                Remove
+                              </DangerButton>
                             </div>
-                          ))}
-                        </dl>
-                        <div className="flex gap-2">
-                          <Button variant="outline" className="flex-1 h-11 text-sm"
-                                  onClick={() => openEdit(r)}>
-                            Edit
-                          </Button>
-                          <Button variant="ghost" className="h-11 text-sm text-red-400"
-                                  onClick={() => remove(r)}>
-                            Remove
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </CardContent>
-          </Card>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </Sheet>
         )}
-      </div>
+
+        {/* Import sits beside Export because they are the same idea in opposite
+            directions, and an Admin looking for "get the roster in" looks where
+            "get the roster out" already is. Admin-only, matching the import
+            page's own gate. */}
+        <div className="flex flex-col gap-cis-2 sm:flex-row">
+          <SecondaryButton
+            block
+            className="sm:flex-1"
+            onClick={exportCsv}
+            disabled={filtered.length === 0}
+          >
+            Export CSV
+          </SecondaryButton>
+          {isAdmin && (
+            <Link href="/admin/imports" className={`${secondaryButtonClasses} w-full sm:flex-1`}>
+              Import from CSV
+            </Link>
+          )}
+        </div>
+      </PageShell>
 
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
@@ -678,6 +735,6 @@ export default function RegistrationsClient({
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

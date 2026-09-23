@@ -9,12 +9,32 @@
 
 import {
   resolveImportRows,
+  displayNameFor,
   indexKidsByIdentity,
   countRows,
   type KidIdentity,
 } from './batch';
+import type { HeaderMapping } from './csv/columns';
 import type { ParsedRow } from './csv/rows';
 import type { KidRegistrationInput } from '@/lib/validation/kid';
+
+/** First name in column 0, last name in column 1 -- matches the raw fixtures below. */
+const MAPPING: HeaderMapping = {
+  columnOf: { first_name: 0, last_name: 1 },
+  headerOf: { first_name: 'CISer First Name', last_name: 'CISer Last Name' },
+  ignored: [],
+  unmapped: [],
+  missingRequired: [],
+};
+
+/** Supplies the mapping so the assertions below stay about matching, not plumbing. */
+function resolve(
+  parsedRows: Parameters<typeof resolveImportRows>[0],
+  rawRows: string[][],
+  existingKids: KidIdentity[],
+) {
+  return resolveImportRows(parsedRows, rawRows, existingKids, MAPPING);
+}
 
 function kidRegistration(
   overrides: { first?: string; last?: string; dob?: string } = {},
@@ -96,21 +116,21 @@ describe('indexKidsByIdentity', () => {
 
 describe('resolveImportRows -- matching against the existing roster', () => {
   it('treats a kid who is not on the roster as an insert', () => {
-    const [row] = resolveImportRows([validRow(2)], [['Mina']], []);
+    const [row] = resolve([validRow(2)], [['Mina']], []);
 
     expect(row.action).toBe('insert');
     expect(row.matched_kid_id).toBeNull();
   });
 
   it('matches a returning kid rather than creating a second record', () => {
-    const [row] = resolveImportRows([validRow(2)], [['Mina']], [existingKid('kid-1')]);
+    const [row] = resolve([validRow(2)], [['Mina']], [existingKid('kid-1')]);
 
     expect(row.action).toBe('update');
     expect(row.matched_kid_id).toBe('kid-1');
   });
 
   it('matches case-insensitively and ignores surrounding whitespace', () => {
-    const [row] = resolveImportRows(
+    const [row] = resolve(
       [validRow(2, { first: '  mina', last: 'GUIRGUIS ' })],
       [['mina']],
       [existingKid('kid-1')],
@@ -121,7 +141,7 @@ describe('resolveImportRows -- matching against the existing roster', () => {
   });
 
   it('does not match a different birthday, since that is a different child', () => {
-    const [row] = resolveImportRows(
+    const [row] = resolve(
       [validRow(2, { dob: '2015-03-02' })],
       [['Mina']],
       [existingKid('kid-1')],
@@ -132,7 +152,7 @@ describe('resolveImportRows -- matching against the existing roster', () => {
   });
 
   it('does not match twins, who share a surname and birthday but not a first name', () => {
-    const [row] = resolveImportRows(
+    const [row] = resolve(
       [validRow(2, { first: 'Marina' })],
       [['Marina']],
       [existingKid('kid-1', { first: 'Mina' })],
@@ -144,7 +164,7 @@ describe('resolveImportRows -- matching against the existing roster', () => {
 
 describe('resolveImportRows -- ambiguity is never resolved by guessing', () => {
   it('errors a row matching more than one kid instead of picking one', () => {
-    const [row] = resolveImportRows(
+    const [row] = resolve(
       [validRow(2)],
       [['Mina']],
       [existingKid('kid-1'), existingKid('kid-2')],
@@ -158,7 +178,7 @@ describe('resolveImportRows -- ambiguity is never resolved by guessing', () => {
   it('withholds the parsed payload so an ambiguous row cannot be committed', () => {
     // import_commit() only processes rows whose `parsed` is non-null, so this
     // is what actually keeps the row out of the import.
-    const [row] = resolveImportRows(
+    const [row] = resolve(
       [validRow(2)],
       [['Mina']],
       [existingKid('kid-1'), existingKid('kid-2')],
@@ -170,7 +190,7 @@ describe('resolveImportRows -- ambiguity is never resolved by guessing', () => {
 
 describe('resolveImportRows -- duplicate lines within one file', () => {
   it('records the earlier line a duplicate came from', () => {
-    const rows = resolveImportRows(
+    const rows = resolve(
       [validRow(2), validRow(5)],
       [['Mina'], ['Mina']],
       [],
@@ -181,14 +201,14 @@ describe('resolveImportRows -- duplicate lines within one file', () => {
   });
 
   it('treats the second line as an update, since commit will find the first kid', () => {
-    const rows = resolveImportRows([validRow(2), validRow(5)], [['Mina'], ['Mina']], []);
+    const rows = resolve([validRow(2), validRow(5)], [['Mina'], ['Mina']], []);
 
     expect(rows[0].action).toBe('insert');
     expect(rows[1].action).toBe('update');
   });
 
   it('points a third duplicate at the first line, not the one before it', () => {
-    const rows = resolveImportRows(
+    const rows = resolve(
       [validRow(2), validRow(5), validRow(9)],
       [['Mina'], ['Mina'], ['Mina']],
       [],
@@ -198,7 +218,7 @@ describe('resolveImportRows -- duplicate lines within one file', () => {
   });
 
   it('does not treat unrelated kids as duplicates', () => {
-    const rows = resolveImportRows(
+    const rows = resolve(
       [validRow(2), validRow(3, { first: 'Marina' })],
       [['Mina'], ['Marina']],
       [],
@@ -210,7 +230,7 @@ describe('resolveImportRows -- duplicate lines within one file', () => {
 
 describe('resolveImportRows -- rows that failed validation', () => {
   it('carries the validation errors through without matching', () => {
-    const [row] = resolveImportRows([erroredRow(2)], [['']], [existingKid('kid-1')]);
+    const [row] = resolve([erroredRow(2)], [['']], [existingKid('kid-1')]);
 
     expect(row.action).toBe('error');
     expect(row.parsed).toBeNull();
@@ -219,7 +239,7 @@ describe('resolveImportRows -- rows that failed validation', () => {
   });
 
   it('keeps the raw cells so the review screen can show what was typed', () => {
-    const [row] = resolveImportRows([erroredRow(2)], [['Mina', 'not-a-grade']], []);
+    const [row] = resolve([erroredRow(2)], [['Mina', 'not-a-grade']], []);
 
     expect(row.raw).toEqual(['Mina', 'not-a-grade']);
   });
@@ -227,12 +247,53 @@ describe('resolveImportRows -- rows that failed validation', () => {
 
 describe('countRows', () => {
   it('counts errored rows separately from importable ones', () => {
-    const rows = resolveImportRows(
+    const rows = resolve(
       [validRow(2), erroredRow(3), validRow(4, { first: 'Marina' })],
       [[], [], []],
       [],
     );
 
     expect(countRows(rows)).toEqual({ total: 3, valid: 2, errored: 1 });
+  });
+});
+
+describe('displayNameFor', () => {
+  it('joins the first and last name cells', () => {
+    expect(displayNameFor(['Mina', 'Guirguis'], MAPPING)).toBe('Mina Guirguis');
+  });
+
+  it('falls back to whichever name cell is present', () => {
+    expect(displayNameFor(['Mina', ''], MAPPING)).toBe('Mina');
+    expect(displayNameFor(['', 'Guirguis'], MAPPING)).toBe('Guirguis');
+  });
+
+  it('is null when both are blank, so the screen can say "Name missing"', () => {
+    expect(displayNameFor(['', '   '], MAPPING)).toBeNull();
+  });
+
+  it('treats "n/a" as blank, the same as the rest of the parser', () => {
+    expect(displayNameFor(['n/a', 'N/A'], MAPPING)).toBeNull();
+  });
+
+  it('is null when the file has no name columns at all', () => {
+    const empty: HeaderMapping = { ...MAPPING, columnOf: {}, headerOf: {} };
+    expect(displayNameFor(['Mina', 'Guirguis'], empty)).toBeNull();
+  });
+});
+
+describe('resolveImportRows -- naming rows that failed validation', () => {
+  // The row an Admin has to go and fix is exactly the one they need to
+  // recognise, and those rows have no `parsed` to read a name from.
+  it('still names a row that failed validation', () => {
+    const [row] = resolve([erroredRow(2)], [['Peter', 'Sedra']], []);
+
+    expect(row.parsed).toBeNull();
+    expect(row.display_name).toBe('Peter Sedra');
+  });
+
+  it('names a valid row from the raw cells too', () => {
+    const [row] = resolve([validRow(2)], [['Mina', 'Guirguis']], []);
+
+    expect(row.display_name).toBe('Mina Guirguis');
   });
 });
