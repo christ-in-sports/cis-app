@@ -36,6 +36,13 @@ heading followed by:
 
 ## Decisions
 
+### 2026-09-23 — Drop kid photos entirely
+- **Status:** Accepted
+- **Context:** Photos were scoped in from the start: a private bucket, `Kid.photo_path` holding an object path rather than a URL, short-lived signed URLs on read, and the CSV importer copying each photo across from the Google Drive link the Google Form produces. None of it shipped. The Drive half was blocked the whole time on service-account access (`project_spec.md` §2.8, open since 2026-09-21), and what did exist was a nullable column, two `import_rows` columns, a bucket, a read-policy helper and two storage policies -- all inert.
+- **Decision:** Remove the feature. No photo is stored anywhere: the column, the staging columns, the bucket, its policies and `can_read_kid_photo()` all go, and the CSV importer stops mapping the form's photo question at all (it is reported as an unrecognised column like any other it does not use). The form may keep asking for a photo; nothing reads it. Photos may return in a future version, in which case this entry is the starting point rather than a rediscovery.
+- **Consequences / tradeoffs:** The program loses the ability to put a face to a name -- the thing photos were for, and the reason to revisit this. In exchange: no minors' images stored, so the most sensitive data class in the system simply is not held; no dependency on Google Drive API access, which was the last unresolved blocker on ENG-5; and no half-built pipeline or bucket governed by policies nothing writes to, which is exactly the kind of thing that reads as load-bearing to the next person. Nothing is lost on the way out -- `photo_path` was never populated and the bucket has no objects.
+- **Reference:** `project_spec.md` §2.2, §2.4, §2.5, §2.8; supersedes [2026-09-21 — Store kid photos in a private Storage bucket](#2026-09-21--store-kid-photos-in-a-private-storage-bucket); Linear [ENG-4](https://linear.app/cis-app/issue/ENG-4/kid-registration-parent-self-service-form), [ENG-5](https://linear.app/cis-app/issue/ENG-5/kid-registration-admin-csv-import)
+
 ### 2026-09-22 — Replace the flat `registrations` table rather than migrate it
 - **Status:** Accepted
 - **Context:** The 2026-09-21 decision to split `Kid` from a per-season `Registration` still had to be applied to a live schema whose single flat `registrations` table held one row per kid, with no season concept, plus columns the new model has no place for (`qr_token`, and `attendance` / `attendance_archive` jsonb mirrors).
@@ -65,7 +72,7 @@ heading followed by:
 - **Reference:** `project_spec.md` §1.4, §1.5, §2.4 (`User`/`UserRole`); Linear [ENG-5](https://linear.app/cis-app/issue/ENG-5/kid-registration-admin-csv-import)
 
 ### 2026-09-21 — Store kid photos in a private Storage bucket
-- **Status:** Accepted
+- **Status:** **Superseded** by [2026-09-23 — Drop kid photos entirely](#2026-09-23--drop-kid-photos-entirely)
 - **Context:** The registration form collects a photo of each kid, who are minors. `AGENTS.md` §4 treats kid data as sensitive. The interim CSV import gets photos as Google Drive links (parents upload them through a Google Form), whose sharing we don't control.
 - **Decision:** Upload to a private Supabase Storage bucket. `Kid.photo_path` stores the object path, not a URL. The server generates short-lived signed URLs on read, and storage policies mirror who can read the `Kid` row. During CSV import, the server downloads each photo from its Drive link and stores it in the bucket, so imported kids follow the same path as form-submitted ones.
 - **Consequences / tradeoffs:** Photos can't be scraped or shared by link, and imported photos end up under our RLS instead of Drive's sharing. In return, every read needs a server step to sign the URL, signed URLs make browser caching harder, and the importer needs Drive API access (Form uploads are usually not public). A failed download becomes a row-level import error the Admin must resolve.

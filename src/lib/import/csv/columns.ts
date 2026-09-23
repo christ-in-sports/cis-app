@@ -14,9 +14,8 @@
  * The header table below was checked against a real 149-row export of the
  * 2026-27 form on 2026-09-22. Headers are still matched loosely rather than
  * exactly, because the form's wording drifts between seasons -- the real export
- * already differs from the previous importer's table (for example the photo
- * question is now "Please upload a picture/selfie of the CISer"), and several
- * headers carry stray trailing spaces and colons. `unmapped` on the result
+ * already differs from the previous importer's table, and several headers
+ * carry stray trailing spaces and colons. `unmapped` on the result
  * exists so the review screen can show an Admin exactly which of their columns
  * were not understood, rather than failing silently.
  */
@@ -36,7 +35,6 @@ export type CsvField =
   | 'guardian_name'
   | 'guardian_phone'
   | 'guardian_email'
-  | 'photo_link'
   | 'grade'
   | 'division_choice'
   | 'tshirt_size'
@@ -68,7 +66,6 @@ export const FIELD_LABEL: Record<CsvField, string> = {
   guardian_name: 'Parent/guardian',
   guardian_phone: 'Parent/guardian phone number',
   guardian_email: 'Parent/guardian email',
-  photo_link: 'Picture or selfie of CISer',
   grade: 'Grade',
   division_choice: 'Session choice (7th grade only)',
   tshirt_size: 'Youth tshirt size',
@@ -111,7 +108,6 @@ const EXACT: Record<string, CsvField> = {
   youthemail: 'kid_email',
   youthphonenumber: 'kid_phone',
   youthtshirtsize: 'tshirt_size',
-  pleaseuploadapictureselfieoftheciser: 'photo_link',
   forambassadorsonlypickyourtop4onlycissports: 'top_sports_ambassadors',
   forjuniorsonlypickyourtop4onlycissports: 'top_sports_juniors',
   parentguardian: 'guardian_name',
@@ -138,7 +134,6 @@ const PATTERNS: [RegExp, CsvField][] = [
   [/consentform/, 'consent_method'],
   [/session|division|juniorsorambassadors/, 'division_choice'],
   [/tshirt|shirtsize/, 'tshirt_size'],
-  [/(picture|photo|selfie|headshot)/, 'photo_link'],
   [/allerg|medical/, 'allergies'],
   [/(top|favorite|preferred).*sport|sportspreference/, 'top_sports_ambassadors'],
   [/emergency.*(name)/, 'emergency_contact_name'],
@@ -162,8 +157,12 @@ const PATTERNS: [RegExp, CsvField][] = [
  * These back NOT NULL columns with no derivable default. `division_choice` is
  * absent on purpose: division is normally derived from grade, and is only
  * required for 7th graders (handled per-row, not per-file). `allergies`, the
- * two top-sports columns, `kid_email`, `kid_phone` and `photo_link` are all
- * optional -- and the real export has no allergies question at all.
+ * two top-sports columns, `kid_email` and `kid_phone` are all optional -- and
+ * the real export has no allergies question at all.
+ *
+ * The form's photo question is deliberately unmapped: kid photos were dropped
+ * on 2026-09-23 (see docs/decisions.md), so that column is reported as
+ * unrecognised like any other column the importer does not use.
  */
 export const REQUIRED_FIELDS: readonly CsvField[] = [
   'first_name',

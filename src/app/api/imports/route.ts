@@ -15,10 +15,9 @@
  *     is `experimental.serverActions.bodySizeLimit` in next.config -- a global
  *     setting that would weaken every action in the app to accommodate this one
  *     endpoint.
- *   * `maxDuration` is per-route here, but only per-*page* for Server Actions.
- *     Parsing a few hundred rows is fast; copying their photos across from
- *     Google Drive (a later PR) will not be, and that endpoint will want its own
- *     budget.
+ *   * `maxDuration` is per-route here, but only per-*page* for Server Actions,
+ *     so a slow upload cannot be given headroom without giving it to every
+ *     action on the page too.
  *
  * The commit step has neither constraint -- it takes a single batch id -- and is
  * a Server Action, in `src/app/admin/imports/actions.ts`.

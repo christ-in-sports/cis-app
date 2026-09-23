@@ -267,12 +267,16 @@ describe('parseRow', () => {
     expect(result.data?.kid.email).toBeNull();
   });
 
-  it('never carries the raw Drive link through as a photo path', () => {
-    // The link is fetched server-side in a later PR; photo_path is an object
-    // path in the private bucket, never a URL.
+  // Kid photos were dropped on 2026-09-23 (docs/decisions.md). A file the
+  // Admin exports still carries the question, so the extra column must be
+  // harmless rather than blowing the row up.
+  it('ignores the form photo column without disturbing the row', () => {
     const withPhoto = mapHeaders([...HEADERS, 'Please upload a picture/selfie of the CISer']);
     const cells = [...row(), 'https://drive.google.com/file/d/abc/view'];
-    expect(parseRow(cells, withPhoto, 2).data?.kid.photo_path).toBeNull();
+    const result = parseRow(cells, withPhoto, 2);
+
+    expect(result.errors).toEqual([]);
+    expect(result.data?.kid.first_name).toBe('Mina');
   });
 });
 

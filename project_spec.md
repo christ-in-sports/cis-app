@@ -144,7 +144,7 @@ Full spec: `DESIGN_SYSTEM.md` (companion to this file). Key rules that affect ho
 | Push Notifications | **Web Push API + Supabase Edge Functions** | Triggered server-side on relevant events |
 | Payments | **Stripe** | v1.0 — full payment + installment plans |
 | AI | **Anthropic Claude API** | v1.0 — team generation |
-| File Storage | **Supabase Storage** | Profile photos, documents |
+| File Storage | **Supabase Storage** | Documents. *(Kid photos were dropped on 2026-09-23 — see `docs/decisions.md`.)* |
 | Error Tracking | **Sentry** | |
 | Hosting | **Vercel** | Preview deploy per PR, auto-deploy `main` to prod |
 | CI/CD | **GitHub Actions + Vercel** | Lint, type-check, test, build gate before merge |
@@ -203,7 +203,7 @@ Divisions (`juniors` / `ambassadors`) are an attribute on `Registration` and `Te
 |---|---|---|
 | `User` | id, name, email, phone, created_at | has many `Kid` (as parent), belongs to `Team` (as coach), has many roles via `UserRole` |
 | `UserRole` | user_id, role, granted_at, granted_by | belongs to `User` |
-| `Kid` | id, first_name, last_name, photo_path, email?, phone?, gender, dob, allergies, home_address, emergency_contact_name, emergency_contact_phone, guardian_name, guardian_phone, guardian_email, skill_tags[], parent_user_id? | has many `Registration`, belongs to `User` (parent) |
+| `Kid` | id, first_name, last_name, email?, phone?, gender, dob, allergies, home_address, emergency_contact_name, emergency_contact_phone, guardian_name, guardian_phone, guardian_email, skill_tags[], parent_user_id? | has many `Registration`, belongs to `User` (parent) |
 | `Registration` | id, kid_id, season_id, grade, division, tshirt_size, top_sports[]?, consent_given_at?, consent_by_user_id?, team_id?, created_at | belongs to `Kid`, `Season`, `Team` |
 | `Team` | id, name, sport, division, coach_user_id, season_id | has many `Registration`, belongs to `Season` |
 | `Season` | id, name, start_date, end_date, is_active | has many `Event`, `Team` |
@@ -225,7 +225,7 @@ Divisions (`juniors` / `ambassadors`) are an attribute on `Registration` and `Te
 - **`tshirt_size`** is one of `YS`, `YM`, `YL`, `XS`, `S`, `M`, `L`, `XL`, `XXL`.
 - **`gender`** is an enum: `male` or `female`.
 - **`consent_given_at`** replaces a yes/no flag. `null` means no consent, and a registration is not complete until it is set. It is set server-side, together with `consent_by_user_id`. CSV-imported registrations may leave it null for now; the parent registration form always sets it.
-- **`photo_path`** is a path in a **private** Supabase Storage bucket, never a public URL. Serve it through short-lived signed URLs, with storage policies that match who can read the `Kid` row. For CSV import, the CSV carries a Google Drive link; the importer downloads the photo server-side and stores it in the bucket. A failed download is a row-level import error.
+- **No photo is stored.** Registration captured one until 2026-09-23, when it was dropped for simplicity and the Drive dependency it carried was removed with it (`docs/decisions.md`, `docs/arch_decisions.md`). The Google Form may still ask for a photo; the importer reports that column as unrecognised and ignores it.
 - **`home_address` and the emergency contact** are visible only to Admin, the coach of the kid's team, and the kid's linked parent (see the §1.5 matrix). Postgres RLS is row-level, so this needs a design decision before the migration (see §2.8).
 - **`Registration` is unique on (`kid_id`, `season_id`).** `Attendance_Kid`, `SpiritualRecord` and `Payment` still reference `kid_id` for now.
 
@@ -235,7 +235,7 @@ Divisions (`juniors` / `ambassadors`) are an attribute on `Registration` and `Te
 - **Zod schemas** should be the single source of truth for a shape's validation and, where practical, its TypeScript type (`z.infer`).
 - **Server Actions preferred** over client-side fetch + API route for mutations, unless a stable REST endpoint is genuinely needed (e.g., Stripe webhooks).
 - **No secrets in client code** — Stripe secret key, Claude API key, Supabase service role key stay server-side only.
-- **CSV import (MVP)**: build as a server-side parser + validator that maps each row to a `Kid` plus a `Registration` for the active season (matching returning kids to existing `Kid` records on first name + last name + DOB, case-insensitive and whitespace-trimmed, instead of creating duplicates), copies each photo from its Google Drive link into the private Storage bucket, reports row-level errors, and requires Admin review before committing to the database.
+- **CSV import (MVP)**: build as a server-side parser + validator that maps each row to a `Kid` plus a `Registration` for the active season (matching returning kids to existing `Kid` records on first name + last name + DOB, case-insensitive and whitespace-trimmed, instead of creating duplicates), reports row-level errors, and requires Admin review before committing to the database.
 - **Migrations**: use Supabase CLI migrations, committed to the repo — never make schema changes directly in the Supabase dashboard for anything beyond prototyping.
 
 ### 2.6 Git Workflow
@@ -276,7 +276,6 @@ Trunk-based development, not GitFlow — appropriate for a 2-developer team with
 - Are coach-entered kid attributes/ratings visible to parents?
 - Is a registration waitlist needed if a division/team fills up?
 - ~~How do we enforce that only Admin, the kid's coach and the linked parent can see `home_address` and the emergency contact?~~ **Resolved 2026-09-22:** Program Team may see them too (`docs/decisions.md`), so the set of readers for the contact fields is the same as for the roster row. A plain row-level policy on `kids` is therefore sufficient, and the proposed 1:1 `KidContact` table is not needed.
-- How does the server read the Google Drive photos during CSV import? Form uploads are usually not public, so this likely needs Drive API access (e.g., a service account the photos are shared with). Set up before the importer is built.
 - Should `Payment` reference `registration_id` instead of `kid_id`, so payments are scoped to a season?
 
 ---

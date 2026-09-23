@@ -45,7 +45,6 @@ function kidRegistration(
       last_name: overrides.last ?? 'Guirguis',
       dob: overrides.dob ?? '2014-03-02',
       gender: 'male',
-      photo_path: null,
       email: null,
       phone: null,
       allergies: null,

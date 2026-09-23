@@ -76,7 +76,6 @@ function parsedPayload(o: KidOverrides = {}) {
       last_name: o.last ?? 'Guirguis',
       dob: o.dob ?? '2014-03-02',
       gender: 'male',
-      photo_path: null,
       email: o.email === undefined ? null : o.email,
       phone: null,
       allergies: o.allergies === undefined ? null : o.allergies,

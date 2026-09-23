@@ -28,6 +28,12 @@ issue holds the detail; this file is the index of "what's now different from the
 
 ## Decisions
 
+### 2026-09-23 — Kid photos dropped from registration
+- **PRD reference:** §3.5 US-PA-01 (registration captures a photo), §6 Core Data Model (`Kid`)
+- **What changed:** Registration no longer captures or stores a photo of the kid, by either path. The parent form does not ask for one, and the CSV importer ignores the Google Form's photo question rather than copying the file across.
+- **Why:** Decided on 2026-09-23 for simplicity. The Drive access needed to read photos from the Google Form was never resolved (`project_spec.md` §2.8) and was the last blocker on ENG-5; the feature was not worth carrying a half-built pipeline and a bucket of minors' images for. May return in a future version.
+- **Linear:** [ENG-4](https://linear.app/cis-app/issue/ENG-4/kid-registration-parent-self-service-form), [ENG-5](https://linear.app/cis-app/issue/ENG-5/kid-registration-admin-csv-import)
+
 ### 2026-09-22 — Imported consent is surfaced for review, never recorded as consent
 - **PRD reference:** §7.3 Non-Functional Requirements (privacy: parental consent required); refines the 2026-09-21 entry below
 - **What changed:** The registration form does ask about consent, so the 2026-09-21 entry's reason ("consent isn't captured in the CSV yet") no longer holds — but `consent_given_at` still stays null on import. The answer is instead read into a per-row `consentClaim` flag (`claimed` / `not-claimed` / `inconsistent` / `unknown`) shown on the Admin's review screen, so the Admin can chase the parents who still owe a form. Considered and rejected: recording the form's submission timestamp as `consent_given_at` whenever the parent answered "Yes".
@@ -60,8 +66,9 @@ issue holds the detail; this file is the index of "what's now different from the
 
 ### 2026-09-21 — New kid registration field set
 - **PRD reference:** §3.5 US-PA-01 (form captures full name, DOB, grade, division, contact info, allergies, sports preferences/skills), §6 Core Data Model (`Kid`)
-- **What changed:** Name is split into first and last. Added photo, gender (Male or Female), T-shirt size (YS, YM, YL, XS, S, M, L, XL, XXL), home address, emergency contact name and phone, and guardian name, phone and email (guardian email required). The kid's own email and phone are optional, as are top sports. Consent is recorded as a timestamp instead of a yes/no. Allergies are kept. Grade, division, T-shirt size, top sports and consent are stored per season, not on the kid.
+- **What changed:** Name is split into first and last. Added gender (Male or Female), T-shirt size (YS, YM, YL, XS, S, M, L, XL, XXL), home address, emergency contact name and phone, and guardian name, phone and email (guardian email required). The kid's own email and phone are optional, as are top sports. Consent is recorded as a timestamp instead of a yes/no. Allergies are kept. Grade, division, T-shirt size, top sports and consent are stored per season, not on the kid.
 - **Why:** Team-defined field list from the 2026-09-21 Kid schema review; most of these fields are not covered by the PRD.
+- **Update (2026-09-23):** Photo removed from this list -- see the 2026-09-23 entry below.
 - **Linear:** [ENG-4](https://linear.app/cis-app/issue/ENG-4/kid-registration-parent-self-service-form), [ENG-5](https://linear.app/cis-app/issue/ENG-5/kid-registration-admin-csv-import)
 
 ### 2026-09-21 — 7th graders may choose Juniors or Ambassadors

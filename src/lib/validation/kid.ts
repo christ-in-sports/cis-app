@@ -71,10 +71,6 @@ export const kidSchema = z.object({
   dob: z.iso.date('Date of birth must be a valid date'),
   gender: z.enum(GENDERS, 'Gender must be Male or Female'),
 
-  // Object path inside the private kid-photos bucket, never a URL. Null until
-  // the importer copies the photo across from Google Drive (a later PR, blocked
-  // on Drive API access).
-  photo_path: optionalText.default(null),
 
   email: blankToNull(
     z.email('Kid email is not a valid email address').nullable(),
