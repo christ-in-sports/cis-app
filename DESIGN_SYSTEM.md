@@ -69,6 +69,8 @@ screens, and flag it if a new screen seems to need breaking one.
 | `--cis-orange` | `#EE6B2D` | Primary. Filled buttons (ink text), active nav, progress fill, present state |
 | `--cis-orange-text` | `#C2531B` | Orange as *text* on cream (passes 4.5:1). Links use this, `#9C3E12` on hover |
 | `--cis-ember` | `#C4341C` | Sport: scores, "Game"/"Final" chips, unverified flags, leader rank |
+| `--cis-danger` / hover / press | `#8E1F17` / `#A3231A` / `#761A13` | **Destructive actions only** — delete, remove. Never a status, never a chip |
+| `--cis-danger-tint` / `--cis-ink-on-danger` | `#F7E4E0` / `#FFF6EE` | Hover wash behind an outlined danger action; text on a danger fill |
 | `--cis-sage` | `#6F8457` | Spiritual: psalm-point button, verse-huddle rules, verse chips |
 | `--cis-apricot` / tint | `#FFC98E` / `#FFE3C4` | Highlights on dark grounds; chip fills (pair with `#9C3E12` text) |
 | `--cis-page` | `#E9DCC6` | App backdrop |
@@ -79,6 +81,23 @@ screens, and flag it if a new screen seems to need breaking one.
 | `--cis-board` / `--cis-board-tab` | `#6F5133` / `#7A5C3C` | Clipboard hardboard and inactive tab |
 | `--cis-rule` / `--cis-rule-soft` / `--cis-rule-dash` | `#E3D4B8` / `#DFCFAF` / `#D6C4A6` | 1px row rule, ruled-paper gradient line, 2px dashed section break |
 | `--cis-box-empty` | `#C9B49A` | Border of an unticked attendance box |
+
+**Two reds, and how to keep them apart.** `--cis-ember` and `--cis-danger` are both red,
+which is a risk the system takes deliberately — destroying a record is the one action that has
+to look different from every other, and none of orange/ember/sage could carry it without
+breaking the one-colour-one-job rule.
+
+They are separated by **usage**, not just hue, and the separation is what makes them
+unambiguous in practice:
+
+- **`--cis-danger` only ever appears on an action** the user can press — a delete or remove
+  control. It is never a chip, a status, a rule or a fill behind text.
+- **`--cis-ember` never appears on an action.** It marks sport results: scores, "Game"/"Final"
+  chips, the leader row.
+
+So a red thing you can press is destructive; a red thing you cannot press is a score. If a new
+screen needs red for anything that is neither, that is a signal to stop and flag it rather than
+to reach for whichever red is closer.
 
 **Contrast rules — non-negotiable:**
 - Never use `#EE6B2D` for small text — use `#C2531B` instead.

@@ -67,6 +67,12 @@ module.exports = {
   					DEFAULT: 'var(--cis-ember)',
   					tint: 'var(--cis-ember-tint)'
   				},
+  				danger: {
+  					DEFAULT: 'var(--cis-danger)',
+  					hover: 'var(--cis-danger-hover)',
+  					press: 'var(--cis-danger-press)',
+  					tint: 'var(--cis-danger-tint)'
+  				},
   				sage: {
   					DEFAULT: 'var(--cis-sage)',
   					hover: 'var(--cis-sage-hover)',
@@ -95,7 +101,8 @@ module.exports = {
   					dark: 'var(--cis-ink-dark)',
   					muted: 'var(--cis-ink-muted)',
   					'on-dark': 'var(--cis-ink-on-dark)',
-  					'on-dark-muted': 'var(--cis-ink-on-dark-muted)'
+  					'on-dark-muted': 'var(--cis-ink-on-dark-muted)',
+  					'on-danger': 'var(--cis-ink-on-danger)'
   				},
   				board: {
   					DEFAULT: 'var(--cis-board)',

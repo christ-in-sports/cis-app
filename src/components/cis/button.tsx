@@ -49,19 +49,54 @@ export function PrimaryButton({ block, className, children, ...props }: ButtonPr
   );
 }
 
-export function SecondaryButton({ block, className, children, ...props }: ButtonProps) {
+/**
+ * A destructive action — delete, remove. Outlined rather than filled: a solid
+ * red block would out-shout the primary action sitting next to it, and the
+ * thing being emphasised is *consequence*, not importance.
+ *
+ * `--cis-danger` is the system's second red, and it earns its place by being
+ * reserved for actions: a red thing you can press destroys something, a red
+ * thing you cannot press is a score (§4).
+ */
+export function DangerButton({ block, className, children, ...props }: ButtonProps) {
   return (
     <button
       className={cn(
         base,
-        'min-h-cis-tap-primary px-6 border-[3px] border-cis-ink bg-cis-paper-light text-cis-ink',
-        // §3: hover changes background only -- the one non-opaque value in the
-        // system is this wash.
-        'hover:bg-[rgba(36,31,28,.07)]',
+        'min-h-cis-tap-primary px-6 border-[3px] border-cis-danger bg-cis-paper-light text-cis-danger',
+        'hover:bg-cis-danger-tint',
         'active:translate-y-[1px]',
         block && 'w-full',
         className,
       )}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+
+/**
+ * The secondary button's own classes, exported so a link that should look like
+ * one does not copy them.
+ *
+ * §3 turns any repeated 8+ utility string into a component or variant; a
+ * navigation target is an anchor, not a button, so sharing the class string is
+ * how the two stay identical without pretending an `<a>` is a `<button>`.
+ */
+export const secondaryButtonClasses = cn(
+  base,
+  'min-h-cis-tap-primary px-6 border-[3px] border-cis-ink bg-cis-paper-light text-cis-ink',
+  // §3: hover changes background only -- the one non-opaque value in the
+  // system is this wash.
+  'hover:bg-[rgba(36,31,28,.07)]',
+  'active:translate-y-[1px]',
+);
+
+export function SecondaryButton({ block, className, children, ...props }: ButtonProps) {
+  return (
+    <button
+      className={cn(secondaryButtonClasses, block && 'w-full', className)}
       {...props}
     >
       {children}
