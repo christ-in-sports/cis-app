@@ -86,7 +86,8 @@ module.exports = {
   				},
   				rule: {
   					DEFAULT: 'var(--cis-rule)',
-  					soft: 'var(--cis-rule-soft)'
+  					soft: 'var(--cis-rule-soft)',
+  					dash: 'var(--cis-rule-dash)'
   				},
   				track: 'var(--cis-track)',
   				ink: {

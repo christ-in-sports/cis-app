@@ -1,0 +1,30 @@
+CISer First Name,CISer Last Name,DOB,Gender,Grade,Home Address,Youth Email,Youth Phone Number,Youth T-Shirt Size,Parent/Guardian,Parent/Guardian Phone Number,Parent/Guardian Email,Emergency Contact Name,Emergency Contact Number,Have you filled out a consent form?,7th Grade Only: Please choose which session you'd like to attend,Favourite colour
+Youssef,Aziz,4/2/2009,Female,11,"101 Church Way, Hayward, CA",,,YM,Mariam Aziz,(510) 555-2001,parent1@example.com,Nader Aziz,(510) 555-3001,Yes,,orange
+George,Shenouda,5/3/2011,Male,9,"102 Church Way, Hayward, CA",,,YL,Mariam Shenouda,(510) 555-2002,parent2@example.com,Nader Shenouda,(510) 555-3002,Yes,,orange
+Irene,Habib,6/4/2013,Female,7,"103 Church Way, Hayward, CA",irene@example.com,,S,Mariam Habib,(510) 555-2003,parent3@example.com,Nader Habib,(510) 555-3003,Yes,Ambassadors,orange
+Mariam,Rizk,7/5/2015,Male,5,"104 Church Way, Hayward, CA",,(510) 555-1004,M,Mariam Rizk,(510) 555-2004,parent4@example.com,Nader Rizk,(510) 555-3004,Yes,,orange
+Veronica,Wassef,8/6/2008,Female,12,"105 Church Way, Hayward, CA",,,L,Mariam Wassef,(510) 555-2005,parent5@example.com,Nader Wassef,(510) 555-3005,No,,orange
+Bishoy,Sedra,9/7/2010,Male,10,"106 Church Way, Hayward, CA",bishoy@example.com,,YS,Mariam Sedra,(510) 555-2006,parent6@example.com,Nader Sedra,(510) 555-3006,Yes,,orange
+Abanoub,Fahmy,10/8/2012,Female,8,"107 Church Way, Hayward, CA",,,YM,Mariam Fahmy,(510) 555-2007,parent7@example.com,Nader Fahmy,(510) 555-3007,Yes,,orange
+Mark,Ghali,11/9/2014,Male,6,"108 Church Way, Hayward, CA",,(510) 555-1008,YL,Mariam Ghali,(510) 555-2008,parent8@example.com,Nader Ghali,(510) 555-3008,Yes,,orange
+Sarah,Mikhail,3/10/2016,Female,4,"109 Church Way, Hayward, CA",sarah@example.com,,S,Mariam Mikhail,(510) 555-2009,parent9@example.com,Nader Mikhail,(510) 555-3009,Yes,,orange
+Peter,Malak,4/11/2009,Male,11,"110 Church Way, Hayward, CA",,,M,Mariam Malak,(510) 555-2010,parent10@example.com,Nader Malak,(510) 555-3010,No,,orange
+Christina,Tadros,5/12/2011,Female,9,"111 Church Way, Hayward, CA",,,L,Mariam Tadros,(510) 555-2011,parent11@example.com,Nader Tadros,(510) 555-3011,Yes,,orange
+Andrew,Hanna,6/13/2013,Male,7,"112 Church Way, Hayward, CA",andrew@example.com,(510) 555-1012,YS,Mariam Hanna,(510) 555-2012,parent12@example.com,Nader Hanna,(510) 555-3012,Yes,Juniors,orange
+Marina,Naguib,7/14/2015,Female,5,"113 Church Way, Hayward, CA",,,YM,Mariam Naguib,(510) 555-2013,parent13@example.com,Nader Naguib,(510) 555-3013,Yes,,orange
+Kirollos,Iskander,8/15/2008,Male,12,"114 Church Way, Hayward, CA",,,YL,Mariam Iskander,(510) 555-2014,parent14@example.com,Nader Iskander,(510) 555-3014,Yes,,orange
+Demiana,Botros,9/16/2010,Female,10,"115 Church Way, Hayward, CA",demiana@example.com,,S,Mariam Botros,(510) 555-2015,parent15@example.com,Nader Botros,(510) 555-3015,No,,orange
+Mina,Guirguis,10/17/2012,Male,8,"116 Church Way, Hayward, CA",,(510) 555-1016,M,Mariam Guirguis,(510) 555-2016,parent16@example.com,Nader Guirguis,(510) 555-3016,Yes,,orange
+Youssef,Aziz,11/18/2014,Female,6,"117 Church Way, Hayward, CA",,,L,Mariam Aziz,(510) 555-2017,parent17@example.com,Nader Aziz,(510) 555-3017,Yes,,orange
+George,Shenouda,3/19/2016,Male,4,"118 Church Way, Hayward, CA",george@example.com,,YS,Mariam Shenouda,(510) 555-2018,parent18@example.com,Nader Shenouda,(510) 555-3018,Yes,,orange
+Irene,Habib,4/20/2009,Female,11,"119 Church Way, Hayward, CA",,,YM,Mariam Habib,(510) 555-2019,parent19@example.com,Nader Habib,(510) 555-3019,Yes,,orange
+Mariam,Rizk,5/21/2011,Male,9,"120 Church Way, Hayward, CA",,(510) 555-1020,YL,Mariam Rizk,(510) 555-2020,parent20@example.com,Nader Rizk,(510) 555-3020,No,,orange
+Veronica,Wassef,6/22/2013,Female,7,"121 Church Way, Hayward, CA",veronica@example.com,,S,Mariam Wassef,(510) 555-2021,parent21@example.com,Nader Wassef,(510) 555-3021,Yes,Ambassadors,orange
+Bishoy,Sedra,7/23/2015,Male,5,"122 Church Way, Hayward, CA",,,M,Mariam Sedra,(510) 555-2022,parent22@example.com,Nader Sedra,(510) 555-3022,Yes,,orange
+Abanoub,Fahmy,8/24/2008,Female,12,"123 Church Way, Hayward, CA",,,L,Mariam Fahmy,(510) 555-2023,parent23@example.com,Nader Fahmy,(510) 555-3023,Yes,,orange
+Mark,Ghali,9/25/2010,Male,10,"124 Church Way, Hayward, CA",mark@example.com,(510) 555-1024,YS,Mariam Ghali,(510) 555-2024,parent24@example.com,Nader Ghali,(510) 555-3024,Yes,,orange
+Peter,Sedra,10/26/2012,Female,2,"125 Church Way, Hayward, CA",,,YM,Mariam Sedra,(510) 555-2025,parent25@example.com,Nader Sedra,(510) 555-3025,No,,orange
+Nardine,Samy,not a date,Male,6,"126 Church Way, Hayward, CA",,,YL,Mariam Samy,(510) 555-2026,parent26@example.com,Nader Samy,(510) 555-3026,Yes,,orange
+Karas,Fahim,3/1/2016,Female,4,"127 Church Way, Hayward, CA",karas@example.com,,S,Mariam Fahim,(510) 555-2027,,Nader Fahim,(510) 555-3027,Yes,,orange
+Youssef,Aziz,4/2/2009,Female,11,"101 Church Way, Hayward, CA",,,YM,Mariam Aziz,(510) 555-2001,parent1@example.com,Nader Aziz,(510) 555-3001,Yes,,orange
+Mariam,Rizk,7/5/2015,Male,5,"104 Church Way, Hayward, CA",,(510) 555-1004,M,Mariam Rizk,(510) 555-2004,parent4@example.com,Nader Rizk,(510) 555-3004,Yes,,orange

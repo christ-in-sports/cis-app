@@ -59,12 +59,14 @@ jobs:
   e2e:
     name: End-to-end (Playwright)
     runs-on: ubuntu-latest
-    # NEXT_PUBLIC_* vars are shipped to the browser bundle by design (Next.js convention) and
-    # protected by RLS, not secrecy — safe to set directly here rather than as repo secrets.
-    # Without them, createServerSupabaseClient() throws on every request and the app never boots.
+    # Runs against a LOCAL Supabase stack, not the hosted project. The roster
+    # import suite signs users in and truncates kids/registrations so its counts
+    # are exact, which must never happen to real data — and a shared remote also
+    # makes runs order-dependent between concurrent PRs. These are the standard
+    # local-stack keys, identical on every machine, so they are not secrets.
     env:
-      NEXT_PUBLIC_SUPABASE_URL: https://lbvfrplrujisypndgtin.supabase.co
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: sb_publishable_rAsGATxkK481IX-C3gA6Lg_KvNzkqba
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
     steps:
       - uses: actions/checkout@v4
 
@@ -77,7 +79,13 @@ jobs:
 
       - run: npx playwright install --with-deps chromium
 
+      # Docker ships preinstalled on GitHub-hosted runners, so this needs no setup.
+      - run: npx supabase start
+
       - run: npm run test:e2e
+
+      - if: always()
+        run: npx supabase stop
 
       - uses: actions/upload-artifact@v4
         if: failure()

@@ -28,6 +28,25 @@ afterAll(async () => {
   await pool.end();
 });
 
+/**
+ * `withTx`, plus an empty roster to start from.
+ *
+ * Several assertions here count all rows in `kids` or `import_batches`, which
+ * silently depended on the local database being empty -- so anything that left
+ * data behind (the Playwright suite, a manual import) broke them. Clearing
+ * inside the transaction makes each test deterministic without touching the
+ * developer's data: `withTx` always rolls back, so these deletes never land.
+ */
+async function withCleanTx<T>(fn: (client: PoolClient) => Promise<T>): Promise<T> {
+  return withTx(pool, async (client) => {
+    await client.query('delete from import_rows');
+    await client.query('delete from import_batches');
+    await client.query('delete from registrations');
+    await client.query('delete from kids');
+    return fn(client);
+  });
+}
+
 async function currentSeasonId(client: PoolClient): Promise<string> {
   const r = await client.query<{ id: string }>(
     'select id from seasons where is_current limit 1'
@@ -160,7 +179,7 @@ async function makeAdmin(client: PoolClient, email: string): Promise<string> {
 
 describe('import staging tables -- Admin only', () => {
   it('an admin can create and read a batch', async () => {
-    await withTx(pool, async (client) => {
+    await withCleanTx(async (client) => {
       const adminId = await makeAdmin(client, 'imp-admin@test.local');
       const seasonId = await currentSeasonId(client);
 
@@ -181,7 +200,7 @@ describe('import staging tables -- Admin only', () => {
   // Program Team can read the roster, but ENG-5 is explicit that CSV import is
   // Admin-only -- so unlike `kids`, there is no wider read policy here.
   it('program team can neither read nor write batches', async () => {
-    await withTx(pool, async (client) => {
+    await withCleanTx(async (client) => {
       const adminId = await makeAdmin(client, 'imp-admin2@test.local');
       const programId = await createProfile(client, { email: 'imp-program@test.local' });
       await grantRole(client, programId, 'program');
@@ -211,7 +230,7 @@ describe('import staging tables -- Admin only', () => {
   });
 
   it('a coach cannot read staged rows, which hold the same minor data', async () => {
-    await withTx(pool, async (client) => {
+    await withCleanTx(async (client) => {
       const adminId = await makeAdmin(client, 'imp-admin3@test.local');
       const coachId = await createProfile(client, { email: 'imp-coach@test.local' });
       await grantRole(client, coachId, 'coach');
@@ -231,7 +250,7 @@ describe('import staging tables -- Admin only', () => {
   });
 
   it('an anonymous request sees no batches at all', async () => {
-    await withTx(pool, async (client) => {
+    await withCleanTx(async (client) => {
       const adminId = await makeAdmin(client, 'imp-admin4@test.local');
       await stageBatch(client, { uploadedBy: adminId, rows: [] });
 
@@ -249,7 +268,7 @@ describe('import_commit -- authorisation', () => {
   // caller's RLS. Its own has_role('admin') check is therefore the only thing
   // standing between a coach and a rewritten roster.
   it('refuses a non-admin even though the function is SECURITY DEFINER', async () => {
-    await withTx(pool, async (client) => {
+    await withCleanTx(async (client) => {
       const adminId = await makeAdmin(client, 'imp-admin5@test.local');
       const coachId = await createProfile(client, { email: 'imp-coach2@test.local' });
       await grantRole(client, coachId, 'coach');
@@ -267,7 +286,7 @@ describe('import_commit -- authorisation', () => {
   });
 
   it('refuses program team', async () => {
-    await withTx(pool, async (client) => {
+    await withCleanTx(async (client) => {
       const adminId = await makeAdmin(client, 'imp-admin6@test.local');
       const programId = await createProfile(client, { email: 'imp-program2@test.local' });
       await grantRole(client, programId, 'program');
@@ -284,7 +303,7 @@ describe('import_commit -- authorisation', () => {
 
 describe('import_commit -- writing the roster', () => {
   it('creates the kid and their registration for the batch season', async () => {
-    await withTx(pool, async (client) => {
+    await withCleanTx(async (client) => {
       const adminId = await makeAdmin(client, 'imp-admin7@test.local');
       const seasonId = await currentSeasonId(client);
 
@@ -315,7 +334,7 @@ describe('import_commit -- writing the roster', () => {
   // The CSV's consent answer refers to a paper form handed in months earlier, so
   // it is not evidence of consent given now (docs/decisions.md 2026-09-22).
   it('never records consent', async () => {
-    await withTx(pool, async (client) => {
+    await withCleanTx(async (client) => {
       const adminId = await makeAdmin(client, 'imp-admin8@test.local');
       const batchId = await stageBatch(client, {
         uploadedBy: adminId,
@@ -330,7 +349,7 @@ describe('import_commit -- writing the roster', () => {
   });
 
   it('skips rows that failed validation', async () => {
-    await withTx(pool, async (client) => {
+    await withCleanTx(async (client) => {
       const adminId = await makeAdmin(client, 'imp-admin9@test.local');
       const batchId = await stageBatch(client, {
         uploadedBy: adminId,
@@ -351,7 +370,7 @@ describe('import_commit -- writing the roster', () => {
 
 describe('import_commit -- returning kids', () => {
   it('matches an existing kid instead of creating a second record', async () => {
-    await withTx(pool, async (client) => {
+    await withCleanTx(async (client) => {
       const adminId = await makeAdmin(client, 'ret-admin1@test.local');
       const kidId = await createKid(client);
 
@@ -375,7 +394,7 @@ describe('import_commit -- returning kids', () => {
   // expression. All three normalise the same way, or the preview shown to the
   // Admin would disagree with what commit actually does.
   it('matches case-insensitively and ignores surrounding whitespace', async () => {
-    await withTx(pool, async (client) => {
+    await withCleanTx(async (client) => {
       const adminId = await makeAdmin(client, 'ret-admin2@test.local');
       await createKid(client, { first: 'Mina', last: 'Guirguis' });
 
@@ -392,7 +411,7 @@ describe('import_commit -- returning kids', () => {
   });
 
   it('treats a different birthday as a different child', async () => {
-    await withTx(pool, async (client) => {
+    await withCleanTx(async (client) => {
       const adminId = await makeAdmin(client, 'ret-admin3@test.local');
       await createKid(client, { dob: '2013-03-02' });
 
@@ -411,7 +430,7 @@ describe('import_commit -- returning kids', () => {
   // A blank cell means "not answered", not "delete this". Dropping a recorded
   // allergy because a parent left the box empty is the dangerous direction.
   it('does not erase an existing allergy when the new row leaves it blank', async () => {
-    await withTx(pool, async (client) => {
+    await withCleanTx(async (client) => {
       const adminId = await makeAdmin(client, 'ret-admin4@test.local');
       await createKid(client, { allergies: 'Peanuts' });
 
@@ -428,7 +447,7 @@ describe('import_commit -- returning kids', () => {
   });
 
   it('refreshes required contact details from the newer row', async () => {
-    await withTx(pool, async (client) => {
+    await withCleanTx(async (client) => {
       const adminId = await makeAdmin(client, 'ret-admin5@test.local');
       await createKid(client);
 
@@ -448,7 +467,7 @@ describe('import_commit -- returning kids', () => {
   });
 
   it('updates the season registration rather than failing on the unique key', async () => {
-    await withTx(pool, async (client) => {
+    await withCleanTx(async (client) => {
       const adminId = await makeAdmin(client, 'ret-admin6@test.local');
       const kidId = await createKid(client);
       const seasonId = await currentSeasonId(client);
@@ -476,7 +495,7 @@ describe('import_commit -- ambiguous matches', () => {
   // The identity key is deliberately non-unique. Picking one of two matches
   // would overwrite a real child's medical and contact details at random.
   it('skips a row matching two kids and reports it, without touching either', async () => {
-    await withTx(pool, async (client) => {
+    await withCleanTx(async (client) => {
       const adminId = await makeAdmin(client, 'amb-admin1@test.local');
       await createKid(client);
       await createKid(client);
@@ -505,7 +524,7 @@ describe('import_commit -- ambiguous matches', () => {
   });
 
   it('still commits the rest of the batch', async () => {
-    await withTx(pool, async (client) => {
+    await withCleanTx(async (client) => {
       const adminId = await makeAdmin(client, 'amb-admin2@test.local');
       await createKid(client);
       await createKid(client);
@@ -529,7 +548,7 @@ describe('import_commit -- ambiguous matches', () => {
 describe('import_commit -- committing twice', () => {
   // The guard is the status transition in the database, never a disabled button.
   it('rejects a second commit instead of importing everything again', async () => {
-    await withTx(pool, async (client) => {
+    await withCleanTx(async (client) => {
       const adminId = await makeAdmin(client, 'twice-admin1@test.local');
       const batchId = await stageBatch(client, {
         uploadedBy: adminId,
@@ -545,7 +564,7 @@ describe('import_commit -- committing twice', () => {
   });
 
   it('marks the batch committed', async () => {
-    await withTx(pool, async (client) => {
+    await withCleanTx(async (client) => {
       const adminId = await makeAdmin(client, 'twice-admin2@test.local');
       const batchId = await stageBatch(client, {
         uploadedBy: adminId,
@@ -566,7 +585,7 @@ describe('import_commit -- committing twice', () => {
   // A batch still being written must not be committable -- the route flips it to
   // `ready` only after every row has landed.
   it('refuses a batch that is still pending', async () => {
-    await withTx(pool, async (client) => {
+    await withCleanTx(async (client) => {
       const adminId = await makeAdmin(client, 'twice-admin3@test.local');
       const batchId = await stageBatch(client, {
         uploadedBy: adminId,
@@ -582,7 +601,7 @@ describe('import_commit -- committing twice', () => {
 
 describe('import_commit -- nothing is written before commit', () => {
   it('leaves kids and registrations untouched while a batch sits ready', async () => {
-    await withTx(pool, async (client) => {
+    await withCleanTx(async (client) => {
       const adminId = await makeAdmin(client, 'pre-admin1@test.local');
 
       await stageBatch(client, {
