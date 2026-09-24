@@ -8,6 +8,12 @@ const createJestConfig = nextJest({
 const config = {
   coverageProvider: 'v8',
   testEnvironment: 'jsdom',
+  // next/jest does not reliably pick the `@/*` alias out of tsconfig for
+  // `jest.mock()` calls, which resolve before the transform runs. Declared
+  // here so component tests can mock by the same specifier the source imports.
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+  },
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   testPathIgnorePatterns: [
     '<rootDir>/node_modules/',
