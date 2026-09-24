@@ -646,25 +646,47 @@ export default function RegistrationsClient({
 
                   return (
                     <Fragment key={r.registration_id}>
-                      <tr className={open ? 'align-top' : 'border-b border-cis-rule align-top'}>
+                      {/* The whole row is the tap target, not just the name. On a
+                          phone a 3-word link is a small thing to hit accurately, and
+                          every cell in the row describes the same kid, so there is
+                          nothing else a tap here could reasonably mean. */}
+                      <tr
+                        onClick={() => setExpanded(open ? null : r.registration_id)}
+                        className={[
+                          'group cursor-pointer align-top',
+                          'hover:bg-[rgba(36,31,28,.05)] active:bg-[rgba(36,31,28,.08)]',
+                          open ? '' : 'border-b border-cis-rule',
+                        ].join(' ')}
+                      >
                         {canSelect && (
-                          <td className="py-[10px] pr-2">
-                            <input
-                              type="checkbox"
-                              aria-label={`Consent form received for ${r.kid.first_name} ${r.kid.last_name}`}
-                              checked={selected.has(r.registration_id)}
-                              onChange={() => toggleSelected(r.registration_id)}
-                              className="h-5 w-5 accent-[color:var(--cis-orange)]"
-                            />
+                          /* Swallows the click so ticking a box never also expands the
+                             row -- while marking consent the checkbox is the point, and
+                             a panel springing open under every tick would be in the way.
+                             The label widens the target to the whole cell. */
+                          <td className="py-[10px] pr-2" onClick={(e) => e.stopPropagation()}>
+                            <label className="flex min-h-cis-tap-min cursor-pointer items-center">
+                              <input
+                                type="checkbox"
+                                aria-label={`Consent form received for ${r.kid.first_name} ${r.kid.last_name}`}
+                                checked={selected.has(r.registration_id)}
+                                onChange={() => toggleSelected(r.registration_id)}
+                                className="h-5 w-5 accent-[color:var(--cis-orange)]"
+                              />
+                            </label>
                           </td>
                         )}
                         <td className="py-[10px] pr-[6px]">
+                          {/* Deliberately carries no onClick: the row above handles the
+                              toggle, and both a pointer click and a keyboard Enter or
+                              Space on this button raise a click that bubbles up to it.
+                              The real <button> stays because it is what makes the row
+                              focusable and announces its expanded state -- an onClick on
+                              the <tr> alone would be unreachable without a mouse. */}
                           <button
                             type="button"
                             aria-expanded={open}
                             aria-controls={panelId}
-                            onClick={() => setExpanded(open ? null : r.registration_id)}
-                            className="text-left text-cis-base font-bold leading-[1.3] hover:underline"
+                            className="text-left text-cis-base font-bold leading-[1.3] group-hover:underline"
                           >
                             {r.kid.last_name}, {r.kid.first_name}
                           </button>
