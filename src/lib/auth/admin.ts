@@ -13,10 +13,10 @@
  * message; it does not grant access.
  */
 
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { checkRole, type RoleCheck } from '@/lib/auth/roles';
 
 export interface AdminCheck {
-  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>;
+  supabase: RoleCheck['supabase'];
   userId: string | null;
   isAdmin: boolean;
 }
@@ -27,26 +27,9 @@ export interface AdminCheck {
  * Reads `user_roles` rather than the legacy `profiles.is_staff`: since the
  * six-role migration, `is_staff()` means admin *only*, but `user_roles` is the
  * primitive everything else is defined in terms of, and going through it keeps
- * this check aligned with the RLS policies it is mirroring. The "read own
- * roles" policy is what makes this readable by the user themselves.
+ * this check aligned with the RLS policies it is mirroring. See `checkRole`.
  */
 export async function checkAdmin(): Promise<AdminCheck> {
-  const supabase = await createServerSupabaseClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { supabase, userId: null, isAdmin: false };
-  }
-
-  const { data } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', user.id)
-    .eq('role', 'admin')
-    .maybeSingle();
-
-  return { supabase, userId: user.id, isAdmin: data !== null };
+  const { supabase, userId, hasRole } = await checkRole('admin');
+  return { supabase, userId, isAdmin: hasRole };
 }

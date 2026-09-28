@@ -1,5 +1,7 @@
 import {
   kidSchema,
+  LOCKED_KID_FIELDS,
+  parentRegistrationSchema,
   registrationSchema,
   registrationCoreSchema,
   TSHIRT_SIZES,
@@ -196,5 +198,94 @@ describe('registrationSchema t-shirt size', () => {
   it('is case sensitive, so callers must normalise before validating', () => {
     expect(pathsOf(registrationSchema.safeParse({ ...validRegistration, tshirt_size: 'ym' })))
       .toContain('tshirt_size');
+  });
+});
+
+describe('parentRegistrationSchema', () => {
+  const newKid = { mode: 'new', kid: validKid, registration: validRegistration, consent: true };
+
+  const editable = {
+    home_address: '2 Oak Ave, Hayward CA',
+    emergency_contact_name: 'Sara Hanna',
+    emergency_contact_phone: '(510) 555-1234',
+    guardian_name: 'Sara Hanna',
+    guardian_phone: '(510) 555-1234',
+    guardian_email: 'sara@example.com',
+  };
+  const returning = {
+    mode: 'returning',
+    kid_id: '6f1c3a52-7a4b-4d55-9f44-0a6f3e1c2b10',
+    kid: editable,
+    registration: validRegistration,
+    consent: true,
+  };
+
+  it('accepts a new kid', () => {
+    expect(parentRegistrationSchema.safeParse(newKid).success).toBe(true);
+  });
+
+  it('accepts a returning kid without the locked fields', () => {
+    expect(parentRegistrationSchema.safeParse(returning).success).toBe(true);
+  });
+
+  it('requires the waiver to be agreed', () => {
+    for (const consent of [false, undefined, 'true']) {
+      const result = parentRegistrationSchema.safeParse({ ...newKid, consent });
+      expect(result.success).toBe(false);
+      expect(pathsOf(result)).toContain('consent');
+    }
+  });
+
+  it('strips the locked fields from a returning kid', () => {
+    const result = parentRegistrationSchema.safeParse({
+      ...returning,
+      kid: { ...editable, first_name: 'Someone', last_name: 'Else', dob: '2010-01-01', gender: 'female' },
+    });
+    expect(result.success).toBe(true);
+    if (!result.success || result.data.mode !== 'returning') throw new Error('unreachable');
+    for (const field of LOCKED_KID_FIELDS) {
+      expect(result.data.kid).not.toHaveProperty(field);
+    }
+  });
+
+  it('never carries skill_tags, which staff assign', () => {
+    const result = parentRegistrationSchema.safeParse({
+      ...newKid,
+      kid: { ...validKid, skill_tags: ['goalie'] },
+    });
+    expect(result.success).toBe(true);
+    if (!result.success || result.data.mode !== 'new') throw new Error('unreachable');
+    expect(result.data.kid).not.toHaveProperty('skill_tags');
+  });
+
+  it('requires a valid kid_id when returning', () => {
+    const result = parentRegistrationSchema.safeParse({ ...returning, kid_id: 'not-a-uuid' });
+    expect(result.success).toBe(false);
+    expect(pathsOf(result)).toContain('kid_id');
+  });
+
+  it('rejects an unknown mode', () => {
+    expect(parentRegistrationSchema.safeParse({ ...newKid, mode: 'other' }).success).toBe(false);
+  });
+
+  it('puts the grade/division error on registration.division', () => {
+    const result = parentRegistrationSchema.safeParse({
+      ...newKid,
+      registration: { ...validRegistration, grade: 8, division: 'juniors' },
+    });
+    expect(result.success).toBe(false);
+    expect(messagesFor(result, 'registration.division')).toEqual([
+      'Grade 8 must be registered as ambassadors',
+    ]);
+  });
+
+  it('lets grade 7 choose either division', () => {
+    for (const division of ['juniors', 'ambassadors']) {
+      const result = parentRegistrationSchema.safeParse({
+        ...newKid,
+        registration: { ...validRegistration, grade: 7, division },
+      });
+      expect(result.success).toBe(true);
+    }
   });
 });

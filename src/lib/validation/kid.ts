@@ -155,6 +155,57 @@ export const kidRegistrationSchema = z.object({
   registration: registrationSchema,
 });
 
+/**
+ * Kid fields a parent cannot change once the kid exists. They are what
+ * returning-kid matching keys on (first name + last name + DOB), so letting a
+ * parent edit them could quietly turn one child into another. Gender is locked
+ * with them; a correction goes through an Admin. `register_kid()` ignores them
+ * in the database too -- this list is what the form reads to render them
+ * read-only and what the schema below strips.
+ */
+export const LOCKED_KID_FIELDS = ['first_name', 'last_name', 'dob', 'gender'] as const;
+
+/** `skill_tags` is assigned by staff, so a parent never supplies it. */
+const parentKidSchema = kidSchema.omit({ skill_tags: true });
+
+/** A returning kid: everything a parent may still edit. */
+const returningKidSchema = parentKidSchema.omit({
+  first_name: true,
+  last_name: true,
+  dob: true,
+  gender: true,
+});
+
+/**
+ * The waiver checkbox. `true` is the only acceptable value -- an unticked box
+ * arrives as `false`, and the message is shown next to it. The database
+ * re-checks this; consent itself (timestamp and user) is stamped there.
+ */
+const waiverAgreed = z.literal(true, 'You must agree to the liability waiver');
+
+/**
+ * One parent form submission (ENG-4): either a new kid or a returning one.
+ *
+ * The grade/division rule lives on `registration`, so its error path is
+ * `registration.division` and the form can show it next to the division field.
+ */
+export const parentRegistrationSchema = z.discriminatedUnion('mode', [
+  z.object({
+    mode: z.literal('new'),
+    kid: parentKidSchema,
+    registration: registrationSchema,
+    consent: waiverAgreed,
+  }),
+  z.object({
+    mode: z.literal('returning'),
+    kid_id: z.uuid('Pick one of your kids'),
+    kid: returningKidSchema,
+    registration: registrationSchema,
+    consent: waiverAgreed,
+  }),
+]);
+
 export type KidInput = z.infer<typeof kidSchema>;
+export type ParentRegistrationInput = z.infer<typeof parentRegistrationSchema>;
 export type RegistrationInput = z.infer<typeof registrationSchema>;
 export type KidRegistrationInput = z.infer<typeof kidRegistrationSchema>;
