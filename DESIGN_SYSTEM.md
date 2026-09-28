@@ -175,6 +175,17 @@ one-off markup per screen.
 | `Icon` | Global | Wrapper over the Lucide glyph set so stroke-width 2.75 lives in one place. |
 | `PrimaryButton` / `SecondaryButton` | Global | Pill radius, ink text on orange fill; `tone="sage"` for spiritual actions; secondary is a 3px ink outline. |
 
+**Forms** — `src/components/cis/form.tsx`. The design system had no form spec, so these are derived from the rules above rather than from a prototype (see §8) and should be checked against Claude Design when it is next available:
+
+| Component | Used for | Notes |
+|---|---|---|
+| `Field` | Any labelled control | Sentence-case 15px/700 label, optional hint, error slot. Renders the control through a render prop so `id`, `aria-invalid` and `aria-describedby` stay wired. Required is unmarked; optional fields say "(optional)". |
+| `TextInput` / `SelectInput` | Text, date, tel, email, select | 48px tall, 12px chip radius, 2px ink outline on paper-light. Invalid gets a 3px outline. Focus is the standard 2px orange outline at 3px offset. |
+| `ChoiceGroup` | Short exclusive lists (gender, T-shirt size, division) | Real radio inputs styled as 12px chips; selected is ink-filled. The whole chip is the tap target. |
+| `TickRow` | Checkboxes such as the waiver | Whole row is the tap target; the 44px tick box (14px radius) fills orange with an ink ✓ when set, as in `AttendanceRow`. |
+
+**Validation errors are bold ink text with `role="alert"` — never red.** Ember is sport and danger is destructive actions (§4), so neither can mark a form error. The heavier outline on the control is what ties the message to the field.
+
 **Domain components:**
 
 | Component | Used for | Notes |
@@ -200,6 +211,13 @@ new screens compose from the same set instead of reinventing layout.
   Alternate darker "scoreboard" take (`CIS Coach Home.dc.html`) kept as reference only.
 - **Admin standings** (`CIS Admin Standings.dc.html`). Purpose: an admin checks both divisions
   quickly and spots scores needing verification.
+
+- **Parent registration** (`/register`). Designed in code from this document's rules and the
+  roster/import screens, **without a Claude Design prototype** — none existed when it was built.
+  Treat it as provisional: a picker sheet ("Who are you registering?"), then one sheet per
+  section (about the kid, this season, parent/guardian + emergency contact, waiver). Nothing on
+  it is colour-coded: a registration is neither a score nor a verse, so orange marks only the
+  primary action and ticked state.
 
 State shape for reference (local UI state — real app fetches roster/schedule/standings/verified
 flags from Supabase):
@@ -235,7 +253,8 @@ differential, independent of sort — the rank number never changes on re-sort.
   light grounds only).
 - The program's own icon set, if one exists, to replace Lucide.
 - Remaining MVP screens not yet designed: role-based nav shells for Program Team, Prayer Team,
-  Parent, and Kid roles; equipment inventory; season calendar; verse/psalm logging flow (Prayer
+  Parent, and Kid roles (the parent *registration* screen exists, provisionally — see §8; the
+  parent nav shell does not); equipment inventory; season calendar; verse/psalm logging flow (Prayer
   Team side); CSV import review screen. The components in §7 compose these, but the screens
   themselves must be designed — do not infer them, and do not assume `BottomNav`'s item set.
 - Confirm this direction holds up at data-dense edges (full roster view, equipment list) before
