@@ -206,7 +206,7 @@ Divisions (`juniors` / `ambassadors`) are an attribute on `Registration` and `Te
 | `Kid` | id, first_name, last_name, email?, phone?, gender, dob, allergies, home_address, emergency_contact_name, emergency_contact_phone, guardian_name, guardian_phone, guardian_email, skill_tags[], parent_user_id? | has many `Registration`, belongs to `User` (parent) |
 | `Registration` | id, kid_id, season_id, grade, division, tshirt_size, top_sports[]?, consent_given_at?, consent_by_user_id?, team_id?, created_at | belongs to `Kid`, `Season`, `Team` |
 | `Team` | id, name, sport, division, coach_user_id, season_id | has many `Registration`, belongs to `Season` |
-| `Season` | id, name, start_date, end_date, is_active | has many `Event`, `Team` |
+| `Season` | id, name, start_date, end_date, is_current | has many `Event`, `Team` |
 | `Event` | id, season_id, title, date, time, location, type | belongs to `Season` |
 | `Attendance_Kid` | id, kid_id, event_id, status, note, logged_by_user_id | belongs to `Kid`, `Event` |
 | `Attendance_Coach` | id, coach_user_id, event_id, status, note | belongs to `User`, `Event` |
@@ -219,14 +219,15 @@ Divisions (`juniors` / `ambassadors`) are an attribute on `Registration` and `Te
 `?` marks an optional (nullable) field. Field notes for `Kid` and `Registration`:
 
 - **Contact fields:** `Kid.email` and `Kid.phone` are the kid's own and optional. `guardian_name`, `guardian_phone` and `guardian_email` are required. `emergency_contact_name` and `emergency_contact_phone` are required.
-- **`parent_user_id`** is nullable so a kid can exist (e.g., from CSV import) before the parent has an account. It is linked when a `User` signs up with a matching `guardian_email`. The inline guardian fields stay as the contact snapshot either way.
+- **`parent_user_id`** is nullable so a kid can exist (e.g., from CSV import) before the parent has an account. It is linked by `link_my_kids()`, which the parent registration page calls on load: it attaches unlinked kids whose `guardian_email` matches the parent's **confirmed** auth email (case- and whitespace-insensitive), and never takes a kid from another parent. Linking on page load rather than at signup keeps it independent of how signup is built. It depends on email confirmation being enabled in production. The inline guardian fields stay as the contact snapshot either way. One parent may have many kids.
 - **`allergies`** holds allergies and medical notes. It is retained from the earlier schema.
 - **`grade`** is an integer from 4 to 12. **`division`** must be `juniors` when grade < 7, `ambassadors` when grade > 7, and either when grade = 7. Enforce this with a database `CHECK` constraint on `Registration`; the Zod schema mirrors it for form errors.
 - **`tshirt_size`** is one of `YS`, `YM`, `YL`, `XS`, `S`, `M`, `L`, `XL`, `XXL`.
 - **`gender`** is an enum: `male` or `female`.
 - **`consent_given_at`** replaces a yes/no flag. `null` means no consent, and a registration is not complete until it is set. It is set server-side, together with `consent_by_user_id`. CSV-imported registrations may leave it null for now; the parent registration form always sets it.
 - **No photo is stored.** Registration captured one until 2026-09-23, when it was dropped for simplicity and the Drive dependency it carried was removed with it (`docs/decisions.md`, `docs/arch_decisions.md`). The Google Form may still ask for a photo; the importer reports that column as unrecognised and ignores it.
-- **`home_address` and the emergency contact** are visible only to Admin, the coach of the kid's team, and the kid's linked parent (see the §1.5 matrix). Postgres RLS is row-level, so this needs a design decision before the migration (see §2.8).
+- **`home_address` and the emergency contact** are visible to Admin, Program Team, the coach of the kid's team, and the kid's linked parent (see the §1.5 matrix). Those are the same readers as the roster row, so the row-level `can_read_kid()` policy is sufficient (resolved 2026-09-22, see §2.8).
+- **Parents write through `register_kid()`, not table policies.** It creates the kid or updates a returning one, then upserts this season's `Registration`, in one transaction. Consent (`consent_given_at`, `consent_by_user_id`) is stamped inside it with `now()` and `auth.uid()`. For a returning kid the parent may edit everything except `first_name`, `last_name`, `dob` and `gender` (the returning-kid matching key, plus gender), and never `skill_tags`. Submitting again in the same season edits the registration and re-stamps consent, until an Admin assigns a `team_id`. A new registration has `source = 'parent'`. Parents can read only the current `Season`.
 - **`Registration` is unique on (`kid_id`, `season_id`).** `Attendance_Kid`, `SpiritualRecord` and `Payment` still reference `kid_id` for now.
 
 ### 2.5 Engineering Requirements
@@ -271,7 +272,7 @@ Trunk-based development, not GitFlow — appropriate for a 2-developer team with
 ### 2.8 Open Questions (resolve before building the related feature)
 
 - How are spiritual recitation points structured — preset per verse, or set dynamically each time?
-- Can one parent account manage multiple kids?
+- ~~Can one parent account manage multiple kids?~~ **Resolved 2026-09-28:** yes. Many `Kid` rows may share one `parent_user_id`; the parent form lets them pick a returning kid or add another.
 - What exact payment amounts / installment structures should Stripe be configured with?
 - Are coach-entered kid attributes/ratings visible to parents?
 - Is a registration waitlist needed if a division/team fills up?

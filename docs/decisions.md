@@ -28,6 +28,12 @@ issue holds the detail; this file is the index of "what's now different from the
 
 ## Decisions
 
+### 2026-09-28 — Parent self-service registration: multiple kids, locked fields, edit-until-placed
+- **PRD reference:** §3.5 US-PA-01 (Kid Registration); §13.1 Q2 (can one parent manage multiple kids?)
+- **What changed:** (1) One parent account can register several kids. (2) A returning kid is re-registered by picking them from the parent's own kids; the parent may edit the kid's details, but **not** first name, last name, date of birth or gender -- those change only through an Admin. (3) Submitting again in the same season edits that season's registration and re-stamps consent, but only until an Admin places the kid on a team. (4) Kids imported by CSV are attached to a parent automatically when the parent's confirmed email matches the kid's guardian email. (5) Parents can see the current season.
+- **Why:** (1) matches how families actually register. (2) Name and DOB are how returning kids are matched across seasons, so a free edit could turn one child's record into another's. (3) Grade and division drive team placement, so they stop being parent-editable once placement happens. (4) Without it, every one of the ~149 imported kids would be duplicated the first time a parent registers them. The email must be confirmed or anyone could claim another family's children by signing up with their address.
+- **Linear:** [ENG-4](https://linear.app/cis-app/issue/ENG-4/kid-registration-parent-self-service-form)
+
 ### 2026-09-23 — Kid photos dropped from registration
 - **PRD reference:** §3.5 US-PA-01 (registration captures a photo), §6 Core Data Model (`Kid`)
 - **What changed:** Registration no longer captures or stores a photo of the kid, by either path. The parent form does not ask for one, and the CSV importer ignores the Google Form's photo question rather than copying the file across.

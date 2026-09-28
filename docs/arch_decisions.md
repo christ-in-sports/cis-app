@@ -36,6 +36,13 @@ heading followed by:
 
 ## Decisions
 
+### 2026-09-28 — Parent registration writes go through SECURITY DEFINER functions
+- **Status:** Accepted
+- **Context:** ENG-4 lets a Parent create a kid and a registration. Until now only an Admin could write either table. The obvious route is to add Parent INSERT/UPDATE policies on `kids` and `registrations`.
+- **Decision:** No new write policies. Writes go through `register_kid()`, and imported kids are attached by `link_my_kids()`, both `SECURITY DEFINER` with an explicit `has_role('parent')` check, the same pattern as `import_commit()` and `set_registrations_consent()`. `link_my_kids()` runs when the registration page loads, not at signup. A `seasons` SELECT policy lets a parent read the current season.
+- **Consequences / tradeoffs:** A registration is two rows, so one function call means one transaction and no half-registered kid. Consent time and user are derived in the database and cannot be forged by whoever calls PostgREST. An UPDATE policy on `kids` cannot restrict which columns change, so it would let a parent rewrite `parent_user_id`, `skill_tags` and the locked identity fields; the function updates an explicit column list instead. The cost is that the rules live in PL/pgSQL rather than declarative policies, and each error case needs a code the Server Action maps to a message. Linking on page load means it does not depend on the signup flow, at the price of one extra RPC per load; it relies on email confirmation being enabled in production, because with it off Supabase treats every address as confirmed.
+- **Reference:** `project_spec.md` §2.4; Linear [ENG-4](https://linear.app/cis-app/issue/ENG-4/kid-registration-parent-self-service-form)
+
 ### 2026-09-23 — Drop kid photos entirely
 - **Status:** Accepted
 - **Context:** Photos were scoped in from the start: a private bucket, `Kid.photo_path` holding an object path rather than a URL, short-lived signed URLs on read, and the CSV importer copying each photo across from the Google Drive link the Google Form produces. None of it shipped. The Drive half was blocked the whole time on service-account access (`project_spec.md` §2.8, open since 2026-09-21), and what did exist was a nullable column, two `import_rows` columns, a bucket, a read-policy helper and two storage policies -- all inert.
