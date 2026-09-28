@@ -182,7 +182,7 @@ one-off markup per screen.
 | `Field` | Any labelled control | Sentence-case 15px/700 label, optional hint, error slot. Renders the control through a render prop so `id`, `aria-invalid` and `aria-describedby` stay wired. Required is unmarked; optional fields say "(optional)". |
 | `TextInput` / `SelectInput` | Text, date, tel, email, select | 48px tall, 12px chip radius, 2px ink outline on paper-light. Invalid gets a 3px outline. Focus is the standard 2px orange outline at 3px offset. |
 | `ChoiceGroup` | Short exclusive lists (gender, T-shirt size, division) | Real radio inputs styled as 12px chips; selected is ink-filled. The whole chip is the tap target. |
-| `TickRow` | Checkboxes such as the waiver | Whole row is the tap target; the 44px tick box (14px radius) fills orange with an ink ✓ when set, as in `AttendanceRow`. |
+| `TickRow` | Checkboxes such as the waiver | Whole row is the tap target; the 44px tick box (14px radius) fills orange with an ink ✓ when set, as in `AttendanceRow`. Unticked, its outline is ink rather than `--cis-box-empty`: that tan is about 1.9:1 on paper-light, under the 3:1 WCAG asks of a control's boundary, and a form checkbox is not a glanceable roster mark. |
 
 **Validation errors are bold ink text with `role="alert"` — never red.** Ember is sport and danger is destructive actions (§4), so neither can mark a form error. The heavier outline on the control is what ties the message to the field.
 

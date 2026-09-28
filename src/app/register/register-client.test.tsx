@@ -12,6 +12,7 @@ import '@testing-library/jest-dom';
 
 import RegisterClient from './register-client';
 import type { ParentKid } from '@/lib/registration/parent';
+import { WAIVER_URL } from '@/lib/registration/waiver';
 
 const refresh = jest.fn();
 jest.mock('next/navigation', () => ({
@@ -159,6 +160,18 @@ describe('a returning kid', () => {
     expect(screen.getByText('Mina Guirguis is on a team')).toBeInTheDocument();
     expect(screen.getByText(/Contact an Admin/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Save changes|Register/ })).not.toBeInTheDocument();
+  });
+});
+
+describe('the waiver', () => {
+  it('links to the program\'s waiver document in a new tab', () => {
+    render(<RegisterClient season={season} kids={[]} />);
+
+    const link = screen.getByRole('link', { name: /Read the liability waiver/ });
+    expect(link).toHaveAttribute('href', WAIVER_URL);
+    expect(link).toHaveAttribute('target', '_blank');
+    // Without noopener the opened page could reach back into this one.
+    expect(link.getAttribute('rel')).toContain('noopener');
   });
 });
 

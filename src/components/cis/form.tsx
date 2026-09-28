@@ -222,8 +222,11 @@ export function TickRow({
           className={cn(
             'flex h-cis-tap-min w-cis-tap-min shrink-0 items-center justify-center rounded-cis-box',
             'border-[3px] bg-cis-paper-light text-cis-lg font-extrabold text-cis-ink-dark',
-            checked ? 'border-cis-orange bg-cis-orange' : 'border-cis-box-empty',
-            error && !checked && 'border-cis-ink',
+            // Ink, not the attendance box's `--cis-box-empty`: that tan is ~1.9:1
+            // on paper-light, under the 3:1 WCAG asks of a control's boundary,
+            // and this box records a legal agreement.
+            checked ? 'border-cis-orange bg-cis-orange' : 'border-cis-ink',
+            error && !checked && 'border-[5px]',
             'peer-focus-visible:outline peer-focus-visible:outline-2',
             'peer-focus-visible:outline-offset-[3px] peer-focus-visible:outline-cis-orange',
           )}

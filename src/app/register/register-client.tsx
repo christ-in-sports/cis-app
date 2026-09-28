@@ -32,7 +32,7 @@ import {
   type Division,
 } from '@/lib/attendance';
 import type { ParentKid } from '@/lib/registration/parent';
-import { WAIVER_TEXT, WAIVER_TITLE } from '@/lib/registration/waiver';
+import { WAIVER_TITLE, WAIVER_URL } from '@/lib/registration/waiver';
 import {
   GENDERS,
   TSHIRT_SIZES,
@@ -697,15 +697,22 @@ export default function RegisterClient({
         <Sheet className="flex flex-col gap-cis-3 px-cis-5 pb-cis-6 pt-cis-6">
           <SheetHeading>{WAIVER_TITLE}</SheetHeading>
           <SheetRule />
-          {/* Focusable so the scrolling text is reachable by keyboard. */}
-          <div
-            tabIndex={0}
-            role="region"
-            aria-label={WAIVER_TITLE}
-            className="max-h-48 overflow-y-auto rounded-cis-chip bg-cis-paper px-cis-3 py-cis-3 text-cis-base leading-[1.5] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-cis-orange"
-          >
-            {WAIVER_TEXT}
-          </div>
+          {/* The waiver is a document the program hosts, so this links to it
+              rather than reproducing it. New tab, so the half-filled form is
+              still there when the parent comes back. */}
+          <p className="m-0 text-cis-base leading-[1.45]">
+            <a
+              href={WAIVER_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-cis-orange-text underline underline-offset-2 hover:text-cis-orange-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-cis-orange"
+            >
+              Read the liability waiver
+            </a>
+            {/* Outside the link: text-decoration propagates into children, so
+                inside it this would be underlined like the link itself. */}
+            <span className="font-semibold text-cis-ink-muted"> (opens in a new tab)</span>
+          </p>
           <TickRow
             checked={form.consent}
             onChange={(v) => set('consent', v)}

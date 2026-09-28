@@ -5,7 +5,10 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // One worker everywhere, not just in CI. The suites share one database and
+  // some empty tables to get exact counts (`roster-import.spec.ts` clears
+  // `kids`), so running spec files in parallel makes them trample each other.
+  workers: 1,
   reporter: 'html',
   use: {
     baseURL: 'http://127.0.0.1:3000',
