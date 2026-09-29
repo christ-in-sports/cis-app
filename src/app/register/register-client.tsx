@@ -21,7 +21,14 @@ import { useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-import { ChoiceGroup, Field, SelectInput, TextInput, TickRow } from '@/components/cis/form';
+import {
+  ChoiceGroup,
+  Field,
+  FieldError,
+  SelectInput,
+  TextInput,
+  TickRow,
+} from '@/components/cis/form';
 import { PageShell } from '@/components/cis/page-shell';
 import { PrimaryButton, SecondaryButton, secondaryButtonClasses } from '@/components/cis/button';
 import { Sheet, SheetHeading, SheetRule } from '@/components/cis/sheet';
@@ -722,9 +729,7 @@ export default function RegisterClient({
           </TickRow>
 
           {formError && (
-            <p role="alert" className="m-0 text-cis-base font-bold leading-[1.45]">
-              {formError}
-            </p>
+            <FieldError>{formError}</FieldError>
           )}
 
           <SectionBreak />

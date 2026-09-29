@@ -68,7 +68,7 @@ screens, and flag it if a new screen seems to need breaking one.
 |---|---|---|
 | `--cis-orange` | `#EE6B2D` | Primary. Filled buttons (ink text), active nav, progress fill, present state |
 | `--cis-orange-text` | `#C2531B` | Orange as *text* on cream (passes 4.5:1). Links use this, `#9C3E12` on hover |
-| `--cis-ember` | `#C4341C` | Sport: scores, "Game"/"Final" chips, unverified flags, leader rank |
+| `--cis-ember` | `#C4341C` | Sport: scores, "Game"/"Final" chips, unverified flags, leader rank. Also form validation errors (2026-09-28 — see §7 Forms) |
 | `--cis-danger` / hover / press | `#8E1F17` / `#A3231A` / `#761A13` | **Destructive actions only** — delete, remove. Never a status, never a chip |
 | `--cis-danger-tint` / `--cis-ink-on-danger` | `#F7E4E0` / `#FFF6EE` | Hover wash behind an outlined danger action; text on a danger fill |
 | `--cis-sage` | `#6F8457` | Spiritual: psalm-point button, verse-huddle rules, verse chips |
@@ -93,7 +93,8 @@ unambiguous in practice:
 - **`--cis-danger` only ever appears on an action** the user can press — a delete or remove
   control. It is never a chip, a status, a rule or a fill behind text.
 - **`--cis-ember` never appears on an action.** It marks sport results: scores, "Game"/"Final"
-  chips, the leader row.
+  chips, the leader row — and, since 2026-09-28, form validation messages, which are text and
+  never pressable.
 
 So a red thing you can press is destructive; a red thing you cannot press is a score. If a new
 screen needs red for anything that is neither, that is a signal to stop and flag it rather than
@@ -184,7 +185,7 @@ one-off markup per screen.
 | `ChoiceGroup` | Short exclusive lists (gender, T-shirt size, division) | Real radio inputs styled as 12px chips; selected is ink-filled. The whole chip is the tap target. |
 | `TickRow` | Checkboxes such as the waiver | Whole row is the tap target; the 44px tick box (14px radius) fills orange with an ink ✓ when set, as in `AttendanceRow`. Unticked, its outline is ink rather than `--cis-box-empty`: that tan is about 1.9:1 on paper-light, under the 3:1 WCAG asks of a control's boundary, and a form checkbox is not a glanceable roster mark. |
 
-**Validation errors are bold ink text with `role="alert"` — never red.** Ember is sport and danger is destructive actions (§4), so neither can mark a form error. The heavier outline on the control is what ties the message to the field.
+**Validation errors are bold ember-red text (`FieldError`) with `role="alert"`, and the invalid control takes a 3px ember outline.** This widens ember beyond "sport" — a deliberate decision on 2026-09-28: the first version used bold ink text, on the reasoning that neither red could mark an error, and it proved too easy to miss on a five-sheet phone form. Ember was chosen over `--cis-danger` because danger is reserved for destructive *actions* (§4, and "never a status"), and over orange because orange is the primary-action and link colour that sits right beside these messages. Ember on 13px bold text is about 5.3:1 on paper-light (AA needs 4.5:1). The message is always text under the field and the outline is heavier, so colour is never the only signal. If a screen shows an error and a score together, revisit this.
 
 **Domain components:**
 
