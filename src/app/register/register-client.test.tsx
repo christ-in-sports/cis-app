@@ -249,6 +249,12 @@ describe('submitting a new kid', () => {
       ]),
     );
 
+    // Errors are ember red, not ink, so they stand out on a long form.
+    for (const alert of screen.getAllByRole('alert')) {
+      expect(alert).toHaveClass('text-cis-ember');
+    }
+    expect(field('First name')).toHaveAttribute('aria-invalid', 'true');
+
     return waitFor(() => expect(field('First name')).toHaveFocus());
   });
 

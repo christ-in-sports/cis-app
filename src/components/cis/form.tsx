@@ -11,10 +11,11 @@
  *    same treatment as the roster's search box.
  *  - Focus is the system-wide 2px orange outline at a 3px offset (§6), never
  *    the browser default.
- *  - Errors are bold ink text under the field, with `role="alert"`. No red:
- *    ember is sport and danger is for destructive actions (§4), so neither may
- *    mark a validation problem. An invalid control also gets a heavier (3px)
- *    outline, so the error is not carried by text position alone.
+ *  - Errors are bold ember-red text under the field (`FieldError`), with
+ *    `role="alert"`, and the invalid control gets a heavier ember outline, so
+ *    the error is not carried by colour alone. Ember is normally the sport
+ *    colour; using it here was a deliberate 2026-09-28 decision -- see
+ *    `FieldError`. `--cis-danger` stays reserved for destructive actions.
  *  - Labels are sentence case, weight 700, 15px. No all-caps, no label above a
  *    label (§3, §5).
  *  - A ticked box is filled orange with an ink tick -- state is a filled tick
@@ -40,8 +41,28 @@ const focusRing =
 const controlBase =
   'w-full min-h-12 rounded-cis-chip border-2 border-cis-ink bg-cis-paper-light px-3 ' +
   'text-cis-base text-cis-ink placeholder:text-cis-ink-muted ' +
-  'aria-[invalid=true]:border-[3px] disabled:opacity-60 ' +
+  'aria-[invalid=true]:border-[3px] aria-[invalid=true]:border-cis-ember disabled:opacity-60 ' +
   focusRing;
+
+/**
+ * A validation message. Ember red, bold, with `role="alert"` so a screen reader
+ * announces it.
+ *
+ * Ember is the system's "sport" colour (scores, Game/Final chips), so this is a
+ * deliberate widening of its job -- a decision made on 2026-09-28 after bold ink
+ * text proved too easy to miss on a long form. It stays clear of the other red:
+ * `--cis-danger` is reserved for destructive *actions* (`DESIGN_SYSTEM.md` §4).
+ * Ember on ~13px bold text is 5.3:1 on paper-light, over the 4.5:1 AA floor.
+ * The message never relies on colour alone -- it is text under the field, and
+ * the field itself gets a heavier outline.
+ */
+export function FieldError({ id, children }: { id?: string; children: ReactNode }) {
+  return (
+    <p id={id} role="alert" className="m-0 text-cis-sm font-bold leading-[1.4] text-cis-ember">
+      {children}
+    </p>
+  );
+}
 
 export function Field({
   label,
@@ -80,9 +101,7 @@ export function Field({
         'aria-describedby': describedBy || undefined,
       })}
       {error && (
-        <p id={errorId} role="alert" className="m-0 text-cis-sm font-bold leading-[1.4] text-cis-ink">
-          {error}
-        </p>
+        <FieldError id={errorId}>{error}</FieldError>
       )}
     </div>
   );
@@ -164,7 +183,7 @@ export function ChoiceGroup<T extends string>({
                 'peer-focus-visible:outline peer-focus-visible:outline-2',
                 'peer-focus-visible:outline-offset-[3px] peer-focus-visible:outline-cis-orange',
                 'active:scale-[.94]',
-                error && 'border-[3px]',
+                error && 'border-[3px] border-cis-ember',
               )}
             >
               {choice.label}
@@ -173,9 +192,7 @@ export function ChoiceGroup<T extends string>({
         ))}
       </div>
       {error && (
-        <p id={errorId} role="alert" className="m-0 text-cis-sm font-bold leading-[1.4] text-cis-ink">
-          {error}
-        </p>
+        <FieldError id={errorId}>{error}</FieldError>
       )}
     </fieldset>
   );
@@ -226,7 +243,7 @@ export function TickRow({
             // on paper-light, under the 3:1 WCAG asks of a control's boundary,
             // and this box records a legal agreement.
             checked ? 'border-cis-orange bg-cis-orange' : 'border-cis-ink',
-            error && !checked && 'border-[5px]',
+            error && !checked && 'border-cis-ember',
             'peer-focus-visible:outline peer-focus-visible:outline-2',
             'peer-focus-visible:outline-offset-[3px] peer-focus-visible:outline-cis-orange',
           )}
@@ -236,9 +253,7 @@ export function TickRow({
         <span className="pt-[10px] text-cis-base font-bold leading-[1.45] text-cis-ink">{children}</span>
       </label>
       {error && (
-        <p id={errorId} role="alert" className="m-0 text-cis-sm font-bold leading-[1.4] text-cis-ink">
-          {error}
-        </p>
+        <FieldError id={errorId}>{error}</FieldError>
       )}
     </div>
   );
