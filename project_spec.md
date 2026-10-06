@@ -213,7 +213,7 @@ Divisions (`juniors` / `ambassadors`) are an attribute on `Registration` and `Te
 | `Verse` | id, reference, text, point_value, week_theme, is_active | has many `SpiritualRecord` |
 | `SpiritualRecord` | id, kid_id, verse_id, points_awarded, logged_by_user_id, date | belongs to `Kid`, `Verse` |
 | `GameScore` | id, team_id, event_id, sport, points_scored | belongs to `Team`, `Event` |
-| `Payment` | id, kid_id, parent_user_id, total_amount, plan, amount_paid, status | belongs to `Kid`, `User` |
+| `Payment` | id, registration_id, amount_cents, method (`cash` / `venmo` / `paypal`), received_at, recorded_by | belongs to `Registration`; many per registration (partial payments) |
 | `Equipment` | id, item_name, quantity, requested_by_user_id, status | belongs to `User` |
 
 `?` marks an optional (nullable) field. Field notes for `Kid` and `Registration`:
@@ -228,7 +228,8 @@ Divisions (`juniors` / `ambassadors`) are an attribute on `Registration` and `Te
 - **No photo is stored.** Registration captured one until 2026-09-23, when it was dropped for simplicity and the Drive dependency it carried was removed with it (`docs/decisions.md`, `docs/arch_decisions.md`). The Google Form may still ask for a photo; the importer reports that column as unrecognised and ignores it.
 - **`home_address` and the emergency contact** are visible to Admin, Program Team, the coach of the kid's team, and the kid's linked parent (see the §1.5 matrix). Those are the same readers as the roster row, so the row-level `can_read_kid()` policy is sufficient (resolved 2026-09-22, see §2.8).
 - **Parents write through `register_kid()`, not table policies.** It creates the kid or updates a returning one, then upserts this season's `Registration`, in one transaction. Consent (`consent_given_at`, `consent_by_user_id`) is stamped inside it with `now()` and `auth.uid()`. For a returning kid the parent may edit everything except `first_name`, `last_name`, `dob` and `gender` (the returning-kid matching key, plus gender), and never `skill_tags`. Submitting again in the same season edits the registration and re-stamps consent, until an Admin assigns a `team_id`. A new registration has `source = 'parent'`. Parents can read only the current `Season`.
-- **`Registration` is unique on (`kid_id`, `season_id`).** `Attendance_Kid`, `SpiritualRecord` and `Payment` still reference `kid_id` for now.
+- **`Registration` is unique on (`kid_id`, `season_id`).** `Attendance_Kid` and `SpiritualRecord` still reference `kid_id` for now.
+- **Payments are recorded by an Admin, by hand, until Stripe (v1.0).** Writes go only through `record_payments(registration_ids[], amount_cents, method)` and `delete_payment(id)`, both admin-only, with `received_at` and `recorded_by` stamped by the database. The table has no write policy. Admin and the kid's linked parent can read payments; Program Team and coaches cannot. The fee and the payment methods shown to parents are constants in `src/lib/registration/payment.ts`. The fee is `null` (to be announced) until pricing is confirmed. The parent form never shows payment status, and the CSV import never creates payments.
 
 ### 2.5 Engineering Requirements
 
@@ -277,7 +278,7 @@ Trunk-based development, not GitFlow — appropriate for a 2-developer team with
 - Are coach-entered kid attributes/ratings visible to parents?
 - Is a registration waitlist needed if a division/team fills up?
 - ~~How do we enforce that only Admin, the kid's coach and the linked parent can see `home_address` and the emergency contact?~~ **Resolved 2026-09-22:** Program Team may see them too (`docs/decisions.md`), so the set of readers for the contact fields is the same as for the roster row. A plain row-level policy on `kids` is therefore sufficient, and the proposed 1:1 `KidContact` table is not needed.
-- Should `Payment` reference `registration_id` instead of `kid_id`, so payments are scoped to a season?
+- ~~Should `Payment` reference `registration_id` instead of `kid_id`, so payments are scoped to a season?~~ **Resolved 2026-10-05:** yes. `payments.registration_id` (`docs/arch_decisions.md`).
 
 ---
 

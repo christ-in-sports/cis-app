@@ -84,7 +84,11 @@ export const FIELD_LABEL: Record<CsvField, string> = {
  * kid's in 13 of the 88 rows that have one. It is whoever happened to be signed
  * in, so it is dropped in favour of the two explicit questions.
  *
- * Payment is out of scope for ENG-5 entirely.
+ * The payment column is ignored on purpose (ENG-9). It is the form telling the
+ * parent *how* to pay -- account handles, not an answer -- so nothing in it says
+ * whether they did. Payments are recorded by an Admin on the roster
+ * (`record_payments()`), and imported kids simply start with none, for the same
+ * reason imported consent is never recorded (docs/decisions.md, 2026-09-22).
  *
  * The consent columns are NOT ignored -- see `consent_claim` / `consent_method`
  * below. They are read for the review screen but never written to the database.

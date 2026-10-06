@@ -175,6 +175,38 @@ describe('the waiver', () => {
   });
 });
 
+describe('paying for registration', () => {
+  it('lists every way to pay, with the fee placeholder, before the waiver', () => {
+    render(<RegisterClient season={season} kids={[]} />);
+
+    const heading = screen.getByRole('heading', { name: 'Paying for registration' });
+    const sheet = heading.parentElement as HTMLElement;
+    expect(within(sheet).getByText('To be announced')).toBeInTheDocument();
+    expect(within(sheet).getByText('Give it to Maria Ehab or Joseph Tadrous')).toBeInTheDocument();
+    expect(within(sheet).getByText('@CIS-stantonios')).toBeInTheDocument();
+
+    const paypal = within(sheet).getByRole('link', { name: 'paypal.me/ChristinSports' });
+    expect(paypal).toHaveAttribute('href', 'https://paypal.me/ChristinSports/');
+    expect(paypal).toHaveAttribute('target', '_blank');
+    expect(paypal.getAttribute('rel')).toContain('noopener');
+
+    // Read top to bottom, a parent learns how to pay before agreeing and submitting.
+    const waiver = screen.getByRole('heading', { name: 'Liability waiver' });
+    expect(heading.compareDocumentPosition(waiver) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  // ENG-9: the form must never say whether a kid has paid, for a new kid or a
+  // returning one.
+  it('says nothing about whether a kid has paid', () => {
+    render(<RegisterClient season={season} kids={[kid()]} />);
+    expect(screen.queryByText(/\b(paid|unpaid|balance|owe)\b/i)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Mina Guirguis/ }));
+    expect(screen.getByRole('heading', { name: 'Paying for registration' })).toBeInTheDocument();
+    expect(screen.queryByText(/\b(paid|unpaid|balance|owe)\b/i)).not.toBeInTheDocument();
+  });
+});
+
 describe('grade and division', () => {
   const division = (name: 'juniors' | 'ambassadors') =>
     document.querySelector(`input[name=division][value=${name}]`) as HTMLInputElement;

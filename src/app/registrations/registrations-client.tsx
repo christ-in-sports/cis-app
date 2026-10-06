@@ -10,7 +10,16 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/toast';
 import { Sheet, SheetHeading, SheetRule } from '@/components/cis/sheet';
 import { PageShell } from '@/components/cis/page-shell';
-import { setRegistrationsConsent } from './actions';
+import { deletePayment, recordPayments, setRegistrationsConsent } from './actions';
+import {
+  PaymentFields,
+  PaymentsPanel,
+  emptyPaymentDraft,
+  type PaymentDraft,
+  type PaymentEntry,
+  type PaymentFieldErrors,
+} from './payments';
+import { formatCents } from '@/lib/registration/payment';
 import {
   PrimaryButton,
   SecondaryButton,
@@ -56,8 +65,17 @@ export interface RosterEntry {
   active: boolean;
   consent_given_at: string | null;
   team_id: string | null;
+  /** Empty for anyone but an Admin -- RLS hides payments (ENG-9). */
+  payments: PaymentEntry[];
   kid: Kid;
 }
+
+/**
+ * Which outstanding chore the roster is narrowed to, if any. One at a time:
+ * each mode offers tick boxes and a bulk action of its own, and a box ticked
+ * for "consent received" must never be read as "paid".
+ */
+type ChaseMode = 'consent' | 'payment' | null;
 
 interface FormState {
   first_name: string;
@@ -100,7 +118,7 @@ const nullIfBlank = (v: string) => (v.trim() === '' ? null : v.trim());
  * `router.refresh()` alone would not help, since `rows` is seeded from a prop
  * and useState ignores later prop changes.
  */
-function toEntry(reg: RosterEntry_Row, kid: Kid): RosterEntry {
+function toEntry(reg: RosterEntry_Row, kid: Kid, payments: PaymentEntry[] = []): RosterEntry {
   return {
     registration_id: reg.id,
     grade: reg.grade,
@@ -110,6 +128,7 @@ function toEntry(reg: RosterEntry_Row, kid: Kid): RosterEntry {
     active: reg.active,
     consent_given_at: reg.consent_given_at,
     team_id: reg.team_id,
+    payments,
     kid,
   };
 }
@@ -163,25 +182,35 @@ export default function RegistrationsClient({
   const [form, setForm] = useState<FormState>(EMPTY);
   const [showForm, setShowForm] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [missingConsentOnly, setMissingConsentOnly] = useState(false);
+  const [chase, setChase] = useState<ChaseMode>(null);
   const [consentBusy, setConsentBusy] = useState(false);
+  const [paymentBusy, setPaymentBusy] = useState(false);
+  const [bulkPayment, setBulkPayment] = useState<PaymentDraft>(emptyPaymentDraft);
+  const [bulkPaymentErrors, setBulkPaymentErrors] = useState<PaymentFieldErrors>({});
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return rows.filter((r) => {
       if (gradeFilter !== 'all' && String(r.grade) !== gradeFilter) return false;
-      if (missingConsentOnly && r.consent_given_at !== null) return false;
+      if (chase === 'consent' && r.consent_given_at !== null) return false;
+      if (chase === 'payment' && r.payments.length > 0) return false;
       if (!q) return true;
       return [
         r.kid.first_name, r.kid.last_name, r.kid.guardian_name,
         r.kid.guardian_phone, r.kid.guardian_email, r.kid.phone,
       ].some((v) => v?.toLowerCase().includes(q));
     });
-  }, [rows, search, gradeFilter, missingConsentOnly]);
+  }, [rows, search, gradeFilter, chase]);
 
   const missingConsent = useMemo(
     () => rows.filter((r) => r.consent_given_at === null).length,
+    [rows],
+  );
+
+  /** No payment recorded at all. A partial payment counts as started, not owed. */
+  const unpaid = useMemo(
+    () => rows.filter((r) => r.payments.length === 0).length,
     [rows],
   );
 
@@ -285,7 +314,7 @@ export default function RegistrationsClient({
       }
       setRows((p) => sortRows(
         p.map((r) => (r.registration_id === editing.registration_id
-          ? { ...r, ...toEntry(reg, kid) }
+          ? { ...r, ...toEntry(reg, kid, r.payments) }
           : r))
       ));
       toast({ title: 'Saved' });
@@ -368,7 +397,7 @@ export default function RegistrationsClient({
     // would leave an empty roster and, since the chip only renders while there
     // is something to chase, no control left to switch the filter back off.
     if (received && next.every((x) => x.consent_given_at !== null)) {
-      setMissingConsentOnly(false);
+      setChase(null);
     }
 
     toast({
@@ -376,6 +405,82 @@ export default function RegistrationsClient({
         ? `Consent recorded for ${ids.length} ${ids.length === 1 ? 'kid' : 'kids'}`
         : 'Consent cleared',
     });
+  };
+
+  /**
+   * Records the same payment against one or more registrations. As with
+   * consent, when it was recorded and by whom are set inside the database.
+   * Returns the result so the per-kid form can show its own field errors.
+   */
+  const applyPayment = async (ids: string[], draft: PaymentDraft) => {
+    setPaymentBusy(true);
+    const result = await recordPayments(ids, draft);
+    setPaymentBusy(false);
+
+    if (!result.ok) {
+      // Field problems are shown under the fields; only the rest needs a toast.
+      if (!result.fieldErrors || Object.keys(result.fieldErrors).length === 0) {
+        toast({ title: 'Could not record payment', description: result.error, variant: 'destructive' });
+      }
+      return result;
+    }
+
+    const added = new Map<string, PaymentEntry[]>();
+    for (const p of result.payments ?? []) {
+      const list = added.get(p.registrationId) ?? [];
+      list.push({ id: p.id, amount_cents: p.amountCents, method: p.method, received_at: p.receivedAt });
+      added.set(p.registrationId, list);
+    }
+    const next = rows.map((x) =>
+      added.has(x.registration_id)
+        ? { ...x, payments: [...x.payments, ...(added.get(x.registration_id) ?? [])] }
+        : x
+    );
+    setRows(next);
+    setSelected(new Set());
+
+    // Same reasoning as consent: an empty chase leaves no chip to turn it off.
+    if (chase === 'payment' && next.every((x) => x.payments.length > 0)) {
+      setChase(null);
+    }
+
+    const amount = result.payments?.[0] ? formatCents(result.payments[0].amountCents) : '';
+    toast({
+      title: `${amount} recorded for ${ids.length} ${ids.length === 1 ? 'kid' : 'kids'}`,
+    });
+    return result;
+  };
+
+  const removePayment = async (registrationId: string, payment: PaymentEntry, kidName: string) => {
+    if (!window.confirm(`Remove the ${formatCents(payment.amount_cents)} payment for ${kidName}?`)) return;
+
+    setPaymentBusy(true);
+    const result = await deletePayment(payment.id);
+    setPaymentBusy(false);
+
+    if (!result.ok) {
+      toast({ title: 'Could not remove payment', description: result.error, variant: 'destructive' });
+      return;
+    }
+
+    setRows((prev) =>
+      prev.map((x) =>
+        x.registration_id === registrationId
+          ? { ...x, payments: x.payments.filter((p) => p.id !== payment.id) }
+          : x
+      )
+    );
+    toast({ title: 'Payment removed' });
+  };
+
+  const submitBulkPayment = async () => {
+    const result = await applyPayment([...selected], bulkPayment);
+    if (result.ok) {
+      setBulkPayment(emptyPaymentDraft());
+      setBulkPaymentErrors({});
+    } else {
+      setBulkPaymentErrors(result.fieldErrors ?? {});
+    }
   };
 
   const toggleSelected = (id: string) =>
@@ -386,10 +491,13 @@ export default function RegistrationsClient({
       return next;
     });
 
-  /** The rows a tick box is offered on: visible, and not already recorded. */
+  /**
+   * The rows a tick box is offered on: visible, and still owing whatever the
+   * current mode is chasing -- which the filter already guarantees.
+   */
   const selectableIds = useMemo(
-    () => filtered.filter((r) => r.consent_given_at === null).map((r) => r.registration_id),
-    [filtered],
+    () => (chase === null ? [] : filtered.map((r) => r.registration_id)),
+    [filtered, chase],
   );
 
   const allSelected =
@@ -398,19 +506,20 @@ export default function RegistrationsClient({
   /**
    * Whether to offer tick boxes.
    *
-   * Only while the "still owe a consent form" filter is on. Consent is a
-   * once-a-season chore, so a permanent column for it would tax every other
-   * reading of the roster -- instead the chip is the way in: tap it and the
-   * roster narrows to exactly the kids you are chasing, with a box against
-   * each. Every visible row is missing consent by definition, so ticking can
-   * never overwrite a date that is already recorded.
+   * Only while a chase chip ("still owe a consent form", "haven't paid") is
+   * on. Both are once-a-season chores, so a permanent column would tax every
+   * other reading of the roster -- instead the chip is the way in: tap it and
+   * the roster narrows to exactly the kids you are chasing, with a box against
+   * each. Every visible row is missing that thing by definition, so ticking can
+   * never overwrite a consent date that is already recorded.
    */
-  const canSelect = isAdmin && missingConsentOnly && selectableIds.length > 0;
+  const canSelect = isAdmin && chase !== null && selectableIds.length > 0;
 
-  /** Leaving the mode drops the selection with it. */
-  const toggleConsentMode = () => {
-    setMissingConsentOnly((on) => !on);
+  /** Switching or leaving a mode drops the selection with it. */
+  const toggleChase = (mode: Exclude<ChaseMode, null>) => {
+    setChase((current) => (current === mode ? null : mode));
     setSelected(new Set());
+    setBulkPaymentErrors({});
   };
 
   const remove = async (r: RosterEntry) => {
@@ -526,20 +635,22 @@ export default function RegistrationsClient({
         {/* Chasing ~300 paper forms is only practical if the roster can be
             narrowed to who still owes one. Same toggle-chip pattern as the
             import screen's "Show only problems". */}
-        {(missingConsent > 0 || missingConsentOnly) && (
+        {(missingConsent > 0 || chase === 'consent' || (isAdmin && (unpaid > 0 || chase === 'payment'))) && (
           <div className="flex flex-wrap items-center gap-cis-2">
-            <button
-              type="button"
-              aria-pressed={missingConsentOnly}
-              onClick={toggleConsentMode}
-              className={`rounded-cis-chip border-2 border-cis-ink px-3 py-[7px] text-cis-sm font-bold ${
-                missingConsentOnly ? 'bg-cis-ink text-cis-paper-light' : 'bg-transparent text-cis-ink'
-              }`}
-            >
-              {missingConsent === 0
-                ? 'Everyone has a consent form'
-                : `${missingConsent} still owe a consent form`}
-            </button>
+            {(missingConsent > 0 || chase === 'consent') && (
+              <ChaseChip pressed={chase === 'consent'} onClick={() => toggleChase('consent')}>
+                {missingConsent === 0
+                  ? 'Everyone has a consent form'
+                  : `${missingConsent} still owe a consent form`}
+              </ChaseChip>
+            )}
+            {/* Admin only: payments are invisible to every other staff role,
+                so for them every kid would read as unpaid. */}
+            {isAdmin && (unpaid > 0 || chase === 'payment') && (
+              <ChaseChip pressed={chase === 'payment'} onClick={() => toggleChase('payment')}>
+                {unpaid === 0 ? 'Everyone has paid something' : `${unpaid} haven't paid`}
+              </ChaseChip>
+            )}
             {canSelect && (
               <button
                 type="button"
@@ -564,13 +675,33 @@ export default function RegistrationsClient({
             >
               Clear
             </button>
-            <PrimaryButton
-              className="ml-auto min-h-cis-tap-min px-5 text-cis-base"
-              disabled={consentBusy}
-              onClick={() => applyConsent([...selected], true)}
-            >
-              {consentBusy ? 'Saving…' : `Mark ${selected.size} received`}
-            </PrimaryButton>
+            {chase === 'payment' ? (
+              <>
+                <div className="w-full rounded-cis-chip bg-cis-paper-light p-cis-3 text-cis-ink">
+                  <PaymentFields
+                    draft={bulkPayment}
+                    onChange={setBulkPayment}
+                    errors={bulkPaymentErrors}
+                    idPrefix="Each kid's"
+                  />
+                </div>
+                <PrimaryButton
+                  className="ml-auto min-h-cis-tap-min px-5 text-cis-base"
+                  disabled={paymentBusy}
+                  onClick={submitBulkPayment}
+                >
+                  {paymentBusy ? 'Saving…' : `Record for ${selected.size}`}
+                </PrimaryButton>
+              </>
+            ) : (
+              <PrimaryButton
+                className="ml-auto min-h-cis-tap-min px-5 text-cis-base"
+                disabled={consentBusy}
+                onClick={() => applyConsent([...selected], true)}
+              >
+                {consentBusy ? 'Saving…' : `Mark ${selected.size} received`}
+              </PrimaryButton>
+            )}
           </div>
         )}
 
@@ -579,16 +710,18 @@ export default function RegistrationsClient({
             <SheetHeading className="text-cis-xl">
               {rows.length === 0
                 ? 'No registrations yet'
-                : missingConsentOnly
+                : chase !== null
                   ? 'Nobody left to chase'
                   : 'No matches'}
             </SheetHeading>
             <p className="m-0 text-cis-base leading-[1.5] text-cis-ink-muted">
               {rows.length === 0
                 ? 'Tap Add to register a kid.'
-                : missingConsentOnly
+                : chase === 'consent'
                   ? 'Every kid matching these filters has a consent form recorded.'
-                  : 'Try a different search.'}
+                  : chase === 'payment'
+                    ? 'Every kid matching these filters has a payment recorded.'
+                    : 'Try a different search.'}
             </p>
             {/* The roster is empty at the start of a season, which is exactly
                 when the once-a-year import matters. Saying so here is what makes
@@ -625,7 +758,7 @@ export default function RegistrationsClient({
                 <tr className="border-b-4 border-cis-ink-dark">
                   {canSelect && (
                     <th scope="col" className="pb-2 pr-2 text-left text-cis-sm font-bold text-cis-ink-muted">
-                      Received
+                      {chase === 'payment' ? 'Select' : 'Received'}
                     </th>
                   )}
                   <th scope="col" className="pb-2 text-left text-cis-sm font-bold text-cis-ink-muted">
@@ -667,7 +800,11 @@ export default function RegistrationsClient({
                             <label className="flex min-h-cis-tap-min cursor-pointer items-center">
                               <input
                                 type="checkbox"
-                                aria-label={`Consent form received for ${r.kid.first_name} ${r.kid.last_name}`}
+                                aria-label={
+                                  chase === 'payment'
+                                    ? `Record payment for ${r.kid.first_name} ${r.kid.last_name}`
+                                    : `Consent form received for ${r.kid.first_name} ${r.kid.last_name}`
+                                }
                                 checked={selected.has(r.registration_id)}
                                 onChange={() => toggleSelected(r.registration_id)}
                                 className="h-5 w-5 accent-[color:var(--cis-orange)]"
@@ -727,6 +864,18 @@ export default function RegistrationsClient({
                                 </button>
                               )}
                             </div>
+
+                            {isAdmin && (
+                              <PaymentsPanel
+                                kidName={`${r.kid.first_name} ${r.kid.last_name}`}
+                                payments={r.payments}
+                                busy={paymentBusy}
+                                onRecord={(draft) => applyPayment([r.registration_id], draft)}
+                                onRemove={(p) =>
+                                  removePayment(r.registration_id, p, `${r.kid.first_name} ${r.kid.last_name}`)
+                                }
+                              />
+                            )}
 
                             <dl className="m-0 grid grid-cols-1 gap-[6px] text-cis-sm">
                               {(
@@ -950,5 +1099,29 @@ export default function RegistrationsClient({
         </div>
       )}
     </>
+  );
+}
+
+/** A toggle chip that narrows the roster to one outstanding chore. */
+function ChaseChip({
+  pressed,
+  onClick,
+  children,
+}: {
+  pressed: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={pressed}
+      onClick={onClick}
+      className={`rounded-cis-chip border-2 border-cis-ink px-3 py-[7px] text-cis-sm font-bold ${
+        pressed ? 'bg-cis-ink text-cis-paper-light' : 'bg-transparent text-cis-ink'
+      }`}
+    >
+      {children}
+    </button>
   );
 }

@@ -40,6 +40,7 @@ import {
 } from '@/lib/attendance';
 import type { ParentKid } from '@/lib/registration/parent';
 import { WAIVER_TITLE, WAIVER_URL } from '@/lib/registration/waiver';
+import { PAYMENT_METHODS, REGISTRATION_FEE_CENTS, formatCents } from '@/lib/registration/payment';
 import {
   GENDERS,
   TSHIRT_SIZES,
@@ -700,6 +701,9 @@ export default function RegisterClient({
           </Field>
         </Sheet>
 
+        {/* -------------------------------------------------------- Payment */}
+        <PaymentSheet />
+
         {/* --------------------------------------------------------- Waiver */}
         <Sheet className="flex flex-col gap-cis-3 px-cis-5 pb-cis-6 pt-cis-6">
           <SheetHeading>{WAIVER_TITLE}</SheetHeading>
@@ -708,12 +712,7 @@ export default function RegisterClient({
               rather than reproducing it. New tab, so the half-filled form is
               still there when the parent comes back. */}
           <p className="m-0 text-cis-base leading-[1.45]">
-            <a
-              href={WAIVER_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-bold text-cis-orange-text underline underline-offset-2 hover:text-cis-orange-deep focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-cis-orange"
-            >
+            <a href={WAIVER_URL} target="_blank" rel="noopener noreferrer" className={externalLink}>
               Read the liability waiver
             </a>
             {/* Outside the link: text-decoration propagates into children, so
@@ -746,5 +745,57 @@ export default function RegisterClient({
         </Sheet>
       </form>
     </Shell>
+  );
+}
+
+/** An orange text link to a page outside the app, with the system focus ring. */
+const externalLink =
+  'font-bold text-cis-orange-text underline underline-offset-2 hover:text-cis-orange-deep ' +
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-cis-orange';
+
+/**
+ * How to pay (ENG-9). Information only: there is no payment integration yet, so
+ * a parent pays outside the app and an Admin records it on the roster.
+ *
+ * Deliberately says nothing about whether *this* kid has paid -- the form never
+ * loads payments (see `loadParentRegistrationContext`), so there is nothing to
+ * show even by accident. Paper tone, like the other notice sheets: it is
+ * something to read, not something to fill in.
+ */
+function PaymentSheet() {
+  return (
+    <Sheet tone="paper" className="flex flex-col gap-cis-3 px-cis-5 pb-cis-6 pt-cis-6">
+      <SheetHeading>Paying for registration</SheetHeading>
+      <SheetRule />
+      <p className="m-0 text-cis-base leading-[1.45]">
+        <span className="font-semibold text-cis-ink-muted">Registration fee: </span>
+        <span className="font-bold">
+          {REGISTRATION_FEE_CENTS === null ? 'To be announced' : formatCents(REGISTRATION_FEE_CENTS)}
+        </span>
+      </p>
+      <p className="m-0 text-cis-base leading-[1.45]">You can pay any of these ways:</p>
+      <dl className="m-0 flex flex-col">
+        {PAYMENT_METHODS.map((method) => (
+          <div
+            key={method.id}
+            className="flex gap-cis-3 border-b border-cis-rule py-cis-2 text-cis-base last:border-b-0"
+          >
+            <dt className="w-20 flex-shrink-0 font-bold">{method.label}</dt>
+            <dd className="m-0 min-w-0 break-words">
+              {method.url ? (
+                <>
+                  <a href={method.url} target="_blank" rel="noopener noreferrer" className={externalLink}>
+                    {method.detail}
+                  </a>
+                  <span className="font-semibold text-cis-ink-muted"> (opens in a new tab)</span>
+                </>
+              ) : (
+                method.detail
+              )}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </Sheet>
   );
 }

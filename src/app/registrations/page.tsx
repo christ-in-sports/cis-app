@@ -1,6 +1,7 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { embeddedOne } from '@/lib/attendance';
+import { type PaymentMethod } from '@/lib/registration/payment';
 import RegistrationsClient, { type RosterEntry } from './registrations-client';
 
 export default async function RegistrationsPage() {
@@ -44,6 +45,7 @@ export default async function RegistrationsPage() {
         .select(
           `id, kid_id, grade, division, tshirt_size, top_sports, active,
            consent_given_at, team_id,
+           payments(id, amount_cents, method, received_at),
            kids!inner(
              id, first_name, last_name, dob, gender, allergies, home_address,
              email, phone, emergency_contact_name, emergency_contact_phone,
@@ -54,6 +56,9 @@ export default async function RegistrationsPage() {
         .order('last_name', { referencedTable: 'kids' })
     : { data: [] };
 
+  // `payments` comes back empty for anyone but an Admin: its RLS policy only
+  // admits Admin and the kid's linked parent (ENG-9), so there is no need to
+  // gate the embed here as well.
   const entries: RosterEntry[] = (rows ?? []).flatMap((r) => {
     const kid = embeddedOne(r.kids);
     if (!kid) return [];
@@ -66,6 +71,12 @@ export default async function RegistrationsPage() {
       active: r.active,
       consent_given_at: r.consent_given_at,
       team_id: r.team_id,
+      payments: (r.payments ?? []).map((p) => ({
+        id: p.id,
+        amount_cents: p.amount_cents,
+        method: p.method as PaymentMethod,
+        received_at: p.received_at,
+      })),
       kid,
     }];
   });
