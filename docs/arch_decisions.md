@@ -36,6 +36,13 @@ heading followed by:
 
 ## Decisions
 
+### 2026-10-05 — Payments are their own table, keyed on registration, written only through functions
+- **Status:** Accepted
+- **Context:** ENG-9 has an Admin record payments by hand (amount and method, partial payments allowed) before Stripe exists. The spec's `Payment` entity was keyed on `kid_id`, with an open question about moving it to `registration_id`. The simplest option would be `paid_at` / `paid_by` columns on `registrations`, mirroring consent.
+- **Decision:** A `payments` table with one row per payment received: `registration_id`, `amount_cents` (integer, CHECKed between 1 cent and $1,000), `method` (CHECKed to `cash` / `venmo` / `paypal`), `received_at` and `recorded_by`. Writes go only through `record_payments(ids[], amount_cents, method)` and `delete_payment(id)`, both `SECURITY DEFINER` and admin-only. The table has **no** write policy. RLS lets Admin and the kid's linked parent read it, and nobody else. Program Team and coaches are deliberately excluded, unlike the rest of the kid's record. The fee and the method details are code constants (`src/lib/registration/payment.ts`), like the waiver link.
+- **Consequences / tradeoffs:** Partial payments need more than one row per registration, so columns on `registrations` were ruled out. Keying on the registration scopes a payment to its season, which answers the spec's open question. Integer cents keep sums exact. With no write policy and the time and user derived from `now()` and `auth.uid()`, a payment record can't be back-dated or attributed to someone else, even by an Admin calling PostgREST directly. This is the same reasoning as consent (2026-09-23). Removing a mistake is a hard delete rather than a void flag: for now these are the Admin's own notes of money received, and a void flag can come with Stripe if it's needed. `import_commit()` and `register_kid()` upsert rather than replace the registration, so payments survive a re-import or a parent re-saving the form, and tests cover both. When Stripe arrives it should add its columns here rather than start a parallel table.
+- **Reference:** `project_spec.md` §2.4, §2.8; [`decisions.md`](./decisions.md) 2026-10-05; Linear [ENG-9](https://linear.app/cis-app/issue/ENG-9/registration-payment-methods-on-the-parent-form-admin-payment-tracking)
+
 ### 2026-09-28 — Parent registration writes go through SECURITY DEFINER functions
 - **Status:** Accepted
 - **Context:** ENG-4 lets a Parent create a kid and a registration. Until now only an Admin could write either table. The obvious route is to add Parent INSERT/UPDATE policies on `kids` and `registrations`.

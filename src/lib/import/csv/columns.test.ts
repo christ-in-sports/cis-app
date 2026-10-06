@@ -90,7 +90,8 @@ describe('mapHeaders on the expected form export', () => {
   });
 
   it('skips the payment column', () => {
-    // Payment is a separate ticket, out of scope for ENG-5.
+    // It lists how to pay, not whether anyone did -- an Admin records payments
+    // on the roster instead (ENG-9).
     expect(mapping.ignored.some((h) => h.startsWith('Paypal'))).toBe(true);
   });
 
