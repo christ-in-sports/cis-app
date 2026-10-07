@@ -1,8 +1,9 @@
 /**
  * Juniors / Ambassadors. Named `division` to match `registrations.division` and
- * project_spec.md §2.4. Note that `ministry_teams` and `attendance_groups` still
- * spell the same concept `session` in the database -- those columns were not
- * renamed, so their interfaces below keep that name deliberately.
+ * project_spec.md §2.4. Note that `attendance_groups` still spells the same
+ * concept `session` in the database -- that column was not renamed, so its
+ * interface below keeps that name deliberately. `ministry_teams` was renamed to
+ * `division` (and made required) in 20261008000000_competition_schema.sql.
  */
 export type Division = 'juniors' | 'ambassadors';
 export type AttStatus = 'unmarked' | 'present' | 'absent' | 'late' | 'excused';
@@ -10,7 +11,7 @@ export type AttStatus = 'unmarked' | 'present' | 'absent' | 'late' | 'excused';
 export interface MinistryTeam {
   id: string;
   name: string;
-  session: Division | null;
+  division: Division;
   active: boolean;
 }
 

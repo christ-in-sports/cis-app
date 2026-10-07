@@ -13,15 +13,14 @@ import {
   type RosterKid,
   type Division,
   DIVISION_LABEL,
+  DIVISION_SHORT,
   divisionAllowedForGrade,
 } from '@/lib/attendance';
 
 interface Team {
   id: string;
   name: string;
-  // `ministry_teams` still spells this `session` in the database; only
-  // `registrations` was renamed to `division`.
-  session: Division | null;
+  division: Division;
   active: boolean;
 }
 
@@ -64,7 +63,7 @@ export default function TeamsClient({
 
   const [showTeam, setShowTeam] = useState(false);
   const [tName, setTName] = useState('');
-  const [tSession, setTSession] = useState<'' | Division>('');
+  const [tDivision, setTDivision] = useState<'' | Division>('');
   const [tCoaches, setTCoaches] = useState<Set<string>>(new Set());
 
   const [manageCoaches, setManageCoaches] = useState<string | null>(null);
@@ -148,13 +147,13 @@ export default function TeamsClient({
 
   const createTeam = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tName.trim()) return;
+    if (!tName.trim() || !tDivision) return;
     setBusy(true);
 
     const { data, error } = await supabase
       .from('ministry_teams')
-      .insert({ name: tName.trim(), session: tSession || null })
-      .select('id, name, session, active')
+      .insert({ name: tName.trim(), division: tDivision })
+      .select('id, name, division, active')
       .single();
 
     if (error) {
@@ -174,7 +173,7 @@ export default function TeamsClient({
     }
 
     setTeams((p) => [...p, data].sort((a, b) => a.name.localeCompare(b.name)));
-    setTName(''); setTSession(''); setTCoaches(new Set()); setShowTeam(false);
+    setTName(''); setTDivision(''); setTCoaches(new Set()); setShowTeam(false);
     toast({ title: 'Team created' });
     setBusy(false);
   };
@@ -219,7 +218,7 @@ export default function TeamsClient({
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-muted-foreground text-center">
-              Only staff can create teams or change session assignments.
+              Only staff can create teams or change division assignments.
             </p>
             <Button variant="outline" className="w-full h-12" onClick={() => router.push('/attendance')}>
               ← Back
@@ -260,11 +259,12 @@ export default function TeamsClient({
                 <Input placeholder="Team name (e.g. Lions)" value={tName}
                        onChange={(e) => setTName(e.target.value)} required className="h-12 text-base" />
 
-                <select value={tSession} onChange={(e) => setTSession(e.target.value as any)}
+                <select value={tDivision} onChange={(e) => setTDivision(e.target.value as '' | Division)}
+                        required
                         className="w-full h-12 rounded-lg border border-input bg-background px-3 text-base">
-                  <option value="">Both sessions</option>
-                  <option value="juniors">Juniors only</option>
-                  <option value="ambassadors">Ambassadors only</option>
+                  <option value="" disabled>Choose a division</option>
+                  <option value="juniors">{DIVISION_LABEL.juniors}</option>
+                  <option value="ambassadors">{DIVISION_LABEL.ambassadors}</option>
                 </select>
 
                 <div className="space-y-2">
@@ -314,7 +314,7 @@ export default function TeamsClient({
                       <p className="text-sm font-medium truncate">{t.name}</p>
                       <p className="text-xs text-muted-foreground truncate">
                         {count} kid{count === 1 ? '' : 's'}
-                        {t.session && ` • ${t.session}`}
+                        {` • ${DIVISION_SHORT[t.division]}`}
                         {assigned.length > 0
                           ? ` • ${assigned.map(coachLabel).join(', ')}`
                           : ' • no coach'}

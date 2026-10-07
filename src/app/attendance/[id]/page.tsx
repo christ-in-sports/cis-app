@@ -24,7 +24,7 @@ export default async function TakePage({ params }: { params: Promise<{ id: strin
     await Promise.all([
       supabase.from('attendance_groups').select('*').eq('id', day.group_id).single(),
       supabase.from('attendance_records').select('*').eq('day_id', id),
-      supabase.from('ministry_teams').select('id, name, session, active').order('name'),
+      supabase.from('ministry_teams').select('id, name, division, active').order('name'),
       supabase.from('team_coaches').select('team_id').eq('user_id', user.id),
     ]);
 
