@@ -15,8 +15,8 @@
  *
  *     padding-bottom: calc(env(safe-area-inset-bottom) + 6rem)
  *
- * The same conflict affects roughly a dozen other screens (attendance,
- * tournament, dashboard) that still pair `safe-*` with a Tailwind padding
+ * The same conflict affects roughly a dozen other screens (attendance
+ * and others) that still pair `safe-*` with a Tailwind padding
  * class. Fixing those is its own change -- see the PR description.
  */
 

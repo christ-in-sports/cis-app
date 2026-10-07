@@ -4,13 +4,13 @@ import { Toaster } from '@/components/ui/toaster';
 import { caprasimo, figtree } from '@/lib/fonts';
 
 export const metadata: Metadata = {
-  title: 'CIS Tournament Manager',
-  description: 'Manage your CIS tournaments',
+  title: 'Christ in Sports',
+  description: 'Manage your CIS season',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Tournaments',
+    title: 'CIS',
   },
 };
 
