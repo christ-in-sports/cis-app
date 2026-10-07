@@ -13,13 +13,6 @@ interface User {
 
 const FEATURES = [
   {
-    title: 'Tournament Manager',
-    description: 'Create and manage sports tournaments with fixtures, scores, and standings',
-    emoji: '🏆',
-    href: '/dashboard',
-    ready: true,
-  },
-  {
     title: 'Attendance',
     description: 'Track member attendance',
     emoji: '📝',

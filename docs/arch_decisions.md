@@ -36,6 +36,13 @@ heading followed by:
 
 ## Decisions
 
+### 2026-10-07 — Prototype tournament schema removed, not migrated
+- **Status:** Accepted
+- **Context:** A "Tournament" module was built before the PRD and spec existed. It ran on its own permission model (`tournament_members`, share codes) and its own `teams`, separate from `ministry_teams`, with no season or division. Its RLS let any signed-in user insert themselves into a tournament as `owner`, and let any member promote themselves to `admin`. All of its data is test data.
+- **Decision:** Drop all eleven tournament tables and `get_my_tournament_ids()` in one migration (`20261007230000_drop_tournament_prototype.sql`), delete the routes and components that used them, and remove the `firebase` dependency (only the dropped push tables needed it). The replacement is a season-scoped competition feature (sport blocks, games, results) that uses `has_role()` like the rest of the app.
+- **Consequences / tradeoffs:** The security holes close immediately and no second permission model remains. The prototype's useful logic (fixtures, tiebreaks, scheduler) is ported from git history (`b4a77a6`) rather than kept in place. There is no sports competition feature until the replacement ships (ENG-12 to ENG-15); nothing real is lost. Push notifications are redesigned in v1.0.
+- **Reference:** Linear [ENG-11](https://linear.app/cis-app/issue/ENG-11), parent [ENG-10](https://linear.app/cis-app/issue/ENG-10)
+
 ### 2026-10-05 — Payments are their own table, keyed on registration, written only through functions
 - **Status:** Accepted
 - **Context:** ENG-9 has an Admin record payments by hand (amount and method, partial payments allowed) before Stripe exists. The spec's `Payment` entity was keyed on `kid_id`, with an open question about moving it to `registration_id`. The simplest option would be `paid_at` / `paid_by` columns on `registrations`, mirroring consent.

@@ -30,17 +30,12 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // Protected routes - redirect to login if not authenticated
-  const protectedPaths = ['/dashboard', '/tournament', '/registrations', '/attendance', '/spiritual', '/register'];
+  const protectedPaths = ['/registrations', '/attendance', '/spiritual', '/register'];
   const isProtected = protectedPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   );
 
-  // View-only tournament pages are public
-  const isViewOnly = request.nextUrl.pathname.match(
-    /^\/t\/[a-zA-Z0-9]+$/
-  );
-
-  if (isProtected && !isViewOnly && !user) {
+  if (isProtected && !user) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     url.searchParams.set('redirect', request.nextUrl.pathname);
