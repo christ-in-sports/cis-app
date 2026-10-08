@@ -18,11 +18,16 @@ export interface RoleCheck {
 }
 
 /**
- * Resolves the caller's identity and whether they hold `role`. Reads
- * `user_roles` (the "read own roles" policy makes it readable by the user
+ * Resolves the caller's identity and whether they hold at least one of `roles`.
+ * Reads `user_roles` (the "read own roles" policy makes it readable by the user
  * themselves), the same primitive `has_role()` is defined in terms of.
+ *
+ * Takes a list because some actions are open to more than one role (sports
+ * results: Admin or Program Team, project_spec.md 1.5). A user holding several
+ * of them has several rows, so this asks for any one row rather than expecting
+ * exactly one.
  */
-export async function checkRole(role: AppRole): Promise<RoleCheck> {
+export async function checkAnyRole(roles: readonly AppRole[]): Promise<RoleCheck> {
   const supabase = await createServerSupabaseClient();
 
   const {
@@ -37,8 +42,13 @@ export async function checkRole(role: AppRole): Promise<RoleCheck> {
     .from('user_roles')
     .select('role')
     .eq('user_id', user.id)
-    .eq('role', role)
-    .maybeSingle();
+    .in('role', [...roles])
+    .limit(1);
 
-  return { supabase, userId: user.id, hasRole: data !== null };
+  return { supabase, userId: user.id, hasRole: (data?.length ?? 0) > 0 };
+}
+
+/** Whether the caller holds `role`. See `checkAnyRole`. */
+export function checkRole(role: AppRole): Promise<RoleCheck> {
+  return checkAnyRole([role]);
 }
