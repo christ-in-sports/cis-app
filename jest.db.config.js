@@ -16,6 +16,12 @@ const config = {
   coverageProvider: 'v8',
   testEnvironment: 'node',
   testMatch: ['<rootDir>/supabase/tests/**/*.test.ts'],
+  // competition-actions.test.ts imports the real Server Actions, which import
+  // by the `@/` alias, and mocks two of their dependencies by the same
+  // specifier (see the note in jest.config.js).
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+  },
 };
 
 module.exports = createJestConfig(config);

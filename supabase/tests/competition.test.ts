@@ -961,3 +961,31 @@ describe('set_game_schedule', () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Trigger functions are not part of the public API
+// ---------------------------------------------------------------------------
+
+describe('trigger functions', () => {
+  it('are not executable by anon or signed-in users', async () => {
+    const fns = ['guard_sport_block_shape()', 'set_team_season()', 'set_day_season()'];
+    for (const fn of fns) {
+      const r = await pool.query(
+        `select has_function_privilege('anon', 'public.${fn}', 'execute') as anon,
+                has_function_privilege('authenticated', 'public.${fn}', 'execute') as authed`
+      );
+      expect(r.rows[0]).toEqual({ anon: false, authed: false });
+    }
+  });
+
+  it('still fire for an Admin who creates a team', async () => {
+    await withTx(pool, async (client) => {
+      const admin = await userWithRole(client, 'admin');
+      await asUser(client, admin, () =>
+        client.query(`insert into ministry_teams (name, division) values ('Fires trigger', 'juniors')`)
+      );
+      const row = (await client.query(`select season_id from ministry_teams where name = 'Fires trigger'`)).rows[0];
+      expect(row.season_id).toBe(await currentSeason(client));
+    });
+  });
+});

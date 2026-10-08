@@ -284,6 +284,7 @@ Trunk-based development, not GitFlow — appropriate for a 2-developer team with
 - ~~Should `Payment` reference `registration_id` instead of `kid_id`, so payments are scoped to a season?~~ **Resolved 2026-10-05:** yes. `payments.registration_id` (`docs/arch_decisions.md`).
 - How does the Director calculate and weight the season's final standings across sports? Until this is answered, only each team's place in each sport block is stored (`SportBlockPlace`).
 - How do team and individual awards count toward the overall standings?
+- In a league table, does head-to-head or goal (point, set, round) difference break a tie in points first? The app uses head-to-head first; the prototype used difference first. `rankStandings` supports both (`src/lib/competition/standings.ts`).
 - Should parents be able to see standings without an account (a public share link)? A possible future nice-to-have; standings currently require sign-in.
 
 ---
