@@ -13,7 +13,7 @@ export default async function TeamsPage() {
 
   const [{ data: teams }, { data: rows }, { data: coaches }, { data: links }] =
     await Promise.all([
-      supabase.from('ministry_teams').select('id, name, session, active').order('name'),
+      supabase.from('ministry_teams').select('id, name, division, active').order('name'),
       // Identity lives on `kids`, per-season fields on `registrations`; the roster
       // is the join of the two, flattened below into RosterKid.
       supabase.from('registrations')

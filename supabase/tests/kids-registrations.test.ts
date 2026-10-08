@@ -102,7 +102,7 @@ async function expectRejection(
 /** Creates a ministry team with the given user as its coach. */
 async function createTeamWithCoach(client: PoolClient, coachUserId: string): Promise<string> {
   const t = await client.query<{ id: string }>(
-    `insert into ministry_teams (name, session) values ('Test Team','juniors') returning id`
+    `insert into ministry_teams (name, division) values ('Test Team','juniors') returning id`
   );
   const teamId = t.rows[0].id;
   await client.query('insert into team_coaches (team_id, user_id) values ($1,$2)', [

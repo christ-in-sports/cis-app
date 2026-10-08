@@ -326,7 +326,7 @@ describe('register_kid -- the season registration', () => {
       const parentId = await makeParent(client, 'rk-team@test.local');
       const { kid_id, registration_id } = await registerAs(client, parentId);
       const team = await client.query<{ id: string }>(
-        `insert into ministry_teams (name, session) values ('Team A','juniors') returning id`
+        `insert into ministry_teams (name, division) values ('Team A','juniors') returning id`
       );
       await client.query('update registrations set team_id = $2 where id = $1', [
         registration_id,

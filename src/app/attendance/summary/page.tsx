@@ -21,7 +21,7 @@ export default async function SummaryPage() {
 
   const [{ data: rows }, { data: teams }, { data: days }] = await Promise.all([
     supabase.rpc('attendance_summary', { p_season: current?.id ?? null }),
-    supabase.from('ministry_teams').select('id, name, session, active').order('name'),
+    supabase.from('ministry_teams').select('id, name, division, active').order('name'),
     current
       ? supabase.from('attendance_days').select('id, date, group_id')
           .eq('season_id', current.id).order('date')

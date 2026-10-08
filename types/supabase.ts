@@ -191,6 +191,173 @@ export type Database = {
           },
         ]
       }
+      game_results: {
+        Row: {
+          away_total: number
+          details: Json
+          game_id: string
+          home_total: number
+          recorded_at: string
+          recorded_by: string | null
+          tiebreak_winner_team_id: string | null
+          winner_team_id: string | null
+        }
+        Insert: {
+          away_total: number
+          details?: Json
+          game_id: string
+          home_total: number
+          recorded_at?: string
+          recorded_by?: string | null
+          tiebreak_winner_team_id?: string | null
+          winner_team_id?: string | null
+        }
+        Update: {
+          away_total?: number
+          details?: Json
+          game_id?: string
+          home_total?: number
+          recorded_at?: string
+          recorded_by?: string | null
+          tiebreak_winner_team_id?: string | null
+          winner_team_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_results_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: true
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_results_recorded_by_fkey"
+            columns: ["recorded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_results_tiebreak_winner_team_id_fkey"
+            columns: ["tiebreak_winner_team_id"]
+            isOneToOne: false
+            referencedRelation: "ministry_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_results_winner_team_id_fkey"
+            columns: ["winner_team_id"]
+            isOneToOne: false
+            referencedRelation: "ministry_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      games: {
+        Row: {
+          away_team_id: string | null
+          court: number | null
+          created_at: string
+          event_id: string | null
+          group_label: string | null
+          home_team_id: string | null
+          id: string
+          label: string
+          loser_place: number | null
+          loser_to_game_id: string | null
+          loser_to_slot: string | null
+          round: number
+          scheduled_date: string | null
+          scheduled_time: string | null
+          sport_block_id: string
+          stage: string
+          status: string
+          winner_place: number | null
+          winner_to_game_id: string | null
+          winner_to_slot: string | null
+        }
+        Insert: {
+          away_team_id?: string | null
+          court?: number | null
+          created_at?: string
+          event_id?: string | null
+          group_label?: string | null
+          home_team_id?: string | null
+          id?: string
+          label: string
+          loser_place?: number | null
+          loser_to_game_id?: string | null
+          loser_to_slot?: string | null
+          round: number
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          sport_block_id: string
+          stage: string
+          status?: string
+          winner_place?: number | null
+          winner_to_game_id?: string | null
+          winner_to_slot?: string | null
+        }
+        Update: {
+          away_team_id?: string | null
+          court?: number | null
+          created_at?: string
+          event_id?: string | null
+          group_label?: string | null
+          home_team_id?: string | null
+          id?: string
+          label?: string
+          loser_place?: number | null
+          loser_to_game_id?: string | null
+          loser_to_slot?: string | null
+          round?: number
+          scheduled_date?: string | null
+          scheduled_time?: string | null
+          sport_block_id?: string
+          stage?: string
+          status?: string
+          winner_place?: number | null
+          winner_to_game_id?: string | null
+          winner_to_slot?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "games_away_team_id_fkey"
+            columns: ["away_team_id"]
+            isOneToOne: false
+            referencedRelation: "ministry_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_home_team_id_fkey"
+            columns: ["home_team_id"]
+            isOneToOne: false
+            referencedRelation: "ministry_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_loser_to_game_id_fkey"
+            columns: ["loser_to_game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_sport_block_id_fkey"
+            columns: ["sport_block_id"]
+            isOneToOne: false
+            referencedRelation: "sport_blocks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_winner_to_game_id_fkey"
+            columns: ["winner_to_game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       import_batches: {
         Row: {
           committed_at: string | null
@@ -391,26 +558,40 @@ export type Database = {
       ministry_teams: {
         Row: {
           active: boolean
+          color: string | null
           created_at: string | null
+          division: string
           id: string
           name: string
-          session: string | null
+          season_id: string
         }
         Insert: {
           active?: boolean
+          color?: string | null
           created_at?: string | null
+          division: string
           id?: string
           name: string
-          session?: string | null
+          season_id: string
         }
         Update: {
           active?: boolean
+          color?: string | null
           created_at?: string | null
+          division?: string
           id?: string
           name?: string
-          session?: string | null
+          season_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "ministry_teams_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payments: {
         Row: {
@@ -601,6 +782,92 @@ export type Database = {
         }
         Relationships: []
       }
+      sport_block_places: {
+        Row: {
+          place: number
+          sport_block_id: string
+          team_id: string
+        }
+        Insert: {
+          place: number
+          sport_block_id: string
+          team_id: string
+        }
+        Update: {
+          place?: number
+          sport_block_id?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sport_block_places_sport_block_id_fkey"
+            columns: ["sport_block_id"]
+            isOneToOne: false
+            referencedRelation: "sport_blocks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sport_block_places_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "ministry_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sport_blocks: {
+        Row: {
+          created_at: string
+          division: string
+          ends_on: string | null
+          format: string
+          id: string
+          league_structure: string | null
+          season_id: string
+          settings: Json
+          sport: string
+          starts_on: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          division: string
+          ends_on?: string | null
+          format: string
+          id?: string
+          league_structure?: string | null
+          season_id: string
+          settings?: Json
+          sport: string
+          starts_on?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          division?: string
+          ends_on?: string | null
+          format?: string
+          id?: string
+          league_structure?: string | null
+          season_id?: string
+          settings?: Json
+          sport?: string
+          starts_on?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sport_blocks_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_coaches: {
         Row: {
           added_at: string | null
@@ -675,6 +942,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _parse_competition_games: {
+        Args: { p_games: Json }
+        Returns: {
+          away_team_id: string
+          group_label: string
+          home_team_id: string
+          key: string
+          label: string
+          loser_place: number
+          lt_key: string
+          lt_slot: string
+          round: number
+          stage: string
+          winner_place: number
+          wt_key: string
+          wt_slot: string
+        }[]
+      }
       attendance_summary: {
         Args: { p_season?: string }
         Returns: {
@@ -697,14 +982,25 @@ export type Database = {
       }
       can_mark: { Args: { p_reg: string }; Returns: boolean }
       can_read_kid: { Args: { p_kid: string }; Returns: boolean }
+      can_score_competition: { Args: never; Returns: boolean }
       check_in_by_token: {
         Args: { p_day: string; p_method?: string; p_token: string }
         Returns: Json
       }
+      clear_game_result: { Args: { p_game_id: string }; Returns: undefined }
       coaches_kid: { Args: { p_kid: string }; Returns: boolean }
+      complete_sport_block: {
+        Args: { p_block_id: string; p_places?: string[] }
+        Returns: undefined
+      }
+      create_sport_block_games: {
+        Args: { p_block_id: string; p_games: Json }
+        Returns: number
+      }
       default_session: { Args: { g: string }; Returns: string }
       delete_payment: { Args: { p_payment_id: string }; Returns: string }
       grade_num: { Args: { g: string }; Returns: number }
+      has_any_role: { Args: never; Returns: boolean }
       has_role: {
         Args: { p_role: Database["public"]["Enums"]["app_role"] }
         Returns: boolean
@@ -718,6 +1014,16 @@ export type Database = {
         Returns: string
       }
       populate_attendance_day: { Args: { p_day: string }; Returns: number }
+      record_game_result: {
+        Args: {
+          p_away_total: number
+          p_details?: Json
+          p_game_id: string
+          p_home_total: number
+          p_tiebreak_winner?: string
+        }
+        Returns: undefined
+      }
       record_payments: {
         Args: {
           p_amount_cents: number
@@ -744,6 +1050,8 @@ export type Database = {
           registration_id: string
         }[]
       }
+      reset_sport_block: { Args: { p_block_id: string }; Returns: undefined }
+      set_game_schedule: { Args: { p_items: Json }; Returns: number }
       set_registrations_consent: {
         Args: { p_received: boolean; p_registration_ids: string[] }
         Returns: {

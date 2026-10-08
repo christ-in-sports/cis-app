@@ -205,14 +205,17 @@ Divisions (`juniors` / `ambassadors`) are an attribute on `Registration` and `Te
 | `UserRole` | user_id, role, granted_at, granted_by | belongs to `User` |
 | `Kid` | id, first_name, last_name, email?, phone?, gender, dob, allergies, home_address, emergency_contact_name, emergency_contact_phone, guardian_name, guardian_phone, guardian_email, skill_tags[], parent_user_id? | has many `Registration`, belongs to `User` (parent) |
 | `Registration` | id, kid_id, season_id, grade, division, tshirt_size, top_sports[]?, consent_given_at?, consent_by_user_id?, team_id?, created_at | belongs to `Kid`, `Season`, `Team` |
-| `Team` | id, name, sport, division, coach_user_id, season_id | has many `Registration`, belongs to `Season` |
+| `Team` | id, name, division, color?, season_id | has many `Registration`, `Game`; has coaches via `team_coaches`; belongs to `Season`. Lasts the whole season, so it has no sport. |
 | `Season` | id, name, start_date, end_date, is_current | has many `Event`, `Team` |
 | `Event` | id, season_id, title, date, time, location, type | belongs to `Season` |
 | `Attendance_Kid` | id, kid_id, event_id, status, note, logged_by_user_id | belongs to `Kid`, `Event` |
 | `Attendance_Coach` | id, coach_user_id, event_id, status, note | belongs to `User`, `Event` |
 | `Verse` | id, reference, text, point_value, week_theme, is_active | has many `SpiritualRecord` |
 | `SpiritualRecord` | id, kid_id, verse_id, points_awarded, logged_by_user_id, date | belongs to `Kid`, `Verse` |
-| `GameScore` | id, team_id, event_id, sport, points_scored | belongs to `Team`, `Event` |
+| `SportBlock` | id, season_id, division, sport, format (`league` / `knockout` / `league_knockout`), league_structure? (`round_robin` / `groups`), status (`setup` / `league` / `knockout` / `completed`), starts_on?, ends_on?, settings | one sport for one division over 3–4 weeks; belongs to `Season`; has many `Game`, `SportBlockPlace` |
+| `Game` | id, sport_block_id, home_team_id?, away_team_id?, stage (`league` / `knockout` / `placement`), round, label, group_label?, event_id?, scheduled_date?, scheduled_time?, court?, status, winner_to_game_id?/slot, loser_to_game_id?/slot, winner_place?, loser_place? | belongs to `SportBlock`, optionally `Event`; has one `GameResult`. Knockout games say where the winner and loser go. |
+| `GameResult` | game_id, home_total, away_total, details, winner_team_id?, tiebreak_winner_team_id?, recorded_by, recorded_at | belongs to `Game`. Replaces `GameScore`. `winner_team_id` is null only for a drawn league game. |
+| `SportBlockPlace` | sport_block_id, team_id, place | each team's final place in a completed block; input to the season's overall standings |
 | `Payment` | id, registration_id, amount_cents, method (`cash` / `venmo` / `paypal`), received_at, recorded_by | belongs to `Registration`; many per registration (partial payments) |
 | `Equipment` | id, item_name, quantity, requested_by_user_id, status | belongs to `User` |
 
@@ -279,6 +282,9 @@ Trunk-based development, not GitFlow — appropriate for a 2-developer team with
 - Is a registration waitlist needed if a division/team fills up?
 - ~~How do we enforce that only Admin, the kid's coach and the linked parent can see `home_address` and the emergency contact?~~ **Resolved 2026-09-22:** Program Team may see them too (`docs/decisions.md`), so the set of readers for the contact fields is the same as for the roster row. A plain row-level policy on `kids` is therefore sufficient, and the proposed 1:1 `KidContact` table is not needed.
 - ~~Should `Payment` reference `registration_id` instead of `kid_id`, so payments are scoped to a season?~~ **Resolved 2026-10-05:** yes. `payments.registration_id` (`docs/arch_decisions.md`).
+- How does the Director calculate and weight the season's final standings across sports? Until this is answered, only each team's place in each sport block is stored (`SportBlockPlace`).
+- How do team and individual awards count toward the overall standings?
+- Should parents be able to see standings without an account (a public share link)? A possible future nice-to-have; standings currently require sign-in.
 
 ---
 

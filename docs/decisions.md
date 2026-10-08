@@ -28,6 +28,12 @@ issue holds the detail; this file is the index of "what's now different from the
 
 ## Decisions
 
+### 2026-10-08 — A team has exactly one division, and lasts the whole season
+- **PRD reference:** §3.5 / §6 Core Data Model (`Team`); sports standings and scoring
+- **What changed:** Every team belongs to one division, Juniors or Ambassadors, and to a season. The team screen no longer offers "Both sessions". A team is not made per sport: the same teams play soccer, volleyball, basketball and dodgeball in turn, and Juniors and Ambassadors are ranked separately. Teams are still created and edited by Admin only, since the permission matrix gives Program Team no roster update. Every role can see team names, because every role views standings.
+- **Why:** Standings are per division, so a team that spans both cannot be ranked. Director's answer (2026-10-07): teams stay the same all season. Sports differ between divisions and across seasons, so the sport belongs to a "sport block" (one sport for one division, 3–4 weeks), not to the team.
+- **Linear:** [ENG-12](https://linear.app/cis-app/issue/ENG-12), parent [ENG-10](https://linear.app/cis-app/issue/ENG-10)
+
 ### 2026-10-05 — Payments recorded by hand until Stripe; form shows how to pay, never whether you have
 - **PRD reference:** §3.5 US-PA-01 (Kid Registration); §1.6 / §6 payment processing (Stripe, installment plans)
 - **What changed:** (1) Before Stripe exists, the parent form shows the registration fee and the three ways to pay: cash to Maria Ehab or Joseph Tadrous, Venmo to @CIS-stantonios, or PayPal to paypal.me/ChristinSports. The fee is a placeholder ("To be announced") until pricing is confirmed. (2) Nothing on the form or in the kid picker says whether a kid has paid. (3) An Admin records each payment on the roster with its amount and method, one kid at a time or for several ticked kids at once, and can remove one entered by mistake. Partial payments are allowed, so a kid can have several. A "haven't paid" chip narrows the roster to kids with no payment at all. (4) The kid's linked parent may read their own kid's payments through the API, even though the form shows none. Coaches, Program Team and Prayer Team cannot see payments at all. (5) CSV-imported kids start with no payments. The export's payment column is ignored, because it lists how to pay, not whether anyone did.
