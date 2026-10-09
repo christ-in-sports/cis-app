@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Knockout bracket</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400..800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9DCC6;font-family:Figtree,system-ui,sans-serif;color:#241F1C}
+button{font-family:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible{outline:2px solid #EE6B2D;outline-offset:3px}
+.col{width:390px;flex:none}
+.cap{font-size:13px;font-weight:700;color:#5E534A;margin:0 0 8px 6px}
+.shell{width:390px;max-width:100%;background:#6F5133;border-radius:40px;overflow:hidden;box-shadow:0 18px 44px rgba(60,35,15,.26);display:flex;flex-direction:column;color:#F3E7D4}
+.sb{padding:14px 24px 0;display:flex;justify-content:space-between;font-size:13px;font-weight:700}
+.sb span{display:flex;gap:6px;align-items:center}
+.hd{padding:12px 24px 8px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.hd .k{font-size:13px;font-weight:700;color:#FFC98E}
+.hd .t{font-family:Caprasimo,cursive;font-size:25px;line-height:1.1;margin-top:2px}
+.hd .m{text-align:right;font-size:12px;font-weight:700;line-height:1.5;color:#EBDCC3}
+.tabs{padding:10px 14px 0;display:flex;gap:8px}
+.tab{flex:1;text-align:center;padding:11px 8px 12px;border:none;border-radius:18px 18px 0 0;background:#7A5C3C;color:#FFFCF6;min-height:60px;display:flex;flex-direction:column;justify-content:center;gap:2px;font-size:14px;font-weight:800}
+.tab small{font-size:12px;font-weight:700;color:#F3E7D4}
+.tab.on{background:#FFFCF6;color:#241F1C}.tab.on small{color:#5E534A}
+.sheet{margin:0 14px 14px;background:#FFFCF6;border-radius:26px;padding:20px 18px 22px;box-shadow:0 6px 14px rgba(40,22,8,.25);color:#241F1C}
+.sheet.j{border-radius:0 0 26px 26px}
+.sheet.p{background:#F3E7D4;box-shadow:0 6px 14px rgba(40,22,8,.22)}
+.h{font-family:Caprasimo,cursive;font-size:18px;line-height:1.15}
+.rule{height:5px;background:#201E1D;border-radius:3px}
+.note{font-size:12px;font-weight:700;color:#5E534A;line-height:1.45}
+.chip{display:inline-block;font-size:13px;font-weight:700;padding:6px 11px;border-radius:12px;white-space:nowrap}
+.chip.s{font-size:12px;padding:2px 8px}
+.c-sport{background:#C4341C;color:#FFF6EE}
+.c-tint{background:#FFE3C4;color:#9C3E12}
+.c-orange{background:#EE6B2D;color:#201E1D}
+.c-out{border:2px solid #241F1C;padding:0 6px;color:#241F1C}
+.c-dash{border:2px dashed #5E534A;padding:0 6px;color:#5E534A}
+.blocks{display:flex;gap:8px;flex-wrap:wrap;padding-bottom:12px}
+.blk{border:2px solid #241F1C;background:transparent;color:#241F1C;font-size:15px;font-weight:800;padding:0 16px;min-height:44px;border-radius:12px;display:inline-flex;align-items:center}
+.blk.on{background:#241F1C;color:#FFFCF6}
+.sec{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:18px 0 6px;border-top:5px solid #201E1D;margin-top:14px}
+.sec.f{border-top:none;margin-top:0;padding-top:6px}
+.sec .d{font-size:12px;font-weight:700;color:#5E534A}
+.g{padding:12px 0;border-bottom:1px solid #E3D4B8}
+.gl{display:flex;justify-content:space-between;gap:8px;font-size:12px;font-weight:700;color:#5E534A;margin-bottom:4px}
+.tr{display:flex;align-items:baseline;gap:8px;font-size:17px;line-height:1.4}
+.tr i{font-style:normal;width:18px;flex:none;font-size:12px;font-weight:700;color:#5E534A;text-align:right}
+.tr span{flex:1;min-width:0;font-weight:700}
+.tr.w span{font-weight:800}
+.tr.l span{font-weight:600;color:#5E534A}
+.tr.wt span{font-weight:600;color:#5E534A;font-size:15px}
+.tr b{font-family:Caprasimo,cursive;font-size:22px;font-weight:400;color:#C4341C}
+.gf{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;font-weight:700;color:#5E534A;flex-wrap:wrap}
+.gf .ic{width:14px;height:14px;stroke-width:3}
+.jump{display:flex;gap:8px;padding-bottom:4px;flex-wrap:wrap}
+.jb{border:2px solid #241F1C;background:transparent;color:#241F1C;font-size:13px;font-weight:700;padding:0 12px;min-height:44px;border-radius:12px}
+.nav{padding:6px 22px 24px;display:flex;justify-content:space-between;align-items:center;color:#F3E7D4}
+.ni{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11px;font-weight:700;min-width:56px;min-height:48px;justify-content:center;background:none;border:none;color:inherit}
+.ni.on{color:#FFC98E;font-weight:800}
+.ic{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.s{width:16px;height:16px}
+.sk{background:#FFFCF6;border-radius:12px;padding:12px;margin-bottom:12px;overflow:hidden}
+.sk .b{height:26px;border-radius:12px;background:#E0D2B8;margin-top:6px}
+.sk .hb{height:10px;width:90px;background:#201E1D;border-radius:3px}
+.skt{font-size:15px;font-weight:800;margin-bottom:8px}
+</style>
+</helmet>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-wifi" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><path d="M12 20h.01"/></symbol>
+<symbol id="i-batt" viewBox="0 0 24 24"><rect x="2" y="7" width="16" height="10" rx="3"/><path d="M21 11v2"/></symbol>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 20V10M9.5 20V4M16 20v-7M22 20H2"/></symbol>
+<symbol id="i-cal" viewBox="0 0 24 24"><path d="M16 3v4M8 3v4"/><rect x="3" y="7" width="18" height="14" rx="4"/><path d="M3 12h18"/></symbol>
+<symbol id="i-bracket" viewBox="0 0 24 24"><path d="M3 5h6v5h4M3 19h6v-5h4M13 12h8"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-7-7 7 7-7 7"/></symbol>
+</defs></svg>
+
+<div style="display:flex;gap:28px;padding:28px;align-items:flex-start;background:#E9DCC6">
+
+<!-- A · recommended, 8 teams -->
+<div class="col">
+<p class="cap">A · Recommended: rounds stacked, 8 teams, semi-finals under way</p>
+<div class="shell">
+<div class="sb"><span>12:10</span><span><svg class="ic s"><use href="#i-wifi"/></svg><svg class="ic s"><use href="#i-batt"/></svg></span></div>
+<div class="hd"><div><div class="k">Sports</div><div class="t">Bracket</div></div><div class="m"><div>Updated</div><div>12:10 PM</div></div></div>
+<div class="tabs">
+<button type="button" class="tab on">Juniors<small>Ages 10–13</small></button>
+<button type="button" class="tab">Ambassadors<small>Ages 14–18</small></button>
+</div>
+<div class="sheet j">
+<div class="blocks"><button type="button" class="blk on">Soccer</button><button type="button" class="blk">Basketball</button></div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:12px">
+<div class="h">Juniors soccer</div><span class="chip c-tint">Knockout · 8 teams</span>
+</div>
+<div class="jump"><button type="button" class="jb">Quarters</button><button type="button" class="jb">Semis</button><button type="button" class="jb">Final</button><button type="button" class="jb">Places</button></div>
+
+<div class="sec"><div class="h">Quarter-finals</div><div class="d">4 of 4 played</div></div>
+<div class="g"><div class="gl"><span>Quarter-final 1</span><span>Oct 19 · 9:00 · Court 1</span></div>
+<div class="tr w"><i>1</i><span>Lions</span><b>3</b></div><div class="tr l"><i>8</i><span>Rams</span><b>0</b></div>
+<div class="gf">Winner plays Semi-final 1</div></div>
+<div class="g"><div class="gl"><span>Quarter-final 2</span><span>Oct 19 · 9:00 · Court 2</span></div>
+<div class="tr w"><i>2</i><span>Falcons</span><b>2</b></div><div class="tr l"><i>7</i><span>Anchors</span><b>1</b></div>
+<div class="gf">Winner plays Semi-final 1</div></div>
+<div class="g"><div class="gl"><span>Quarter-final 3</span><span>Oct 19 · 9:45 · Court 1</span></div>
+<div class="tr l"><i>3</i><span>Eagles</span><b>2</b></div><div class="tr w"><i>6</i><span>Warriors</span><b>2</b></div>
+<div class="gf"><span class="chip s c-tint">Level, Warriors won on penalties</span></div>
+<div class="gf">Winner plays Semi-final 2</div></div>
+<div class="g"><div class="gl"><span>Quarter-final 4</span><span>Oct 19 · 9:45 · Court 2</span></div>
+<div class="tr w"><i>4</i><span>Hawks</span><b>1</b></div><div class="tr l"><i>5</i><span>Comets</span><b>0</b></div>
+<div class="gf">Winner plays Semi-final 2</div></div>
+
+<div class="sec"><div class="h">Semi-finals</div><div class="d">1 of 2 played</div></div>
+<div class="g"><div class="gl"><span>Semi-final 1</span><span>Oct 19 · 10:30 · Court 1</span></div>
+<div class="tr w"><i>1</i><span>Lions</span><b>2</b></div><div class="tr l"><i>2</i><span>Falcons</span><b>1</b></div>
+<div class="gf">Winner plays the final · loser plays 3rd place</div></div>
+<div class="g"><div class="gl"><span>Semi-final 2</span><span>Oct 19 · 10:30 · Court 2</span></div>
+<div class="tr"><i>6</i><span>Warriors</span></div><div class="tr"><i>4</i><span>Hawks</span></div>
+<div class="gf"><span class="chip s c-orange">Next up</span>Winner plays the final · loser plays 3rd place</div></div>
+
+<div class="sec"><div class="h">Final and 3rd place</div><div class="d">0 of 2 played</div></div>
+<div class="g"><div class="gl"><span>Final</span><span>Oct 19 · 12:00 · Court 1</span></div>
+<div class="tr"><i>1</i><span>Lions</span></div><div class="tr wt"><i></i><span>Winner of Semi-final 2</span></div>
+<div class="gf"><span class="chip s c-dash">Waiting</span>Decides 1st and 2nd</div></div>
+<div class="g"><div class="gl"><span>3rd place</span><span>Oct 19 · 11:15 · Court 1</span></div>
+<div class="tr"><i>2</i><span>Falcons</span></div><div class="tr wt"><i></i><span>Loser of Semi-final 2</span></div>
+<div class="gf"><span class="chip s c-dash">Waiting</span>Decides 3rd and 4th</div></div>
+
+<div class="sec"><div class="h">Placement games</div><div class="d">0 of 4 played</div></div>
+<div class="g"><div class="gl"><span>5th-place semi 1</span><span>Oct 19 · 10:30 · Court 3</span></div>
+<div class="tr"><i>8</i><span>Rams</span></div><div class="tr"><i>7</i><span>Anchors</span></div>
+<div class="gf"><span class="chip s c-out">Upcoming</span>Winner plays 5th place · loser plays 7th place</div></div>
+<div class="g"><div class="gl"><span>5th-place semi 2</span><span>Oct 19 · 10:30 · Court 4</span></div>
+<div class="tr"><i>3</i><span>Eagles</span></div><div class="tr"><i>5</i><span>Comets</span></div>
+<div class="gf"><span class="chip s c-out">Upcoming</span>Winner plays 5th place · loser plays 7th place</div></div>
+<div class="g"><div class="gl"><span>5th place</span><span>Oct 19 · 11:15 · Court 2</span></div>
+<div class="tr wt"><i></i><span>Winner of 5th-place semi 1</span></div><div class="tr wt"><i></i><span>Winner of 5th-place semi 2</span></div>
+<div class="gf"><span class="chip s c-dash">Waiting</span>Decides 5th and 6th</div></div>
+<div class="g" style="border-bottom:none"><div class="gl"><span>7th place</span><span>Oct 19 · 11:15 · Court 3</span></div>
+<div class="tr wt"><i></i><span>Loser of 5th-place semi 1</span></div><div class="tr wt"><i></i><span>Loser of 5th-place semi 2</span></div>
+<div class="gf"><span class="chip s c-dash">Waiting</span>Decides 7th and 8th</div></div>
+</div>
+<div class="nav">
+<button type="button" class="ni"><svg class="ic"><use href="#i-home"/></svg>Home</button>
+<button type="button" class="ni"><svg class="ic"><use href="#i-chart"/></svg>Standings</button>
+<button type="button" class="ni"><svg class="ic"><use href="#i-cal"/></svg>Schedule</button>
+<button type="button" class="ni on"><svg class="ic"><use href="#i-bracket"/></svg>Bracket</button>
+</div>
+</div>
+</div>
+
+<!-- B · 6 teams, byes -->
+<div class="col">
+<p class="cap">B · Six teams: seeds 1 and 2 have byes, quarter-finals under way</p>
+<div class="shell">
+<div class="sb"><span>9:50</span><span><svg class="ic s"><use href="#i-wifi"/></svg><svg class="ic s"><use href="#i-batt"/></svg></span></div>
+<div class="hd"><div><div class="k">Sports</div><div class="t">Bracket</div></div><div class="m"><div>Updated</div><div>9:50 AM</div></div></div>
+<div class="tabs">
+<button type="button" class="tab">Juniors<small>Ages 10–13</small></button>
+<button type="button" class="tab on">Ambassadors<small>Ages 14–18</small></button>
+</div>
+<div class="sheet j">
+<div class="blocks"><button type="button" class="blk on">Soccer</button><button type="button" class="blk">Basketball</button></div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:12px">
+<div class="h">Ambassadors soccer</div><span class="chip c-tint">Knockout · 6 teams</span>
+</div>
+<div class="jump"><button type="button" class="jb">Quarters</button><button type="button" class="jb">Semis</button><button type="button" class="jb">Final</button><button type="button" class="jb">Places</button></div>
+
+<div class="sec"><div class="h">Quarter-finals</div><div class="d">1 of 2 played</div></div>
+<div class="g"><div class="gl"><span>Bye</span><span>Straight to Semi-final 1</span></div>
+<div class="tr"><i>1</i><span>Saints</span></div></div>
+<div class="g"><div class="gl"><span>Bye</span><span>Straight to Semi-final 2</span></div>
+<div class="tr"><i>2</i><span>Shepherds</span></div></div>
+<div class="g"><div class="gl"><span>Quarter-final 1</span><span>Oct 19 · 9:00 · Court 1</span></div>
+<div class="tr w"><i>3</i><span>Kings</span><b>3</b></div><div class="tr l"><i>6</i><span>Pilgrims</span><b>1</b></div>
+<div class="gf">Winner plays Semi-final 2 · loser plays 5th place</div></div>
+<div class="g"><div class="gl"><span>Quarter-final 2</span><span>Oct 19 · 9:45 · Court 1</span></div>
+<div class="tr"><i>4</i><span>Titans</span></div><div class="tr"><i>5</i><span>Rangers</span></div>
+<div class="gf"><span class="chip s c-orange">Next up</span>Winner plays Semi-final 1 · loser plays 5th place</div></div>
+
+<div class="sec"><div class="h">Semi-finals</div><div class="d">0 of 2 played</div></div>
+<div class="g"><div class="gl"><span>Semi-final 1</span><span>Oct 19 · 10:30 · Court 1</span></div>
+<div class="tr"><i>1</i><span>Saints</span></div><div class="tr wt"><i></i><span>Winner of Quarter-final 2</span></div>
+<div class="gf"><span class="chip s c-dash">Waiting</span>Winner plays the final · loser plays 3rd place</div></div>
+<div class="g"><div class="gl"><span>Semi-final 2</span><span>Oct 19 · 10:30 · Court 2</span></div>
+<div class="tr"><i>2</i><span>Shepherds</span></div><div class="tr"><i>3</i><span>Kings</span></div>
+<div class="gf"><span class="chip s c-out">Upcoming</span>Winner plays the final · loser plays 3rd place</div></div>
+
+<div class="sec"><div class="h">Final and places</div><div class="d">0 of 3 played</div></div>
+<div class="g"><div class="gl"><span>Final</span><span>Oct 19 · 12:00 · Court 1</span></div>
+<div class="tr wt"><i></i><span>Winner of Semi-final 1</span></div><div class="tr wt"><i></i><span>Winner of Semi-final 2</span></div>
+<div class="gf"><span class="chip s c-dash">Waiting</span>Decides 1st and 2nd</div></div>
+<div class="g"><div class="gl"><span>3rd place</span><span>Oct 19 · 11:15 · Court 1</span></div>
+<div class="tr wt"><i></i><span>Loser of Semi-final 1</span></div><div class="tr wt"><i></i><span>Loser of Semi-final 2</span></div>
+<div class="gf"><span class="chip s c-dash">Waiting</span>Decides 3rd and 4th</div></div>
+<div class="g" style="border-bottom:none"><div class="gl"><span>5th place</span><span>Oct 19 · 11:15 · Court 2</span></div>
+<div class="tr"><i>6</i><span>Pilgrims</span></div><div class="tr wt"><i></i><span>Loser of Quarter-final 2</span></div>
+<div class="gf"><span class="chip s c-dash">Waiting</span>Decides 5th and 6th</div></div>
+</div>
+<div class="nav">
+<button type="button" class="ni"><svg class="ic"><use href="#i-home"/></svg>Home</button>
+<button type="button" class="ni"><svg class="ic"><use href="#i-chart"/></svg>Standings</button>
+<button type="button" class="ni"><svg class="ic"><use href="#i-cal"/></svg>Schedule</button>
+<button type="button" class="ni on"><svg class="ic"><use href="#i-bracket"/></svg>Bracket</button>
+</div>
+</div>
+</div>
+
+<!-- C · 7 teams, nothing played -->
+<div class="col">
+<p class="cap">C · Seven teams: one bye, nothing played yet</p>
+<div class="shell">
+<div class="sb"><span>8:05</span><span><svg class="ic s"><use href="#i-wifi"/></svg><svg class="ic s"><use href="#i-batt"/></svg></span></div>
+<div class="hd"><div><div class="k">Sports</div><div class="t">Bracket</div></div><div class="m"><div>Updated</div><div>8:05 AM</div></div></div>
+<div class="tabs">
+<button type="button" class="tab on">Juniors<small>Ages 10–13</small></button>
+<button type="button" class="tab">Ambassadors<small>Ages 14–18</small></button>
+</div>
+<div class="sheet j">
+<div class="blocks"><button type="button" class="blk">Soccer</button><button type="button" class="blk on">Basketball</button></div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:12px">
+<div class="h">Juniors basketball</div><span class="chip c-tint">Knockout · 7 teams</span>
+</div>
+<div class="jump"><button type="button" class="jb">Quarters</button><button type="button" class="jb">Semis</button><button type="button" class="jb">Final</button><button type="button" class="jb">Places</button></div>
+
+<div class="sec"><div class="h">Quarter-finals</div><div class="d">0 of 3 played</div></div>
+<div class="g"><div class="gl"><span>Bye</span><span>Straight to Semi-final 1</span></div>
+<div class="tr"><i>1</i><span>Lions</span></div></div>
+<div class="g"><div class="gl"><span>Quarter-final 1</span><span>Oct 26 · 9:00 · Court 1</span></div>
+<div class="tr"><i>2</i><span>Falcons</span></div><div class="tr"><i>7</i><span>Anchors</span></div>
+<div class="gf"><span class="chip s c-out">Upcoming</span>Winner plays Semi-final 2</div></div>
+<div class="g"><div class="gl"><span>Quarter-final 2</span><span>Oct 26 · 9:00 · Court 2</span></div>
+<div class="tr"><i>3</i><span>Eagles</span></div><div class="tr"><i>6</i><span>Warriors</span></div>
+<div class="gf"><span class="chip s c-out">Upcoming</span>Winner plays Semi-final 2</div></div>
+<div class="g"><div class="gl"><span>Quarter-final 3</span><span>Oct 26 · 9:45 · Court 1</span></div>
+<div class="tr"><i>4</i><span>Hawks</span></div><div class="tr"><i>5</i><span>Comets</span></div>
+<div class="gf"><span class="chip s c-out">Upcoming</span>Winner plays Semi-final 1</div></div>
+
+<div class="sec"><div class="h">Semi-finals</div><div class="d">0 of 2 played</div></div>
+<div class="g"><div class="gl"><span>Semi-final 1</span><span>Oct 26 · 10:30 · Court 1</span></div>
+<div class="tr"><i>1</i><span>Lions</span></div><div class="tr wt"><i></i><span>Winner of Quarter-final 3</span></div>
+<div class="gf"><span class="chip s c-dash">Waiting</span>Winner plays the final · loser plays 3rd place</div></div>
+<div class="g"><div class="gl"><span>Semi-final 2</span><span>Oct 26 · 10:30 · Court 2</span></div>
+<div class="tr wt"><i></i><span>Winner of Quarter-final 1</span></div><div class="tr wt"><i></i><span>Winner of Quarter-final 2</span></div>
+<div class="gf"><span class="chip s c-dash">Waiting</span>Winner plays the final · loser plays 3rd place</div></div>
+
+<div class="sec"><div class="h">Final and places</div><div class="d">0 of 4 played</div></div>
+<div class="g"><div class="gl"><span>Final</span><span>Oct 26 · 12:00 · Court 1</span></div>
+<div class="tr wt"><i></i><span>Winner of Semi-final 1</span></div><div class="tr wt"><i></i><span>Winner of Semi-final 2</span></div>
+<div class="gf"><span class="chip s c-dash">Waiting</span>Decides 1st and 2nd</div></div>
+<div class="g"><div class="gl"><span>3rd place</span><span>Oct 26 · 11:15 · Court 1</span></div>
+<div class="tr wt"><i></i><span>Loser of Semi-final 1</span></div><div class="tr wt"><i></i><span>Loser of Semi-final 2</span></div>
+<div class="gf"><span class="chip s c-dash">Waiting</span>Decides 3rd and 4th</div></div>
+<div class="g"><div class="gl"><span>Placement 1</span><span>Oct 26 · 10:30 · Court 3</span></div>
+<div class="tr wt"><i></i><span>Loser of Quarter-final 2</span></div><div class="tr wt"><i></i><span>Loser of Quarter-final 3</span></div>
+<div class="gf"><span class="chip s c-dash">Waiting</span>Loser takes 7th</div></div>
+<div class="g" style="border-bottom:none"><div class="gl"><span>5th place</span><span>Oct 26 · 11:15 · Court 2</span></div>
+<div class="tr wt"><i></i><span>Loser of Quarter-final 1</span></div><div class="tr wt"><i></i><span>Winner of Placement 1</span></div>
+<div class="gf"><span class="chip s c-dash">Waiting</span>Decides 5th and 6th</div></div>
+</div>
+<div class="nav">
+<button type="button" class="ni"><svg class="ic"><use href="#i-home"/></svg>Home</button>
+<button type="button" class="ni"><svg class="ic"><use href="#i-chart"/></svg>Standings</button>
+<button type="button" class="ni"><svg class="ic"><use href="#i-cal"/></svg>Schedule</button>
+<button type="button" class="ni on"><svg class="ic"><use href="#i-bracket"/></svg>Bracket</button>
+</div>
+</div>
+</div>
+
+<!-- D · options considered -->
+<div class="col">
+<p class="cap">D · Options explored for a phone-width bracket</p>
+<div class="shell">
+<div class="sb"><span>9:41</span><span><svg class="ic s"><use href="#i-wifi"/></svg><svg class="ic s"><use href="#i-batt"/></svg></span></div>
+<div class="hd"><div><div class="k">Sports</div><div class="t">Bracket options</div></div></div>
+<div style="padding-top:8px"></div>
+<div class="sheet p" style="margin-top:6px">
+<div class="sk">
+<div class="skt">1 · Rounds stacked (chosen)</div>
+<div class="hb"></div>
+<div class="b"></div><div class="b"></div>
+<div class="hb" style="margin-top:12px"></div>
+<div class="b"></div>
+<div class="note" style="margin-top:8px">Every game readable at full size. Round jump chips replace scrolling. "Winner plays …" text does the job of connector lines.</div>
+</div>
+<div class="sk">
+<div class="skt">2 · Swipe between rounds</div>
+<div style="display:flex;gap:8px;margin-bottom:6px"><span style="width:60px;height:20px;border-radius:12px;background:#241F1C"></span><span style="width:60px;height:20px;border-radius:12px;border:2px solid #241F1C;box-sizing:border-box"></span><span style="width:60px;height:20px;border-radius:12px;border:2px solid #241F1C;box-sizing:border-box"></span></div>
+<div style="display:flex;gap:10px;width:440px">
+<div style="width:290px"><div class="b"></div><div class="b"></div><div class="b"></div></div>
+<div style="width:290px"><div class="b"></div><div class="b" style="margin-top:32px"></div></div>
+</div>
+<div class="note" style="margin-top:8px">One round at a time, so you cannot see where a team goes next. Horizontal swipes also fight the PWA's own back gesture.</div>
+</div>
+<div class="sk" style="margin-bottom:0">
+<div class="skt">3 · Connector lines</div>
+<div style="width:326px;overflow:hidden">
+<svg width="520" height="150" viewBox="0 0 520 150" fill="none" stroke="#201E1D" stroke-width="3" stroke-linecap="round">
+<rect x="2" y="4" width="110" height="26" rx="12" fill="#E0D2B8" stroke="none"/><rect x="2" y="38" width="110" height="26" rx="12" fill="#E0D2B8" stroke="none"/>
+<rect x="2" y="84" width="110" height="26" rx="12" fill="#E0D2B8" stroke="none"/><rect x="2" y="118" width="110" height="26" rx="12" fill="#E0D2B8" stroke="none"/>
+<path d="M112 17h20v34h-20M112 51"/><path d="M132 34h20"/><path d="M112 97h20v34h-20"/><path d="M132 114h20"/>
+<rect x="152" y="21" width="110" height="26" rx="12" fill="#E0D2B8" stroke="none"/><rect x="152" y="101" width="110" height="26" rx="12" fill="#E0D2B8" stroke="none"/>
+<path d="M262 34h20v80h-20"/><path d="M282 74h20"/>
+<rect x="302" y="61" width="110" height="26" rx="12" fill="#E0D2B8" stroke="none"/>
+</svg>
+</div>
+<div class="note" style="margin-top:8px">About 480px wide for 8 teams, so it pans sideways with text at roughly half size. Placement games have no natural place in the tree.</div>
+</div>
+</div>
+<div class="nav" style="height:30px"></div>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1700,"height":2300}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

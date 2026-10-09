@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Score entry rules</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400..800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9DCC6;font-family:Figtree,system-ui,sans-serif;color:#241F1C}
+button{font-family:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible{outline:2px solid #EE6B2D;outline-offset:3px}
+.col{width:390px;flex:none}
+.cap{font-size:13px;font-weight:700;color:#5E534A;margin:0 0 8px 6px}
+.shell{width:390px;max-width:100%;background:#6F5133;border-radius:40px;overflow:hidden;box-shadow:0 18px 44px rgba(60,35,15,.26);display:flex;flex-direction:column;color:#F3E7D4}
+.sb{padding:14px 24px 0;display:flex;justify-content:space-between;font-size:13px;font-weight:700}
+.sb span{display:flex;gap:6px;align-items:center}
+.hd{padding:12px 24px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.hd .k{font-size:13px;font-weight:700;color:#FFC98E}
+.hd .t{font-family:Caprasimo,cursive;font-size:25px;line-height:1.1;margin-top:2px}
+.x{width:44px;height:44px;border-radius:999px;border:3px solid #F3E7D4;background:transparent;color:#F3E7D4;display:flex;align-items:center;justify-content:center;flex:none}
+.sheet{margin:0 14px 14px;background:#FFFCF6;border-radius:26px;padding:20px 18px 22px;box-shadow:0 6px 14px rgba(40,22,8,.25);color:#241F1C}
+.h{font-family:Caprasimo,cursive;font-size:18px;line-height:1.15}
+.rule{height:5px;background:#201E1D;border-radius:3px}
+.dash{border-top:2px dashed #D6C4A6}
+.note{font-size:12px;font-weight:700;color:#5E534A;line-height:1.45}
+.body{font-size:15px;font-weight:600;line-height:1.5;color:#241F1C}
+.chip{display:inline-block;font-size:13px;font-weight:700;padding:6px 11px;border-radius:12px;white-space:nowrap}
+.c-tint{background:#FFE3C4;color:#9C3E12}
+.c-sport{background:#C4341C;color:#FFF6EE}
+.btn{border:none;background:#EE6B2D;color:#201E1D;font-weight:800;font-size:18px;padding:16px;border-radius:999px;min-height:58px;box-shadow:0 4px 0 #B14E1C;display:inline-flex;align-items:center;justify-content:center;gap:8px;flex:1}
+.btn.off{background:#E0D2B8;color:#5E534A;box-shadow:none}
+.btn.dg{background:#8E1F17;color:#FFF6EE;box-shadow:0 4px 0 #761A13}
+.btn2{border:3px solid #241F1C;background:transparent;color:#241F1C;font-weight:800;font-size:15px;padding:10px 20px;border-radius:999px;min-height:58px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn2.dg{border-color:#8E1F17;color:#8E1F17}
+.btn2.sm{min-height:44px;font-size:15px;padding:6px 16px}
+.bar{background:#FFFCF6;border-top:5px solid #201E1D;padding:14px 14px 24px;display:flex;gap:10px;align-items:center}
+.tn{font-family:Caprasimo,cursive;font-size:26px;line-height:1.1}
+.stp{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px}
+.sbtn{width:60px;height:60px;border-radius:999px;display:flex;align-items:center;justify-content:center;border:3px solid #241F1C;background:transparent;color:#241F1C;flex:none}
+.sbtn.p{border:none;background:#EE6B2D;color:#201E1D;box-shadow:0 4px 0 #B14E1C}
+.sbtn.off{border-color:#C9B49A;color:#5E534A;background:#E0D2B8;box-shadow:none}
+.sc{font-family:Caprasimo,cursive;font-size:56px;line-height:1;color:#C4341C;text-align:center;flex:1}
+.pick{flex:1;min-height:56px;border-radius:12px;border:2px solid #241F1C;background:transparent;color:#241F1C;font-size:17px;font-weight:800}
+.pick.on{background:#241F1C;color:#FFFCF6}
+.err{display:flex;gap:8px;align-items:flex-start;color:#C4341C;font-size:13px;font-weight:700;line-height:1.45;margin-top:10px}
+.err .ic{width:18px;height:18px;margin-top:1px}
+.ic{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.s{width:16px;height:16px}.ic.l{width:32px;height:32px}
+</style>
+</helmet>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-wifi" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><path d="M12 20h.01"/></symbol>
+<symbol id="i-batt" viewBox="0 0 24 24"><rect x="2" y="7" width="16" height="10" rx="3"/><path d="M21 11v2"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+<symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 2.4 18a2 2 0 0 0 1.7 3h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-7-7 7 7-7 7"/></symbol>
+</defs></svg>
+
+<div style="display:flex;gap:28px;padding:28px;align-items:flex-start;background:#E9DCC6">
+
+<!-- A · tiebreak asked -->
+<div class="col">
+<p class="cap">A · Knockout game ends level: the sheet asks who won the tiebreak</p>
+<div class="shell">
+<div class="sb"><span>9:58</span><span><svg class="ic s"><use href="#i-wifi"/></svg><svg class="ic s"><use href="#i-batt"/></svg></span></div>
+<div class="hd"><div><div class="k">Quarter-final 3 · Court 1 · 9:45</div><div class="t">Score entry</div></div><button type="button" class="x" aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button></div>
+<div class="sheet">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:12px">
+<div class="h">Juniors soccer</div><span class="chip c-tint">Knockout · no draws</span>
+</div>
+<div class="rule"></div>
+<div style="padding:12px 0 14px">
+<div class="tn">Eagles</div>
+<div class="stp"><button type="button" class="sbtn" aria-label="One fewer goal for Eagles"><svg class="ic l"><use href="#i-minus"/></svg></button><div class="sc">2</div><button type="button" class="sbtn p" aria-label="One more goal for Eagles"><svg class="ic l"><use href="#i-plus"/></svg></button></div>
+</div>
+<div class="dash"></div>
+<div style="padding:12px 0 14px">
+<div class="tn">Warriors</div>
+<div class="stp"><button type="button" class="sbtn" aria-label="One fewer goal for Warriors"><svg class="ic l"><use href="#i-minus"/></svg></button><div class="sc">2</div><button type="button" class="sbtn p" aria-label="One more goal for Warriors"><svg class="ic l"><use href="#i-plus"/></svg></button></div>
+</div>
+<div class="rule"></div>
+<div style="padding-top:14px">
+<div class="h">Level after full time</div>
+<div class="body" style="margin:4px 0 12px">Who won the penalty shootout?</div>
+<div style="display:flex;gap:10px"><button type="button" class="pick">Eagles</button><button type="button" class="pick on">Warriors</button></div>
+<div class="note" style="padding-top:10px">Basketball asks about overtime, dodgeball about the extra round.</div>
+</div>
+</div>
+<div class="bar"><button type="button" class="btn2">Cancel</button><button type="button" class="btn">Save score</button></div>
+</div>
+</div>
+
+<!-- B · validation -->
+<div class="col">
+<p class="cap">B · Validation: saved while level with no tiebreak winner picked</p>
+<div class="shell">
+<div class="sb"><span>9:58</span><span><svg class="ic s"><use href="#i-wifi"/></svg><svg class="ic s"><use href="#i-batt"/></svg></span></div>
+<div class="hd"><div><div class="k">Semi-final 2 · Court 2 · 10:30</div><div class="t">Score entry</div></div><button type="button" class="x" aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button></div>
+<div class="sheet">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:12px">
+<div class="h">Ambassadors basketball</div><span class="chip c-tint">Knockout · no draws</span>
+</div>
+<div class="rule"></div>
+<div style="padding:12px 0 14px">
+<div class="tn">Saints</div>
+<div class="stp"><button type="button" class="sbtn" aria-label="One fewer point for Saints"><svg class="ic l"><use href="#i-minus"/></svg></button><div class="sc">46</div><button type="button" class="sbtn p" aria-label="One more point for Saints"><svg class="ic l"><use href="#i-plus"/></svg></button></div>
+</div>
+<div class="dash"></div>
+<div style="padding:12px 0 14px">
+<div class="tn">Shepherds</div>
+<div class="stp"><button type="button" class="sbtn" aria-label="One fewer point for Shepherds"><svg class="ic l"><use href="#i-minus"/></svg></button><div class="sc">46</div><button type="button" class="sbtn p" aria-label="One more point for Shepherds"><svg class="ic l"><use href="#i-plus"/></svg></button></div>
+</div>
+<div class="rule"></div>
+<div style="padding-top:14px">
+<div class="h">Level after full time</div>
+<div class="body" style="margin:4px 0 12px">Who won in overtime?</div>
+<div style="display:flex;gap:10px;outline:3px solid #C4341C;outline-offset:6px;border-radius:12px"><button type="button" class="pick">Saints</button><button type="button" class="pick">Shepherds</button></div>
+<div class="err" role="alert"><svg class="ic"><use href="#i-warn"/></svg><span>Can't save yet. A knockout game can't end level, so pick who won in overtime.</span></div>
+</div>
+</div>
+<div class="bar"><button type="button" class="btn2">Cancel</button><button type="button" class="btn">Save score</button></div>
+</div>
+</div>
+
+<!-- C · blocked edit -->
+<div class="col">
+<p class="cap">C · Editing a played game: changing the winner is blocked</p>
+<div class="shell">
+<div class="sb"><span>10:40</span><span><svg class="ic s"><use href="#i-wifi"/></svg><svg class="ic s"><use href="#i-batt"/></svg></span></div>
+<div class="hd"><div><div class="k">Quarter-final 2 · Court 2 · 9:00</div><div class="t">Edit score</div></div><button type="button" class="x" aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button></div>
+<div class="sheet">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:12px">
+<div class="h">Juniors soccer</div><span class="chip c-sport">Final</span>
+</div>
+<div class="note" style="padding-bottom:10px">Recorded by Mina · Oct 19, 9:52 AM · was Falcons 2–1 Anchors</div>
+<div class="rule"></div>
+<div style="padding:12px 0 14px">
+<div class="tn">Falcons</div>
+<div class="stp"><button type="button" class="sbtn" aria-label="One fewer goal for Falcons"><svg class="ic l"><use href="#i-minus"/></svg></button><div class="sc">1</div><button type="button" class="sbtn p" aria-label="One more goal for Falcons"><svg class="ic l"><use href="#i-plus"/></svg></button></div>
+</div>
+<div class="dash"></div>
+<div style="padding:12px 0 8px">
+<div class="tn">Anchors</div>
+<div class="stp"><button type="button" class="sbtn" aria-label="One fewer goal for Anchors"><svg class="ic l"><use href="#i-minus"/></svg></button><div class="sc">2</div><button type="button" class="sbtn p" aria-label="One more goal for Anchors"><svg class="ic l"><use href="#i-plus"/></svg></button></div>
+</div>
+<div class="err" role="alert" style="padding:12px 0;border-top:2px solid #C4341C;margin-top:8px"><svg class="ic"><use href="#i-warn"/></svg><span>Can't change the winner. Anchors would take the Falcons' place in Semi-final 1, and Semi-final 1 has already been played. Clear that result first.</span></div>
+<button type="button" class="btn2 sm" style="width:100%">Open Semi-final 1<svg class="ic s" style="stroke-width:3"><use href="#i-arrow"/></svg></button>
+<div class="dash" style="margin-top:16px"></div>
+<div style="padding-top:16px">
+<button type="button" class="btn2 dg" style="width:100%"><svg class="ic s" style="stroke-width:3"><use href="#i-trash"/></svg>Clear this result</button>
+<div class="note" style="padding-top:8px">Sends this game back to upcoming. It is blocked for the same reason until Semi-final 1 is cleared.</div>
+</div>
+</div>
+<div class="bar"><button type="button" class="btn2">Cancel</button><button type="button" class="btn off" aria-disabled="true">Save score</button></div>
+</div>
+</div>
+
+<!-- D · clear confirmation -->
+<div class="col">
+<p class="cap">D · Clear result: destructive confirmation names what goes</p>
+<div class="shell">
+<div class="sb"><span>10:41</span><span><svg class="ic s"><use href="#i-wifi"/></svg><svg class="ic s"><use href="#i-batt"/></svg></span></div>
+<div class="hd"><div><div class="k">Semi-final 1 · Court 1 · 10:30</div><div class="t">Clear result</div></div><button type="button" class="x" aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button></div>
+<div class="sheet">
+<div class="h" style="font-size:22px;padding-bottom:12px">Clear Semi-final 1?</div>
+<div class="rule"></div>
+<div style="padding:14px 0">
+<div class="note">This result will be removed</div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;padding-top:4px"><span class="tn" style="font-size:22px">Lions 2 – 1 Falcons</span></div>
+<div class="note" style="padding-top:4px">Recorded by Mina · Oct 19, 10:52 AM</div>
+</div>
+<div class="dash"></div>
+<div style="padding:14px 0">
+<div class="note">What changes after that</div>
+<ul style="margin:6px 0 0;padding-left:20px" class="body">
+<li>Lions leave the Final and go back to waiting for Semi-final 1</li>
+<li>Falcons leave 3rd place and go back to waiting for Semi-final 1</li>
+<li>Semi-final 1 goes back to upcoming and can be scored again</li>
+</ul>
+</div>
+<div class="rule"></div>
+<div style="display:flex;flex-direction:column;gap:12px;padding-top:16px">
+<button type="button" class="btn dg"><svg class="ic s" style="stroke-width:3"><use href="#i-trash"/></svg>Clear result</button>
+<button type="button" class="btn2">Keep result</button>
+</div>
+</div>
+<div style="height:10px"></div>
+</div>
+</div>
+
+<!-- E · saving -->
+<div class="col">
+<p class="cap">E · Saving: controls locked, label changes, no spinner</p>
+<div class="shell">
+<div class="sb"><span>9:52</span><span><svg class="ic s"><use href="#i-wifi"/></svg><svg class="ic s"><use href="#i-batt"/></svg></span></div>
+<div class="hd"><div><div class="k">Round 1 · Court 1 · 9:45</div><div class="t">Score entry</div></div><button type="button" class="x" aria-label="Close" style="opacity:1;border-color:#C9B49A;color:#C9B49A"><svg class="ic"><use href="#i-x"/></svg></button></div>
+<div class="sheet">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:12px">
+<div class="h">Juniors soccer</div><span class="chip c-tint">League · draw allowed</span>
+</div>
+<div class="rule"></div>
+<div style="padding:12px 0 14px">
+<div class="tn">Falcons</div>
+<div class="stp"><button type="button" class="sbtn off" aria-disabled="true"><svg class="ic l"><use href="#i-minus"/></svg></button><div class="sc">2</div><button type="button" class="sbtn off" aria-disabled="true"><svg class="ic l"><use href="#i-plus"/></svg></button></div>
+</div>
+<div class="dash"></div>
+<div style="padding:12px 0 8px">
+<div class="tn">Comets</div>
+<div class="stp"><button type="button" class="sbtn off" aria-disabled="true"><svg class="ic l"><use href="#i-minus"/></svg></button><div class="sc">1</div><button type="button" class="sbtn off" aria-disabled="true"><svg class="ic l"><use href="#i-plus"/></svg></button></div>
+</div>
+<div class="note" style="padding-top:12px">Saving Falcons 2–1 Comets. Keep this open until it says saved.</div>
+</div>
+<div class="bar"><button type="button" class="btn2" style="border-color:#C9B49A;color:#5E534A">Cancel</button><button type="button" class="btn off" aria-disabled="true">Saving…</button></div>
+</div>
+</div>
+
+<!-- F · success -->
+<div class="col">
+<p class="cap">F · Saved: confirmation, standings effect, next game</p>
+<div class="shell">
+<div class="sb"><span>9:53</span><span><svg class="ic s"><use href="#i-wifi"/></svg><svg class="ic s"><use href="#i-batt"/></svg></span></div>
+<div class="hd"><div><div class="k">Round 1 · Court 1 · 9:45</div><div class="t">Score saved</div></div><button type="button" class="x" aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button></div>
+<div class="sheet">
+<div style="display:flex;align-items:center;gap:12px;padding-bottom:14px">
+<div style="width:44px;height:44px;border-radius:14px;border:3px solid #241F1C;background:#EE6B2D;display:flex;align-items:center;justify-content:center;flex:none"><svg class="ic" style="stroke:#201E1D;stroke-width:3.4"><use href="#i-check"/></svg></div>
+<div><div class="h">Saved to the schedule</div><div class="note" style="margin-top:2px">Recorded by you · 9:53 AM</div></div>
+</div>
+<div class="rule"></div>
+<div style="padding:16px 0">
+<div style="display:flex;justify-content:space-between;align-items:center"><span class="tn" style="font-size:30px">Falcons</span><span class="sc" style="flex:none;font-size:56px">2</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px"><span class="tn" style="font-size:30px;color:#5E534A">Comets</span><span class="sc" style="flex:none;font-size:56px">1</span></div>
+</div>
+<div class="dash"></div>
+<div style="padding:14px 0">
+<div class="note">Standings now</div>
+<div class="body" style="margin-top:2px">Falcons move to 2nd on 7 points. Comets drop to 5th.</div>
+</div>
+<div class="rule"></div>
+<div style="padding-top:14px">
+<div class="note">Next on Court 1</div>
+<div style="font-size:17px;font-weight:800;margin-top:2px">10:30 · Eagles vs. Warriors</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;margin-top:18px">
+<button type="button" class="btn">Score next game</button>
+<button type="button" class="btn2">Back to schedule</button>
+</div>
+</div>
+<div style="height:10px"></div>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":2536,"height":1250}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

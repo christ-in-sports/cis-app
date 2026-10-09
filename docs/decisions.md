@@ -28,6 +28,12 @@ issue holds the detail; this file is the index of "what's now different from the
 
 ## Decisions
 
+### 2026-10-08 — Sports screen design assumptions, pending director confirmation
+- **PRD reference:** sports competition screens (standings, schedule, bracket, score entry, block management)
+- **What changed:** The Sports screens in `design/reference/CIS Sports *.dc.html` were designed on these assumptions. Each is a guess, not a confirmed decision, so confirm or correct them before building: (1) league points are 3 for a win and 1 for a draw in every sport; (2) rank is points, then difference (GD/PD/SD/RD), and the knockout is seeded from the table; (3) once games exist, sport, division, format **and league structure** are locked (the brief listed only the first three); (4) clearing a game day sends its unplayed games back to unscheduled and leaves games that already have a result alone; (5) the 7-team placement games ("Placement 1", then 5th place) are a guess and must match the fixture generator; (6) the existing Admin Standings psalm-point column stays separate from sports standings, which carry no spiritual data.
+- **Why:** The design brief did not specify these. Still open for the director: whether Program Team (not just Admin) may edit a result after a block is completed, how a viewer with several kids sees "Your team", and whether a division can run two blocks of the same sport.
+- **Linear:** not yet filed
+
 ### 2026-10-08 — A team has exactly one division, and lasts the whole season
 - **PRD reference:** §3.5 / §6 Core Data Model (`Team`); sports standings and scoring
 - **What changed:** Every team belongs to one division, Juniors or Ambassadors, and to a season. The team screen no longer offers "Both sessions". A team is not made per sport: the same teams play soccer, volleyball, basketball and dodgeball in turn, and Juniors and Ambassadors are ranked separately. Teams are still created and edited by Admin only, since the permission matrix gives Program Team no roster update. Every role can see team names, because every role views standings.

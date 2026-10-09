@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sports navigation</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400..800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9DCC6;font-family:Figtree,system-ui,sans-serif;color:#241F1C}
+button{font-family:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible{outline:2px solid #EE6B2D;outline-offset:3px}
+.col{width:390px;flex:none}
+.cap{font-size:13px;font-weight:700;color:#5E534A;margin:0 0 8px 6px}
+.shell{width:390px;max-width:100%;background:#6F5133;border-radius:40px;overflow:hidden;box-shadow:0 18px 44px rgba(60,35,15,.26);display:flex;flex-direction:column;color:#F3E7D4}
+.sb{padding:14px 24px 0;display:flex;justify-content:space-between;font-size:13px;font-weight:700}
+.sb span{display:flex;gap:6px;align-items:center}
+.hd{padding:12px 24px 8px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.hd .k{font-size:13px;font-weight:700;color:#FFC98E}
+.hd .t{font-family:Caprasimo,cursive;font-size:25px;line-height:1.1;margin-top:2px}
+.hd .m{text-align:right;font-size:12px;font-weight:700;line-height:1.5;color:#EBDCC3}
+.tabs{padding:10px 14px 0;display:flex;gap:8px}
+.tab{flex:1;text-align:center;padding:11px 8px 12px;border:none;border-radius:18px 18px 0 0;background:#7A5C3C;color:#FFFCF6;min-height:60px;display:flex;flex-direction:column;justify-content:center;gap:2px;font-size:14px;font-weight:800}
+.tab small{font-size:12px;font-weight:700;color:#F3E7D4}
+.tab.on{background:#FFFCF6;color:#241F1C}.tab.on small{color:#5E534A}
+.sheet{margin:0 14px 14px;background:#FFFCF6;border-radius:26px;padding:20px 18px 22px;box-shadow:0 6px 14px rgba(40,22,8,.25);color:#241F1C}
+.sheet.j{border-radius:0 0 26px 26px}
+.sheet.p{background:#F3E7D4;box-shadow:0 6px 14px rgba(40,22,8,.22)}
+.h{font-family:Caprasimo,cursive;font-size:18px;line-height:1.15}
+.rule{height:5px;background:#201E1D;border-radius:3px}
+.note{font-size:12px;font-weight:700;color:#5E534A;line-height:1.45}
+.chip{display:inline-block;font-size:13px;font-weight:700;padding:6px 11px;border-radius:12px;white-space:nowrap}
+.chip.s{font-size:12px;padding:2px 8px}
+.c-sport{background:#C4341C;color:#FFF6EE}
+.c-out{border:2px solid #241F1C;padding:0 6px;color:#241F1C}
+.c-orange{background:#EE6B2D;color:#201E1D}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:64px;border-bottom:1px solid #DFCFAF;text-decoration:none;color:#241F1C}
+.row .a{font-size:17px;font-weight:800}
+.row .b{font-size:13px;font-weight:600;color:#5E534A;margin-top:2px}
+.row.mu .a{color:#5E534A;font-weight:700}
+.tb{width:100%;border-collapse:collapse;table-layout:fixed}
+.tb thead tr{border-bottom:4px solid #201E1D}
+.tb th{padding:0 0 8px;font-size:12px;font-weight:700;color:#5E534A;text-align:left}
+.tb tbody tr{border-bottom:1px solid #E3D4B8}
+.tb td{padding:12px 0;vertical-align:top}
+.tb td.tm{font-size:15px;font-weight:800;padding-top:14px}
+.tb td.ct{font-size:17px;font-weight:800;padding-top:12px;text-align:center}
+.tl{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:17px;line-height:1.35}
+.tl span{font-weight:700}.tl.w span{font-weight:800}.tl.l span{font-weight:600;color:#5E534A}
+.tl b{font-family:Caprasimo,cursive;font-size:22px;font-weight:400;color:#C4341C}
+.mt{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:12px;font-weight:700;color:#5E534A;flex-wrap:wrap}
+.sbtn{margin-top:10px;min-height:44px;padding:0 16px;border-radius:999px;font-size:14px;font-weight:800;border:3px solid #241F1C;background:transparent;color:#241F1C;display:inline-flex;align-items:center}
+.sbtn.p{border:none;background:#EE6B2D;color:#201E1D;box-shadow:0 4px 0 #B14E1C;margin-bottom:4px}
+.nav{padding:6px 14px 24px;display:flex;justify-content:space-between;align-items:center;color:#F3E7D4}
+.nav.g{padding:6px 22px 24px}
+.ni{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:11px;font-weight:700;min-width:56px;min-height:48px;justify-content:center;background:none;border:none;color:inherit}
+.ni.on{color:#FFC98E;font-weight:800}
+.ic{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.s{width:16px;height:16px}
+</style>
+</helmet>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-wifi" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><path d="M12 20h.01"/></symbol>
+<symbol id="i-batt" viewBox="0 0 24 24"><rect x="2" y="7" width="16" height="10" rx="3"/><path d="M21 11v2"/></symbol>
+<symbol id="i-home" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+<symbol id="i-clip" viewBox="0 0 24 24"><path d="M4 4h16v13l-4 4H4z"/><path d="M8 9h8M8 13h5"/></symbol>
+<symbol id="i-chart" viewBox="0 0 24 24"><path d="M3 20V10M9.5 20V4M16 20v-7M22 20H2"/></symbol>
+<symbol id="i-cal" viewBox="0 0 24 24"><path d="M16 3v4M8 3v4"/><rect x="3" y="7" width="18" height="14" rx="4"/><path d="M3 12h18"/></symbol>
+<symbol id="i-bracket" viewBox="0 0 24 24"><path d="M3 5h6v5h4M3 19h6v-5h4M13 12h8"/></symbol>
+<symbol id="i-sliders" viewBox="0 0 24 24"><path d="M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4"/></symbol>
+<symbol id="i-trophy" viewBox="0 0 24 24"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22M18 2H6v7a6 6 0 0 0 12 0V2z"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></symbol>
+<symbol id="i-chev-r" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+</defs></svg>
+
+<div style="display:flex;gap:28px;padding:28px;align-items:flex-start;background:#E9DCC6">
+
+<!-- A · home, global nav -->
+<div class="col">
+<p class="cap">A · Home: Sports is one item in the global nav, plus a shortcut sheet</p>
+<div class="shell">
+<div class="sb"><span>9:12</span><span><svg class="ic s"><use href="#i-wifi"/></svg><svg class="ic s"><use href="#i-batt"/></svg></span></div>
+<div class="hd"><div><div class="k">Saturday, Oct 12</div><div class="t">Today</div></div><div class="m"><div>Lions · 12U</div><div>Coach</div></div></div>
+<div class="sheet" style="margin-top:10px">
+<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding-bottom:12px"><div class="h" style="font-size:20px">Game day</div><span class="chip c-sport">Game</span></div>
+<div class="rule"></div>
+<div style="padding:14px 0 4px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px">
+<div><div style="font-family:Caprasimo,cursive;font-size:34px;line-height:1">Lions</div><div style="font-size:14px;font-weight:700;color:#5E534A;margin:3px 0">vs.</div><div style="font-family:Caprasimo,cursive;font-size:34px;line-height:1;color:#5E534A">Eagles</div></div>
+<div style="text-align:right"><div style="font-family:Caprasimo,cursive;font-size:30px;line-height:1;color:#C4341C">10:30</div><div style="font-size:14px;font-weight:700;margin-top:4px">AM · Court 3</div></div>
+</div>
+</div>
+<div class="sheet p">
+<div class="h" style="padding-bottom:6px">Sports</div>
+<a href="CIS Sports Standings.dc.html" class="row" style="border-top:4px solid #201E1D"><div><div class="a">Standings</div><div class="b">Juniors soccer · Lions are 1st</div></div><svg class="ic" style="color:#C2531B"><use href="#i-chev-r"/></svg></a>
+<a href="CIS Sports Schedule.dc.html" class="row"><div><div class="a">Schedule</div><div class="b">Next game 10:30 · Court 3</div></div><svg class="ic" style="color:#C2531B"><use href="#i-chev-r"/></svg></a>
+<a href="CIS Sports Bracket.dc.html" class="row mu" style="border-bottom:none"><div><div class="a">Bracket</div><div class="b">Opens when the knockout starts</div></div><svg class="ic" style="color:#5E534A"><use href="#i-chev-r"/></svg></a>
+</div>
+<div class="nav g">
+<button type="button" class="ni on"><svg class="ic"><use href="#i-clip"/></svg>Today</button>
+<button type="button" class="ni"><svg class="ic"><use href="#i-trophy"/></svg>Sports</button>
+<button type="button" class="ni"><svg class="ic"><use href="#i-cal"/></svg>Calendar</button>
+<button type="button" class="ni"><svg class="ic"><use href="#i-user"/></svg>Team</button>
+</div>
+</div>
+</div>
+
+<!-- B · inside Sports, reader -->
+<div class="col">
+<p class="cap">B · Inside Sports, everyone: the bottom nav swaps to the Sports set, Home goes back</p>
+<div class="shell">
+<div class="sb"><span>9:14</span><span><svg class="ic s"><use href="#i-wifi"/></svg><svg class="ic s"><use href="#i-batt"/></svg></span></div>
+<div class="hd"><div><div class="k">Sports</div><div class="t">Schedule</div></div><div class="m"><div>Updated</div><div>9:14 AM</div></div></div>
+<div class="tabs"><button type="button" class="tab on">Juniors<small>Ages 10–13</small></button><button type="button" class="tab">Ambassadors<small>Ages 14–18</small></button></div>
+<div class="sheet j">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding-bottom:10px"><div class="h">Saturday, Oct 12</div><div class="note">5 slots · 2 courts</div></div>
+<table class="tb">
+<colgroup><col style="width:56px"><col style="width:44px"><col></colgroup>
+<thead><tr><th scope="col">Time</th><th scope="col" style="text-align:center">Court</th><th scope="col">Game</th></tr></thead>
+<tbody>
+<tr><td class="tm">9:00</td><td class="ct">1</td><td><div class="tl w"><span>Lions</span><b>2</b></div><div class="tl l"><span>Rams</span><b>0</b></div><div class="mt"><span class="chip s c-sport">Final</span>Soccer · Round 1</div></td></tr>
+<tr><td class="tm">9:45</td><td class="ct">1</td><td><div class="tl"><span>Falcons</span><b>1</b></div><div class="tl"><span>Comets</span><b>1</b></div><div class="mt"><span class="chip s c-sport">Final</span>Soccer · Round 1 · draw</div></td></tr>
+<tr><td class="tm">10:30</td><td class="ct">1</td><td><div class="tl"><span>Eagles</span></div><div class="tl"><span>Warriors</span></div><div class="mt"><span class="chip s c-orange">Next up</span>Soccer · Round 1</div></td></tr>
+</tbody></table>
+</div>
+<div class="nav">
+<button type="button" class="ni"><svg class="ic"><use href="#i-home"/></svg>Home</button>
+<button type="button" class="ni"><svg class="ic"><use href="#i-chart"/></svg>Standings</button>
+<button type="button" class="ni on"><svg class="ic"><use href="#i-cal"/></svg>Schedule</button>
+<button type="button" class="ni"><svg class="ic"><use href="#i-bracket"/></svg>Bracket</button>
+</div>
+</div>
+</div>
+
+<!-- C · inside Sports, writer -->
+<div class="col">
+<p class="cap">C · Inside Sports, Admin and Program Team: Manage joins the set, and games gain Enter score</p>
+<div class="shell">
+<div class="sb"><span>9:14</span><span><svg class="ic s"><use href="#i-wifi"/></svg><svg class="ic s"><use href="#i-batt"/></svg></span></div>
+<div class="hd"><div><div class="k">Sports</div><div class="t">Schedule</div></div><div class="m"><div>Updated</div><div>9:14 AM</div></div></div>
+<div class="tabs"><button type="button" class="tab on">Juniors<small>Ages 10–13</small></button><button type="button" class="tab">Ambassadors<small>Ages 14–18</small></button></div>
+<div class="sheet j">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding-bottom:10px"><div class="h">Saturday, Oct 12</div><div class="note">5 slots · 2 courts</div></div>
+<table class="tb">
+<colgroup><col style="width:56px"><col style="width:44px"><col></colgroup>
+<thead><tr><th scope="col">Time</th><th scope="col" style="text-align:center">Court</th><th scope="col">Game</th></tr></thead>
+<tbody>
+<tr><td class="tm">9:00</td><td class="ct">1</td><td><div class="tl w"><span>Lions</span><b>2</b></div><div class="tl l"><span>Rams</span><b>0</b></div><div class="mt"><span class="chip s c-sport">Final</span>Soccer · Round 1</div><button type="button" class="sbtn">Edit score</button></td></tr>
+<tr><td class="tm">9:45</td><td class="ct">1</td><td><div class="tl"><span>Falcons</span></div><div class="tl"><span>Comets</span></div><div class="mt"><span class="chip s c-orange">Next up</span>Soccer · Round 1</div><button type="button" class="sbtn p">Enter score</button></td></tr>
+<tr><td class="tm">10:30</td><td class="ct">1</td><td><div class="tl"><span>Eagles</span></div><div class="tl"><span>Warriors</span></div><div class="mt"><span class="chip s c-out">Upcoming</span>Soccer · Round 1</div><button type="button" class="sbtn">Enter score</button></td></tr>
+</tbody></table>
+</div>
+<div class="nav">
+<button type="button" class="ni"><svg class="ic"><use href="#i-home"/></svg>Home</button>
+<button type="button" class="ni"><svg class="ic"><use href="#i-chart"/></svg>Standings</button>
+<button type="button" class="ni on"><svg class="ic"><use href="#i-cal"/></svg>Schedule</button>
+<button type="button" class="ni"><svg class="ic"><use href="#i-bracket"/></svg>Bracket</button>
+<button type="button" class="ni"><svg class="ic"><use href="#i-sliders"/></svg>Manage</button>
+</div>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1282,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
