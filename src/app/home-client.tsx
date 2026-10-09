@@ -13,6 +13,13 @@ interface User {
 
 const FEATURES = [
   {
+    title: 'Sports',
+    description: 'Standings, schedule and brackets for every sport',
+    emoji: '🏆',
+    href: '/sports',
+    ready: true,
+  },
+  {
     title: 'Attendance',
     description: 'Track member attendance',
     emoji: '📝',

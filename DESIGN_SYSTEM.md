@@ -196,7 +196,7 @@ one-off markup per screen.
 | `RunOfDayList` | Coach home | Ruled-paper schedule list; row color varies by type (game = ember, verse = sage). |
 | `StandingsTable` | Admin standings | Real `<table>`, sortable headers, rank/team/record/points columns, leader-row wash. |
 | `DivisionTabs` | Admin standings | Juniors/Ambassadors switch; active tab joined visually to the sheet below. |
-| `UnverifiedFilterChip` | Admin standings | Toggle chip that filters the table to flagged rows; inverts fill when active. |
+| ~~`UnverifiedFilterChip`~~ | ~~Admin standings~~ | **Dropped 2026-10-08.** There is no score verification step (`docs/decisions.md`), so there is nothing to flag or filter. The Admin Standings reference still draws it; ignore that chip and the "unverified" labels in it. |
 | `VerseProgressBadge` | Spiritual/verse screens | Sage-colored, carries psalm-point state — not a bare dot. |
 | `BottomNav` | Global (mobile shell) | 4 items, Lucide icons (stroke-width 2.75), 11px labels, 56×48px min tap target. Items are a prop — only the Coach and Admin sets are designed. |
 
@@ -214,6 +214,16 @@ one-off markup per screen.
 | `BlockAction`, `ResultStrip` | `label`, `disabledReason`; `text` | A disabled action always shows its reason ("3 league games still need a result"). Results read "6 placed, 3 left to schedule". |
 | `ConfirmSheet`, `LockedField` | `title`, `deletes[]`, `keeps[]`, `requireTick`; `value`, `reason` | Destructive confirmations use `--cis-danger` and name exactly what goes. Locked fields say why. |
 | `SportsNav` | `role` | Entering Sports swaps `BottomNav` to Home / Standings / Schedule / Bracket, plus Manage for Admin and Program Team. The global set proposed alongside it is Today / Sports / Calendar / Team. |
+
+**Built so far (ENG-15, part 1 of 3: the screens everyone sees).** In `src/components/cis/`: `Chip` (variants `sport`, `active`, `outline`, `dashed`, `tint`; `faith` and `stamp` stay unbuilt), `Icon`, `Sheet` with `joined`, `DivisionTabs`, `BlockSwitcher`, `StandingsTable`, the schedule table (`ScheduleTable`, with `GameStateChip` and `TeamLines`), the bracket (`BracketSectionView`, `BracketGame`, `RoundJumpChips`), `SportsNav`, and three small ones the designs imply: `BoardShell` (the hardboard behind a screen, with the header), `LinkRow` (a ruled row that links on) and `EmptyNotice` (the waiting state: heading, sentence, optional note and action). Final places is a page in `src/app/sports/places`. **Not built yet:** `ScoreSheet` and its parts (part 2), `StageTracker`, `BlockAction`, `ResultStrip`, `ConfirmSheet`, `LockedField` and the block forms (part 3).
+
+**Where the code deliberately differs from the Sports mockups** (decided 2026-10-08, `docs/decisions.md`):
+- **No seed numbers** beside team names in the bracket. Seeds are not stored. Byes, "Winner plays …" and waiting games are as drawn.
+- **Rank is points, then head-to-head among the tied teams, then difference** (the mockup footnote said points, then difference). The footnote on the standings screen says what the code does.
+- **Slots are exactly one game long.** The mockups space slots 45 minutes apart for 30-minute games ("plus changeover"); there is no changeover setting, so 30-minute games run at 9:00, 9:30, 10:00.
+- **Sort headers are 34px tall**, as drawn, which is under the 44px tap minimum (see Open items).
+- **"Your team"** flags every team the viewer coaches or has a kid on, so a family with two kids on two teams sees both flagged.
+- **The Sports screens stand on the board, not on the cream page.** The sheet sets its own ink text (`Sheet`), because the board's text is pale.
 
 Decided on these screens: **teams are identified by name only**. No team-color swatch is shown, because any team hex could collide with orange, ember or sage and read as status.
 
@@ -273,7 +283,7 @@ differential, independent of sort — the rank number never changes on re-sort.
 
 ## 10. Open items
 
-- **Sports screens, flagged for a decision:** (1) score entry uses a 72px Caprasimo numeral,
+- **Sports screens, flagged for a decision** (1 and 2 concern the score entry screen, built in part 2 of ENG-15; 3 and 4 are as built): (1) score entry uses a 72px Caprasimo numeral,
   above the 26–34 scale, so it needs a token such as `--cis-display-score` or a cap at 34;
   (2) the score-entry screen shows ember errors and ember scores together, which §7 Forms says to
   revisit; (3) standings sort headers are 34px tall, under the 44px tap minimum, as in the Admin

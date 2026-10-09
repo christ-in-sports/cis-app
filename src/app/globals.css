@@ -78,6 +78,16 @@
   }
 }
 
+/* The design system's focus state (DESIGN_SYSTEM.md section 6), required on every
+   interactive element rather than left to the browser default. Applied to a whole
+   screen by putting `cis-focus-scope` on its container (BoardShell does). */
+@layer components {
+  .cis-focus-scope :is(a, button, input, select, textarea, summary, [role='button']):focus-visible {
+    outline: 2px solid var(--cis-orange);
+    outline-offset: 3px;
+  }
+}
+
 /* Mobile app feel */
 html, body {
   overscroll-behavior: none;

@@ -7,8 +7,8 @@
  * borders (§6), which is why `SheetRule` exists as its own part rather than
  * being a `border-t` on whatever follows it.
  *
- * Deliberately minimal: only the props the CSV import review screen actually
- * uses. The rest of the §7 inventory stays unbuilt until a screen needs it.
+ * Deliberately minimal: only the props the screens built so far use. The rest of
+ * the §7 inventory stays unbuilt until a screen needs it.
  */
 
 import type { ReactNode } from 'react';
@@ -16,19 +16,28 @@ import { cn } from '@/lib/utils';
 
 export function Sheet({
   tone = 'light',
+  joined,
   className,
   children,
 }: {
   /** `light` is the primary sheet, `paper` the secondary one (§7). */
   tone?: 'light' | 'paper';
+  /**
+   * Squares the top corners so the sheet reads as one piece with the active
+   * `DivisionTabs` tab above it (§6).
+   */
+  joined?: boolean;
   className?: string;
   children: ReactNode;
 }) {
   return (
     <div
       className={cn(
-        'rounded-cis-sheet shadow-cis-sheet',
+        // Ink text, set here rather than inherited: a sheet can sit on the dark
+        // board, whose own text is pale.
+        'rounded-cis-sheet text-cis-ink shadow-cis-sheet',
         tone === 'light' ? 'bg-cis-paper-light' : 'bg-cis-paper',
+        joined && 'rounded-t-none',
         className,
       )}
     >
