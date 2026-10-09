@@ -200,6 +200,25 @@ one-off markup per screen.
 | `VerseProgressBadge` | Spiritual/verse screens | Sage-colored, carries psalm-point state — not a bare dot. |
 | `BottomNav` | Global (mobile shell) | 4 items, Lucide icons (stroke-width 2.75), 11px labels, 56×48px min tap target. Items are a prop — only the Coach and Admin sets are designed. |
 
+**Sports components** — designed in `design/reference/CIS Sports *.dc.html` (2026-10-08). All are built from existing tokens; none needs a new color or radius. Rebuild in React; don't port the markup.
+
+| Component | Props | Notes |
+|---|---|---|
+| `BlockSwitcher` | `blocks[]`, `value` | `ChoiceGroup`-style chips (ink-filled when selected) that switch the sport block under a `DivisionTabs`. |
+| `StandingsTable` (extended) | `sport`, `groups[]`, `rows`, `yourTeamId` | Last two columns are labelled per sport: GD/GF, PD/PF, SD/SW, RD/RW. One table or two groups. Rank never changes on re-sort. P and W–D–L are centered, not right-aligned, so they don't touch. "Your team" is an apricot chip under the name (the leader wash is taken). |
+| `GameRow` + `GameState` | `game`, `state` (final / next up / upcoming / waiting), `canScore` | Real `<table>`: time, court, game. Final = ember chip, Next up = orange chip, Upcoming = outlined chip, Waiting = dashed chip. Waiting teams read "Winner of Semi-final 1". Writers get an "Enter score" / "Edit score" button. |
+| `BracketGame`, `RoundJumpChips` | `label`, `home`, `away` (seed, name or source, score), `winner`, `tiebreak`, `feedsInto` | **Bracket on a phone = rounds stacked vertically**, with jump chips and a "Winner plays …" line instead of connector lines. Byes are a labelled row. A level game shows both scores plus "won on penalties". |
+| `ScoreSheet` | `game`, `sport` | Full-screen sheet with a `StickyActionBar` (opaque paper, 5px ink rule on top). No dimming overlay, since transparency is banned. |
+| `ScoreStepper`, `SetTable`, `RoundWinnerPicker`, `TiebreakPrompt` | `value`, `quick[]`; `sets[]`; `rounds[]`; `sport` | Per-sport entry. Tiebreak shows only for a level knockout game; league games may draw. |
+| `StageTracker` | `format`, `stage` | Boxes joined by a rule: done = ink with a tick, now = orange with a numeral, later = outlined; each also has a Done / Now / Later label. Never a dot. |
+| `BlockAction`, `ResultStrip` | `label`, `disabledReason`; `text` | A disabled action always shows its reason ("3 league games still need a result"). Results read "6 placed, 3 left to schedule". |
+| `ConfirmSheet`, `LockedField` | `title`, `deletes[]`, `keeps[]`, `requireTick`; `value`, `reason` | Destructive confirmations use `--cis-danger` and name exactly what goes. Locked fields say why. |
+| `SportsNav` | `role` | Entering Sports swaps `BottomNav` to Home / Standings / Schedule / Bracket, plus Manage for Admin and Program Team. The global set proposed alongside it is Today / Sports / Calendar / Team. |
+
+Decided on these screens: **teams are identified by name only**. No team-color swatch is shown, because any team hex could collide with orange, ember or sage and read as status.
+
+Disabled buttons (not specified before): `--cis-track` fill, `--cis-ink-muted` text, no shadow. Disabled outline buttons use a `--cis-box-empty` outline.
+
 Each of these should be a real component in the codebase (not a one-off per-screen block) so
 new screens compose from the same set instead of reinventing layout.
 
@@ -213,6 +232,10 @@ new screens compose from the same set instead of reinventing layout.
 - **Admin standings** (`CIS Admin Standings.dc.html`). Purpose: an admin checks both divisions
   quickly and spots scores needing verification.
 
+- **Sports screens** (`CIS Sports Standings`, `Schedule`, `Bracket`, `Score Entry`, `Score Rules`,
+  `Manage Stages`, `Manage Forms`, `Final Places`, `Navigation` `.dc.html`). Standings, schedule,
+  bracket and final places for everyone; score entry and block management for Admin and Program
+  Team. Assumptions behind them are logged in `docs/decisions.md` (2026-10-08).
 - **Parent registration** (`/register`). Designed in code from this document's rules and the
   roster/import screens, **without a Claude Design prototype** — none existed when it was built.
   Treat it as provisional: a picker sheet ("Who are you registering?"), then one sheet per
@@ -250,6 +273,12 @@ differential, independent of sort — the rank number never changes on re-sort.
 
 ## 10. Open items
 
+- **Sports screens, flagged for a decision:** (1) score entry uses a 72px Caprasimo numeral,
+  above the 26–34 scale, so it needs a token such as `--cis-display-score` or a cap at 34;
+  (2) the score-entry screen shows ember errors and ember scores together, which §7 Forms says to
+  revisit; (3) standings sort headers are 34px tall, under the 44px tap minimum, as in the Admin
+  Standings reference; (4) the Sports nav item sets and the global Today / Sports / Calendar / Team
+  set are proposals, not agreed.
 - Vector logo artwork, plus a reversed/white version for dark grounds (currently raster only,
   light grounds only).
 - The program's own icon set, if one exists, to replace Lucide.

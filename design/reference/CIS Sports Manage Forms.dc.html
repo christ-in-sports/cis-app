@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manage block forms</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400..800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9DCC6;font-family:Figtree,system-ui,sans-serif;color:#241F1C}
+button{font-family:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible{outline:2px solid #EE6B2D;outline-offset:3px}
+.col{width:390px;flex:none}
+.cap{font-size:13px;font-weight:700;color:#5E534A;margin:0 0 8px 6px}
+.shell{width:390px;max-width:100%;background:#6F5133;border-radius:40px;overflow:hidden;box-shadow:0 18px 44px rgba(60,35,15,.26);display:flex;flex-direction:column;color:#F3E7D4}
+.sb{padding:14px 24px 0;display:flex;justify-content:space-between;font-size:13px;font-weight:700}
+.sb span{display:flex;gap:6px;align-items:center}
+.hd{padding:12px 24px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.hd .k{font-size:13px;font-weight:700;color:#FFC98E}
+.hd .t{font-family:Caprasimo,cursive;font-size:25px;line-height:1.1;margin-top:2px}
+.x{width:44px;height:44px;border-radius:999px;border:3px solid #F3E7D4;background:transparent;color:#F3E7D4;display:flex;align-items:center;justify-content:center;flex:none}
+.sheet{margin:0 14px 14px;background:#FFFCF6;border-radius:26px;padding:20px 18px 22px;box-shadow:0 6px 14px rgba(40,22,8,.25);color:#241F1C}
+.h{font-family:Caprasimo,cursive;font-size:18px;line-height:1.15}
+.rule{height:5px;background:#201E1D;border-radius:3px}
+.dash{border-top:2px dashed #D6C4A6}
+.note{font-size:12px;font-weight:700;color:#5E534A;line-height:1.45}
+.body{font-size:15px;font-weight:600;line-height:1.5}
+.chip{display:inline-block;font-size:13px;font-weight:700;padding:6px 11px;border-radius:12px;white-space:nowrap}
+.c-tint{background:#FFE3C4;color:#9C3E12}
+.btn{border:none;background:#EE6B2D;color:#201E1D;font-weight:800;font-size:18px;padding:16px;border-radius:999px;min-height:58px;box-shadow:0 4px 0 #B14E1C;display:flex;align-items:center;justify-content:center;gap:8px;flex:1}
+.btn.off{background:#E0D2B8;color:#5E534A;box-shadow:none}
+.btn.dg{background:#8E1F17;color:#FFF6EE;box-shadow:0 4px 0 #761A13}
+.btn2{border:3px solid #241F1C;background:transparent;color:#241F1C;font-weight:800;font-size:15px;padding:10px 20px;border-radius:999px;min-height:58px;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn2.dg{border-color:#8E1F17;color:#8E1F17}
+.bar{background:#FFFCF6;border-top:5px solid #201E1D;padding:14px 14px 24px;display:flex;gap:10px;align-items:center}
+.fld{margin-top:16px}
+.lab{font-size:15px;font-weight:700;margin-bottom:6px}
+.hint{font-size:13px;font-weight:600;color:#5E534A;margin-top:5px;line-height:1.4}
+.in{min-height:48px;border:2px solid #241F1C;border-radius:12px;background:#FFFCF6;padding:0 14px;font-size:17px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.in.lk{background:#F3E7D4;border-color:#F3E7D4}
+.cg{display:flex;gap:8px;flex-wrap:wrap}
+.ch{min-height:48px;padding:0 14px;border-radius:12px;border:2px solid #241F1C;background:transparent;font-size:15px;font-weight:800;color:#241F1C;flex:1;min-width:120px}
+.ch.on{background:#241F1C;color:#FFFCF6}
+.opt{display:flex;flex-direction:column;align-items:flex-start;text-align:left;width:100%;padding:8px 14px;min-height:56px;border-radius:12px;border:2px solid #241F1C;background:transparent;color:#241F1C;font-size:15px;font-weight:800;margin-bottom:8px;justify-content:center}
+.opt small{font-size:12px;font-weight:600;color:#5E534A}
+.opt.on{background:#241F1C;color:#FFFCF6}.opt.on small{color:#E3D4B8}
+.res{display:flex;gap:10px;align-items:flex-start;background:#F3E7D4;border-radius:12px;padding:12px 14px;font-size:15px;font-weight:700;line-height:1.4}
+.res .ic{width:20px;height:20px;stroke-width:3.2;margin-top:1px}
+.sbtn{width:56px;height:56px;border-radius:999px;display:flex;align-items:center;justify-content:center;border:3px solid #241F1C;background:transparent;color:#241F1C;flex:none}
+.sbtn.p{border:none;background:#EE6B2D;color:#201E1D;box-shadow:0 4px 0 #B14E1C}
+.tk{display:flex;align-items:center;gap:12px;min-height:56px;padding:6px 0}
+.tkb{width:44px;height:44px;border-radius:14px;border:3px solid #241F1C;display:flex;align-items:center;justify-content:center;flex:none}
+.tkb.on{background:#EE6B2D}
+.rd{display:flex;align-items:center;gap:12px;min-height:64px;padding:6px 0;border-bottom:1px solid #E3D4B8}
+.rd .tkb{width:36px;height:36px;border-radius:12px}
+.why{display:flex;gap:6px;align-items:flex-start;font-size:13px;font-weight:700;color:#5E534A;line-height:1.4;margin-top:8px}
+.ic{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.s{width:16px;height:16px}.ic.l{width:28px;height:28px}
+.trk{display:grid;grid-template-columns:repeat(4,1fr)}
+.st{display:flex;flex-direction:column;align-items:center;gap:6px}
+.st .rw{display:flex;align-items:center;width:100%}
+.st .ln{flex:1;height:0;border-top:3px solid #201E1D}
+.st .ln.u{border-top:3px dashed #C9B49A}
+.st .ln.h{visibility:hidden}
+.bx{width:36px;height:36px;border-radius:12px;border:3px solid #241F1C;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;box-sizing:border-box;flex:none}
+.bx.c{background:#EE6B2D;color:#201E1D}
+.bx.u{border-color:#5E534A;color:#5E534A}
+.st .lb{font-size:13px;font-weight:700;color:#5E534A;text-align:center}
+.st .lb.c{font-weight:800;color:#241F1C}
+.st .sl{font-size:11px;font-weight:700;color:#5E534A}
+.fx{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.fx .n{font-family:Caprasimo,cursive;font-size:26px;line-height:1}
+.fx .l{font-size:12px;font-weight:700;color:#5E534A;margin-top:4px}
+</style>
+</helmet>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-wifi" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><path d="M12 20h.01"/></symbol>
+<symbol id="i-batt" viewBox="0 0 24 24"><rect x="2" y="7" width="16" height="10" rx="3"/><path d="M21 11v2"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+<symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+<symbol id="i-cal" viewBox="0 0 24 24"><path d="M16 3v4M8 3v4"/><rect x="3" y="7" width="18" height="14" rx="4"/><path d="M3 12h18"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+</defs></svg>
+
+<div style="display:flex;gap:28px;padding:28px;align-items:flex-start;background:#E9DCC6">
+
+<!-- A · create -->
+<div class="col">
+<p class="cap">A · Create a block</p>
+<div class="shell">
+<div class="sb"><span>7:30</span><span><svg class="ic s"><use href="#i-wifi"/></svg><svg class="ic s"><use href="#i-batt"/></svg></span></div>
+<div class="hd"><div><div class="k">Admin · Manage sports</div><div class="t">New block</div></div><button type="button" class="x" aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button></div>
+<div class="sheet">
+<div class="h">What and who</div>
+<div class="fld"><div class="lab">Sport</div><div class="cg"><button type="button" class="ch on">Soccer</button><button type="button" class="ch">Basketball</button><button type="button" class="ch">Volleyball</button><button type="button" class="ch">Dodgeball</button></div></div>
+<div class="fld"><div class="lab">Division</div><div class="cg"><button type="button" class="ch on">Juniors</button><button type="button" class="ch">Ambassadors</button></div></div>
+<div class="rule" style="margin:22px 0 0"></div>
+<div class="h" style="padding-top:16px">How it runs</div>
+<div class="fld"><div class="lab">Format</div>
+<button type="button" class="opt">League only<small>Everyone plays everyone, ranked by points</small></button>
+<button type="button" class="opt">Knockout only<small>Seeded bracket with placement games</small></button>
+<button type="button" class="opt on">League then knockout<small>League table seeds the knockout</small></button>
+</div>
+<div class="fld"><div class="lab">League structure</div><div class="cg"><button type="button" class="ch on">One table</button><button type="button" class="ch">Two groups (A and B)</button></div>
+<div class="hint">Two groups needs at least 6 teams, split into 3 or 4 each.</div></div>
+<div class="rule" style="margin:22px 0 0"></div>
+<div class="h" style="padding-top:16px">When</div>
+<div class="fld"><div class="lab">Start date</div><div class="in"><span>Oct 12, 2026</span><svg class="ic"><use href="#i-cal"/></svg></div></div>
+<div class="fld"><div class="lab">End date</div><div class="in"><span>Dec 7, 2026</span><svg class="ic"><use href="#i-cal"/></svg></div></div>
+<div class="rule" style="margin:22px 0 0"></div>
+<div class="h" style="padding-top:16px">Soccer settings</div>
+<div class="fld"><div class="lab">Game length</div><div class="in"><span>30 minutes</span></div>
+<div class="hint">Volleyball adds sets per game, dodgeball adds rounds per game.</div></div>
+</div>
+<div class="bar"><button type="button" class="btn2">Cancel</button><button type="button" class="btn">Create block</button></div>
+</div>
+</div>
+
+<!-- B · edit, locked -->
+<div class="col">
+<p class="cap">B · Edit a block that already has games: sport, division and format are locked</p>
+<div class="shell">
+<div class="sb"><span>7:42</span><span><svg class="ic s"><use href="#i-wifi"/></svg><svg class="ic s"><use href="#i-batt"/></svg></span></div>
+<div class="hd"><div><div class="k">Admin · Manage sports</div><div class="t">Edit block</div></div><button type="button" class="x" aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button></div>
+<div class="sheet">
+<div class="res"><svg class="ic"><use href="#i-lock"/></svg><span>Sport, division, format and league structure are locked because this block has 28 games. To change them, reset the block first.</span></div>
+<div class="h" style="padding-top:18px">What and who</div>
+<div class="fld"><div class="lab">Sport</div><div class="in lk"><span>Soccer</span><svg class="ic"><use href="#i-lock"/></svg></div></div>
+<div class="fld"><div class="lab">Division</div><div class="in lk"><span>Juniors</span><svg class="ic"><use href="#i-lock"/></svg></div></div>
+<div class="rule" style="margin:22px 0 0"></div>
+<div class="h" style="padding-top:16px">How it runs</div>
+<div class="fld"><div class="lab">Format</div><div class="in lk"><span>League then knockout</span><svg class="ic"><use href="#i-lock"/></svg></div></div>
+<div class="fld"><div class="lab">League structure</div><div class="in lk"><span>One table</span><svg class="ic"><use href="#i-lock"/></svg></div></div>
+<div class="rule" style="margin:22px 0 0"></div>
+<div class="h" style="padding-top:16px">When</div>
+<div class="fld"><div class="lab">Start date</div><div class="in"><span>Oct 12, 2026</span><svg class="ic"><use href="#i-cal"/></svg></div></div>
+<div class="fld"><div class="lab">End date</div><div class="in"><span>Dec 14, 2026</span><svg class="ic"><use href="#i-cal"/></svg></div></div>
+<div class="rule" style="margin:22px 0 0"></div>
+<div class="h" style="padding-top:16px">Soccer settings</div>
+<div class="fld"><div class="lab">Game length</div><div class="in"><span>30 minutes</span></div></div>
+</div>
+<div class="bar"><button type="button" class="btn2">Cancel</button><button type="button" class="btn">Save changes</button></div>
+</div>
+</div>
+
+<!-- C · schedule a game day -->
+<div class="col">
+<p class="cap">C · Schedule a game day, with the outcome shown before you commit</p>
+<div class="shell">
+<div class="sb"><span>7:50</span><span><svg class="ic s"><use href="#i-wifi"/></svg><svg class="ic s"><use href="#i-batt"/></svg></span></div>
+<div class="hd"><div><div class="k">Juniors soccer · League</div><div class="t">Schedule a game day</div></div><button type="button" class="x" aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button></div>
+<div class="sheet">
+<div class="fld" style="margin-top:0"><div class="lab">Date</div><div class="in"><span>Sat, Oct 12</span><svg class="ic"><use href="#i-cal"/></svg></div></div>
+<div class="fld"><div class="lab">Start time</div><div class="in"><span>9:00 AM</span></div></div>
+<div class="fld"><div class="lab">Slots</div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><button type="button" class="sbtn" aria-label="One fewer slot"><svg class="ic l"><use href="#i-minus"/></svg></button><div style="font-family:Caprasimo,cursive;font-size:44px;line-height:1;flex:1;text-align:center">3</div><button type="button" class="sbtn p" aria-label="One more slot"><svg class="ic l"><use href="#i-plus"/></svg></button></div>
+<div class="hint">Slots at 9:00, 9:45 and 10:30 (30-minute games plus changeover).</div></div>
+<div class="fld"><div class="lab">Courts</div><div class="cg"><button type="button" class="ch" style="min-width:60px">1</button><button type="button" class="ch on" style="min-width:60px">2</button><button type="button" class="ch" style="min-width:60px">3</button><button type="button" class="ch" style="min-width:60px">4</button></div></div>
+<div class="rule" style="margin:22px 0 14px"></div>
+<div class="res"><svg class="ic"><use href="#i-check"/></svg><span>6 placed, 3 left to schedule.<br><span style="font-size:13px;font-weight:600;color:#5E534A">3 slots × 2 courts = 6 games. 9 league games have no time yet.</span></span></div>
+</div>
+<div class="bar"><button type="button" class="btn2">Cancel</button><button type="button" class="btn">Schedule day</button></div>
+</div>
+</div>
+
+<!-- D · clear a game day -->
+<div class="col">
+<p class="cap">D · Clear a game day: pick the day, confirm what it does</p>
+<div class="shell">
+<div class="sb"><span>8:05</span><span><svg class="ic s"><use href="#i-wifi"/></svg><svg class="ic s"><use href="#i-batt"/></svg></span></div>
+<div class="hd"><div><div class="k">Juniors soccer · League</div><div class="t">Clear a game day</div></div><button type="button" class="x" aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button></div>
+<div class="sheet">
+<div class="lab">Which day?</div>
+<div style="border-top:4px solid #201E1D">
+<div class="rd"><span class="tkb"></span><div style="flex:1"><div style="font-size:17px;font-weight:800">Sat, Oct 12</div><div class="note">9 games · 9 played</div></div></div>
+<div class="rd"><span class="tkb"></span><div style="flex:1"><div style="font-size:17px;font-weight:800">Sat, Oct 19</div><div class="note">9 games · 4 played</div></div></div>
+<div class="rd"><span class="tkb on"><svg class="ic" style="stroke:#201E1D;stroke-width:3.4;width:22px;height:22px"><use href="#i-check"/></svg></span><div style="flex:1"><div style="font-size:17px;font-weight:800">Sat, Oct 26</div><div class="note">6 games · 0 played</div></div></div>
+</div>
+<div class="rule" style="margin:18px 0 14px"></div>
+<div class="note">What happens</div>
+<div class="body" style="margin-top:4px">6 games on Oct 26 go back to unscheduled. Games that already have a result are left alone.</div>
+<div style="margin-top:18px"><button type="button" class="btn dg" style="width:100%;box-sizing:border-box"><svg class="ic s" style="stroke-width:3"><use href="#i-trash"/></svg>Clear game day</button></div>
+<div class="why"><svg class="ic s" style="stroke-width:3"><use href="#i-check"/></svg><span>Result shown after: 6 cleared, 6 now left to schedule.</span></div>
+</div>
+<div style="height:10px"></div>
+</div>
+</div>
+
+<!-- E · reset -->
+<div class="col">
+<p class="cap">E · Reset block: names exactly what will be deleted</p>
+<div class="shell">
+<div class="sb"><span>4:30</span><span><svg class="ic s"><use href="#i-wifi"/></svg><svg class="ic s"><use href="#i-batt"/></svg></span></div>
+<div class="hd"><div><div class="k">Juniors soccer · Completed</div><div class="t">Reset block</div></div><button type="button" class="x" aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button></div>
+<div class="sheet">
+<div class="h" style="font-size:22px;padding-bottom:12px">Reset Juniors soccer?</div>
+<div class="rule"></div>
+<div style="padding:14px 0">
+<div class="note">This will be deleted</div>
+<div style="border-top:1px solid #E3D4B8;margin-top:6px"></div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;border-bottom:1px solid #E3D4B8"><span class="body" style="font-weight:700">Games</span><span style="font-size:17px;font-weight:800">40</span></div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;border-bottom:1px solid #E3D4B8"><span class="body" style="font-weight:700">Results, with who recorded them</span><span style="font-size:17px;font-weight:800">40</span></div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;border-bottom:1px solid #E3D4B8"><span class="body" style="font-weight:700">Final places</span><span style="font-size:17px;font-weight:800">8 teams</span></div>
+<div style="display:flex;justify-content:space-between;align-items:baseline;padding:10px 0;border-bottom:1px solid #E3D4B8"><span class="body" style="font-weight:700">Game day times and courts</span><span style="font-size:17px;font-weight:800">6 days</span></div>
+</div>
+<div class="note">This is kept</div>
+<div class="body" style="margin:4px 0 14px">The 8 Juniors teams and the block's settings. The block goes back to Setup.</div>
+<div class="rule"></div>
+<div class="tk"><span class="tkb on"><svg class="ic" style="stroke:#201E1D;stroke-width:3.4;width:22px;height:22px"><use href="#i-check"/></svg></span><span class="body" style="font-weight:700">I understand these results cannot be recovered</span></div>
+<div style="display:flex;flex-direction:column;gap:12px;padding-top:10px">
+<button type="button" class="btn dg"><svg class="ic s" style="stroke-width:3"><use href="#i-trash"/></svg>Reset block</button>
+<button type="button" class="btn2">Keep block</button>
+</div>
+</div>
+<div style="height:10px"></div>
+</div>
+</div>
+
+<!-- F · generate fixtures ready -->
+<div class="col">
+<p class="cap">F · Setup with 8 teams: Generate fixtures is ready</p>
+<div class="shell">
+<div class="sb"><span>7:30</span><span><svg class="ic s"><use href="#i-wifi"/></svg><svg class="ic s"><use href="#i-batt"/></svg></span></div>
+<div class="hd"><div><div class="k">Admin</div><div class="t">Manage sports</div></div></div>
+<div class="sheet" style="margin-top:10px">
+<div class="h">Juniors soccer</div>
+<div class="note" style="padding:6px 0 16px">League then knockout · One table · Oct 12 – Dec 7</div>
+<div class="trk">
+<div class="st"><div class="rw"><span class="ln h"></span><span class="bx c">1</span><span class="ln u"></span></div><div class="lb c">Setup</div><div class="sl">Now</div></div>
+<div class="st"><div class="rw"><span class="ln u"></span><span class="bx u">2</span><span class="ln u"></span></div><div class="lb">League</div><div class="sl">Later</div></div>
+<div class="st"><div class="rw"><span class="ln u"></span><span class="bx u">3</span><span class="ln u"></span></div><div class="lb">Knockout</div><div class="sl">Later</div></div>
+<div class="st"><div class="rw"><span class="ln u"></span><span class="bx u">4</span><span class="ln h"></span></div><div class="lb">Completed</div><div class="sl">Later</div></div>
+</div>
+<div style="padding:18px 0 12px"><div class="note">Next step</div><div style="font-size:17px;font-weight:800;margin-top:2px">Generate fixtures</div></div>
+<div class="fx" style="padding-bottom:14px"><div><div class="n">8</div><div class="l">teams</div></div><div><div class="n">0</div><div class="l">games</div></div><div><div class="n">0</div><div class="l">played</div></div></div>
+<div class="rule"></div>
+<div style="padding-top:14px"><button type="button" class="btn" style="width:100%;box-sizing:border-box">Generate fixtures</button>
+<div class="why"><svg class="ic s" style="stroke-width:3"><use href="#i-check"/></svg><span>8 teams in one table makes 28 games. Each team plays 7.</span></div></div>
+</div>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":2536,"height":1500}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Score entry by sport</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400..800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9DCC6;font-family:Figtree,system-ui,sans-serif;color:#241F1C}
+button{font-family:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible{outline:2px solid #EE6B2D;outline-offset:3px}
+.col{width:390px;flex:none}
+.cap{font-size:13px;font-weight:700;color:#5E534A;margin:0 0 8px 6px}
+.shell{width:390px;max-width:100%;background:#6F5133;border-radius:40px;overflow:hidden;box-shadow:0 18px 44px rgba(60,35,15,.26);display:flex;flex-direction:column;color:#F3E7D4}
+.sb{padding:14px 24px 0;display:flex;justify-content:space-between;font-size:13px;font-weight:700}
+.sb span{display:flex;gap:6px;align-items:center}
+.hd{padding:12px 24px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.hd .k{font-size:13px;font-weight:700;color:#FFC98E}
+.hd .t{font-family:Caprasimo,cursive;font-size:25px;line-height:1.1;margin-top:2px}
+.x{width:44px;height:44px;border-radius:999px;border:3px solid #F3E7D4;background:transparent;color:#F3E7D4;display:flex;align-items:center;justify-content:center;flex:none}
+.sheet{margin:0 14px 14px;background:#FFFCF6;border-radius:26px;padding:20px 18px 22px;box-shadow:0 6px 14px rgba(40,22,8,.25);color:#241F1C}
+.h{font-family:Caprasimo,cursive;font-size:18px;line-height:1.15}
+.rule{height:5px;background:#201E1D;border-radius:3px}
+.dash{border-top:2px dashed #D6C4A6}
+.note{font-size:12px;font-weight:700;color:#5E534A;line-height:1.45}
+.chip{display:inline-block;font-size:13px;font-weight:700;padding:6px 11px;border-radius:12px;white-space:nowrap}
+.c-tint{background:#FFE3C4;color:#9C3E12}
+.btn{border:none;background:#EE6B2D;color:#201E1D;font-weight:800;font-size:18px;padding:16px;border-radius:999px;min-height:58px;box-shadow:0 4px 0 #B14E1C;display:inline-flex;align-items:center;justify-content:center;gap:8px;flex:1}
+.btn2{border:3px solid #241F1C;background:transparent;color:#241F1C;font-weight:800;font-size:15px;padding:10px 20px;border-radius:999px;min-height:58px;display:inline-flex;align-items:center;justify-content:center}
+.bar{background:#FFFCF6;border-top:5px solid #201E1D;padding:14px 14px 24px;display:flex;gap:10px;align-items:center}
+.tn{font-family:Caprasimo,cursive;font-size:26px;line-height:1.1}
+.stp{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px}
+.sbtn{width:72px;height:72px;border-radius:999px;display:flex;align-items:center;justify-content:center;border:3px solid #241F1C;background:transparent;color:#241F1C;flex:none}
+.sbtn.p{border:none;background:#EE6B2D;color:#201E1D;box-shadow:0 4px 0 #B14E1C}
+.sc{font-family:Caprasimo,cursive;font-size:72px;line-height:1;color:#C4341C;text-align:center;flex:1}
+.qb{flex:1;min-height:60px;border-radius:999px;font-size:20px;font-weight:800;border:3px solid #241F1C;background:transparent;color:#241F1C}
+.qb.p{border:none;background:#EE6B2D;color:#201E1D;box-shadow:0 4px 0 #B14E1C}
+.tb{width:100%;border-collapse:collapse;table-layout:fixed}
+.tb thead tr{border-bottom:4px solid #201E1D}
+.tb th{padding:0 0 8px;font-size:12px;font-weight:700;color:#5E534A;text-align:right}
+.tb th.l{text-align:left}
+.tb tbody tr{border-bottom:1px solid #E3D4B8}
+.tb td{padding:10px 0;font-size:20px;font-weight:800;text-align:right}
+.tb td.l{text-align:left;font-size:15px}
+.tb td.lo{font-weight:600;color:#5E534A}
+.tb tr.act{background:#F3E7D4}
+.tb tr.act td.l{padding-left:8px}
+.tb tr.act td:last-child{padding-right:8px}
+.tb td.mu{color:#5E534A;font-weight:600}
+.rd{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #E3D4B8;min-height:70px}
+.rd .n{width:62px;font-size:15px;font-weight:800;flex:none}
+.pick{flex:1;min-height:56px;border-radius:12px;border:2px solid #241F1C;background:transparent;color:#241F1C;font-size:17px;font-weight:800}
+.pick.on{background:#241F1C;color:#FFFCF6}
+.ic{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.s{width:16px;height:16px}.ic.l{width:36px;height:36px}
+</style>
+</helmet>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-wifi" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><path d="M12 20h.01"/></symbol>
+<symbol id="i-batt" viewBox="0 0 24 24"><rect x="2" y="7" width="16" height="10" rx="3"/><path d="M21 11v2"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+<symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+</defs></svg>
+
+<div style="display:flex;gap:28px;padding:28px;align-items:flex-start;background:#E9DCC6">
+
+<!-- A · soccer, league game -->
+<div class="col">
+<p class="cap">A · Soccer, league game: goals with + and −, a draw is fine</p>
+<div class="shell">
+<div class="sb"><span>9:52</span><span><svg class="ic s"><use href="#i-wifi"/></svg><svg class="ic s"><use href="#i-batt"/></svg></span></div>
+<div class="hd"><div><div class="k">Round 1 · Court 1 · 9:45</div><div class="t">Score entry</div></div><button type="button" class="x" aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button></div>
+<div class="sheet">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:12px">
+<div class="h">Juniors soccer</div><span class="chip c-tint">League · draw allowed</span>
+</div>
+<div class="rule"></div>
+<div style="padding:16px 0 18px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><div class="tn">Falcons</div><div class="note">Home</div></div>
+<div class="stp"><button type="button" class="sbtn" aria-label="One fewer goal for Falcons"><svg class="ic l"><use href="#i-minus"/></svg></button><div class="sc">1</div><button type="button" class="sbtn p" aria-label="One more goal for Falcons"><svg class="ic l"><use href="#i-plus"/></svg></button></div>
+</div>
+<div class="dash"></div>
+<div style="padding:16px 0 6px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><div class="tn">Comets</div><div class="note">Away</div></div>
+<div class="stp"><button type="button" class="sbtn" aria-label="One fewer goal for Comets"><svg class="ic l"><use href="#i-minus"/></svg></button><div class="sc">1</div><button type="button" class="sbtn p" aria-label="One more goal for Comets"><svg class="ic l"><use href="#i-plus"/></svg></button></div>
+</div>
+<div class="note" style="padding-top:12px">Goals scored, full time. Level scores are saved as a draw.</div>
+</div>
+<div class="bar"><button type="button" class="btn2">Cancel</button><button type="button" class="btn">Save score</button></div>
+</div>
+</div>
+
+<!-- B · basketball -->
+<div class="col">
+<p class="cap">B · Basketball: quick +1, +2, +3 and a single undo step</p>
+<div class="shell">
+<div class="sb"><span>10:21</span><span><svg class="ic s"><use href="#i-wifi"/></svg><svg class="ic s"><use href="#i-batt"/></svg></span></div>
+<div class="hd"><div><div class="k">Round 2 · Court 2 · 12:00</div><div class="t">Score entry</div></div><button type="button" class="x" aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button></div>
+<div class="sheet">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:12px">
+<div class="h">Juniors basketball</div><span class="chip c-tint">League · draw allowed</span>
+</div>
+<div class="rule"></div>
+<div style="padding:16px 0 18px">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><div class="tn">Eagles</div><div class="note">Home</div></div><div class="sc" style="flex:none;min-width:130px;text-align:right">38</div></div>
+<div style="display:flex;gap:8px;margin-top:12px"><button type="button" class="qb" aria-label="Take off one point for Eagles">−1</button><button type="button" class="qb p">+1</button><button type="button" class="qb p">+2</button><button type="button" class="qb p">+3</button></div>
+</div>
+<div class="dash"></div>
+<div style="padding:16px 0 6px">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div><div class="tn">Hawks</div><div class="note">Away</div></div><div class="sc" style="flex:none;min-width:130px;text-align:right">44</div></div>
+<div style="display:flex;gap:8px;margin-top:12px"><button type="button" class="qb" aria-label="Take off one point for Hawks">−1</button><button type="button" class="qb p">+1</button><button type="button" class="qb p">+2</button><button type="button" class="qb p">+3</button></div>
+</div>
+<div class="note" style="padding-top:12px">Tap a quick button for each basket. −1 fixes a mis-tap.</div>
+</div>
+<div class="bar"><button type="button" class="btn2">Cancel</button><button type="button" class="btn">Save score</button></div>
+</div>
+</div>
+
+<!-- C · volleyball -->
+<div class="col">
+<p class="cap">C · Volleyball: points per set (best of 5), total shown is sets won</p>
+<div class="shell">
+<div class="sb"><span>1:08</span><span><svg class="ic s"><use href="#i-wifi"/></svg><svg class="ic s"><use href="#i-batt"/></svg></span></div>
+<div class="hd"><div><div class="k">Round 3 · Court 1 · 1:00</div><div class="t">Score entry</div></div><button type="button" class="x" aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button></div>
+<div class="sheet">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:12px">
+<div class="h">Ambassadors volleyball</div><span class="chip c-tint">League · best of 5</span>
+</div>
+<div class="rule"></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0 14px">
+<div style="text-align:center;flex:1"><div class="tn" style="font-size:22px">Saints</div></div>
+<div style="text-align:center;flex:none"><div class="sc" style="font-size:64px;display:flex;gap:14px;align-items:center;justify-content:center"><span>2</span><span style="font-size:34px;color:#5E534A">–</span><span>1</span></div><div class="note">sets won</div></div>
+<div style="text-align:center;flex:1"><div class="tn" style="font-size:22px">Kings</div></div>
+</div>
+<table class="tb">
+<colgroup><col style="width:70px"><col><col></colgroup>
+<thead><tr><th class="l" scope="col">Set</th><th scope="col" style="padding-right:8px">Saints</th><th scope="col" style="padding-right:8px">Kings</th></tr></thead>
+<tbody>
+<tr><td class="l">Set 1</td><td style="padding-right:8px">25</td><td class="lo" style="padding-right:8px">21</td></tr>
+<tr><td class="l">Set 2</td><td class="lo" style="padding-right:8px">18</td><td style="padding-right:8px">25</td></tr>
+<tr class="act"><td class="l">Set 3</td><td>15</td><td class="lo">12</td></tr>
+<tr><td class="l mu">Set 4</td><td class="mu" style="padding-right:8px">–</td><td class="mu" style="padding-right:8px">–</td></tr>
+<tr><td class="l mu">Set 5</td><td class="mu" style="padding-right:8px">–</td><td class="mu" style="padding-right:8px">–</td></tr>
+</tbody></table>
+<div class="dash" style="margin-top:14px"></div>
+<div class="h" style="padding:14px 0 8px">Set 3 points</div>
+<div style="display:flex;gap:10px">
+<div style="flex:1;text-align:center"><div class="note">Saints</div><div class="sc" style="font-size:64px">15</div><div style="display:flex;gap:8px;justify-content:center;margin-top:8px"><button type="button" class="sbtn" style="width:64px;height:64px" aria-label="One fewer point for Saints"><svg class="ic l"><use href="#i-minus"/></svg></button><button type="button" class="sbtn p" style="width:64px;height:64px" aria-label="One more point for Saints"><svg class="ic l"><use href="#i-plus"/></svg></button></div></div>
+<div style="flex:1;text-align:center"><div class="note">Kings</div><div class="sc" style="font-size:64px">12</div><div style="display:flex;gap:8px;justify-content:center;margin-top:8px"><button type="button" class="sbtn" style="width:64px;height:64px" aria-label="One fewer point for Kings"><svg class="ic l"><use href="#i-minus"/></svg></button><button type="button" class="sbtn p" style="width:64px;height:64px" aria-label="One more point for Kings"><svg class="ic l"><use href="#i-plus"/></svg></button></div></div>
+</div>
+<div class="note" style="padding-top:14px">The higher score wins the set. Tap a set row to edit it. Sets 4 and 5 are only needed if neither team has 3.</div>
+</div>
+<div class="bar"><button type="button" class="btn2">Cancel</button><button type="button" class="btn">Save score</button></div>
+</div>
+</div>
+
+<!-- D · dodgeball -->
+<div class="col">
+<p class="cap">D · Dodgeball: tap the winner of each round, total is rounds won</p>
+<div class="shell">
+<div class="sb"><span>1:30</span><span><svg class="ic s"><use href="#i-wifi"/></svg><svg class="ic s"><use href="#i-batt"/></svg></span></div>
+<div class="hd"><div><div class="k">Round 2 · Court 3 · 1:15</div><div class="t">Score entry</div></div><button type="button" class="x" aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button></div>
+<div class="sheet">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:12px">
+<div class="h">Juniors dodgeball</div><span class="chip c-tint">League · best of 5</span>
+</div>
+<div class="rule"></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0 14px">
+<div style="text-align:center;flex:1"><div class="tn" style="font-size:22px">Rams</div></div>
+<div style="text-align:center;flex:none"><div class="sc" style="font-size:64px;display:flex;gap:14px;align-items:center;justify-content:center"><span>3</span><span style="font-size:34px;color:#5E534A">–</span><span>1</span></div><div class="note">rounds won</div></div>
+<div style="text-align:center;flex:1"><div class="tn" style="font-size:22px">Anchors</div></div>
+</div>
+<div style="border-top:4px solid #201E1D"></div>
+<div class="rd"><div class="n">Round 1</div><button type="button" class="pick on">Rams</button><button type="button" class="pick">Anchors</button></div>
+<div class="rd"><div class="n">Round 2</div><button type="button" class="pick on">Rams</button><button type="button" class="pick">Anchors</button></div>
+<div class="rd"><div class="n">Round 3</div><button type="button" class="pick">Rams</button><button type="button" class="pick on">Anchors</button></div>
+<div class="rd"><div class="n">Round 4</div><button type="button" class="pick on">Rams</button><button type="button" class="pick">Anchors</button></div>
+<div class="rd" style="border-bottom:none"><div class="n" style="color:#5E534A;font-weight:600">Round 5</div><div style="flex:1;font-size:15px;font-weight:600;color:#5E534A">Not needed, Rams already have 3</div></div>
+<div class="note" style="padding-top:10px">Tap a name to record the round. Tap it again to clear it.</div>
+</div>
+<div class="bar"><button type="button" class="btn2">Cancel</button><button type="button" class="btn">Save score</button></div>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1700,"height":1200}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
