@@ -36,6 +36,7 @@ export default async function ManagePage({
   if (!data.season) {
     return (
       <>
+        {sel.keep}
         {header}
         <SportsSheet>
           <EmptyNotice title="No season yet">Sports blocks belong to a season. Start a season first.</EmptyNotice>
@@ -66,6 +67,7 @@ export default async function ManagePage({
   if (!block) {
     return (
       <>
+        {sel.keep}
         {header}
         {tabs}
         <SportsSheet>
@@ -95,6 +97,7 @@ export default async function ManagePage({
 
   return (
     <>
+      {sel.keep}
       {header}
       {tabs}
       <SportsSheet>

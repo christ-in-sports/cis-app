@@ -262,6 +262,33 @@ test('a coach reads standings, schedule and bracket, and is offered nothing to e
   expect(problems.filter((p) => /hydrat|did not match|Minified React error/i.test(p))).toEqual([]);
 });
 
+test('the division and sport a reader chose follow them between screens', async ({ page }) => {
+  await signIn(page, COACH);
+  const nav = page.getByRole('navigation', { name: 'Sports' });
+
+  // A page opened bare fills in what it resolved, so the nav can carry it.
+  await page.goto('/sports/schedule');
+  await expect(page).toHaveURL(/division=juniors&block=/);
+
+  // Choosing Ambassadors, then moving around, stays on Ambassadors.
+  await page.goto('/sports/bracket?division=ambassadors');
+  await nav.getByRole('link', { name: 'Standings' }).click();
+  await expect(page).toHaveURL(/division=ambassadors/);
+  await nav.getByRole('link', { name: 'Schedule' }).click();
+  await expect(page).toHaveURL(/division=ambassadors&block=/);
+  await expect(page.getByRole('link', { name: /Ambassadors/ })).toHaveAttribute('aria-current', 'page');
+  await nav.getByRole('link', { name: 'Bracket' }).click();
+  await expect(page).toHaveURL(/division=ambassadors&block=/);
+
+  // "All blocks" on the schedule is a choice too, and sticks.
+  await page.goto('/sports/schedule?division=juniors');
+  await page.getByRole('link', { name: 'All blocks' }).click();
+  await expect(page).toHaveURL(/block=all/);
+  await nav.getByRole('link', { name: 'Standings' }).click();
+  await nav.getByRole('link', { name: 'Schedule' }).click();
+  await expect(page).toHaveURL(/block=all/);
+});
+
 test('a Program Team member scores a knockout game, is asked for a tiebreak, and corrections are guarded', async ({ page }) => {
   await signIn(page, PROGRAM);
   await page.goto('/sports/bracket?division=ambassadors');

@@ -18,7 +18,11 @@ import { SportsNav } from './sports-nav';
 import { GameStateChip } from './team-lines';
 
 let pathname = '/sports';
-jest.mock('next/navigation', () => ({ usePathname: () => pathname }));
+let search = '';
+jest.mock('next/navigation', () => ({
+  usePathname: () => pathname,
+  useSearchParams: () => new URLSearchParams(search),
+}));
 
 describe('Chip', () => {
   it('renders its label in each variant', () => {
@@ -111,6 +115,19 @@ describe('SportsNav', () => {
     render(<SportsNav canManage={false} />);
     const current = screen.getAllByRole('link').filter((l) => l.getAttribute('aria-current') === 'page');
     expect(current.map((l) => l.textContent)).toEqual([label]);
+  });
+
+  it('carries the division and sport onto every section link, but not Home', () => {
+    pathname = '/sports/schedule';
+    search = 'division=ambassadors&block=b-1&mine=1';
+    render(<SportsNav canManage />);
+    const href = (name: string) => screen.getByRole('link', { name }).getAttribute('href');
+    expect(href('Standings')).toBe('/sports?division=ambassadors&block=b-1');
+    expect(href('Schedule')).toBe('/sports/schedule?division=ambassadors&block=b-1');
+    expect(href('Bracket')).toBe('/sports/bracket?division=ambassadors&block=b-1');
+    expect(href('Manage')).toBe('/sports/manage?division=ambassadors&block=b-1');
+    expect(href('Home')).toBe('/');
+    search = '';
   });
 
   it('points Home back at the app and never lights it', () => {

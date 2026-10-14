@@ -41,6 +41,7 @@ export default async function StandingsPage({
   if (!data.season) {
     return (
       <>
+        {sel.keep}
         {header}
         <SportsSheet>
           <EmptyNotice title="No season yet">
@@ -55,6 +56,7 @@ export default async function StandingsPage({
     const other = DIVISION_ORDER.find((d) => d !== division && data.blocks.some((b) => b.division === d));
     return (
       <>
+        {sel.keep}
         {header}
         {tabs}
         <SportsSheet>
@@ -115,6 +117,7 @@ export default async function StandingsPage({
   if (!view) {
     return (
       <>
+        {sel.keep}
         {header}
         {tabs}
         <SportsSheet>
@@ -143,6 +146,7 @@ export default async function StandingsPage({
 
   return (
     <>
+      {sel.keep}
       {header}
       {tabs}
       <SportsSheet>
