@@ -10,7 +10,7 @@
  */
 
 import Link from 'next/link';
-import { Icon } from '@/components/cis/icon';
+import { Icon, type IconName } from '@/components/cis/icon';
 import { cn } from '@/lib/utils';
 
 export interface BlockSwitcherItem {
@@ -20,6 +20,8 @@ export interface BlockSwitcherItem {
   selected: boolean;
   /** Show a tick, for a filter that is switched on. */
   tick?: boolean;
+  /** A glyph before the label, such as the plus on "New block". */
+  icon?: IconName;
 }
 
 export function BlockSwitcher({
@@ -45,6 +47,7 @@ export function BlockSwitcher({
           )}
         >
           {item.tick && item.selected ? <Icon name="check" size={14} strokeWidth={3} /> : null}
+          {item.icon ? <Icon name={item.icon} size={16} strokeWidth={3} /> : null}
           {item.label}
         </Link>
       ))}
