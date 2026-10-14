@@ -5,6 +5,7 @@ import { BoardHeader } from '@/components/cis/board-shell';
 import { secondaryButtonClasses } from '@/components/cis/button';
 import { DivisionTabs } from '@/components/cis/division-tabs';
 import { EmptyNotice } from '@/components/cis/empty-notice';
+import { ScoreLink } from '@/components/cis/score-link';
 import { ScheduleTable } from '@/components/cis/schedule-table';
 import { SheetHeading, SheetRule } from '@/components/cis/sheet';
 import {
@@ -14,6 +15,7 @@ import {
   formatShortDate,
   sportLabel,
 } from '@/lib/competition/labels';
+import { scoreable } from '@/lib/competition/entry';
 import type { GameRecord } from '@/lib/competition/types';
 import { buildSchedule, dayNote, gameMeta, gameView, nextUpIds } from '@/lib/competition/view';
 
@@ -173,7 +175,16 @@ export default async function SchedulePage({
                         results: sel.results,
                         next,
                       });
-                      return { id: g.id, court: g.court, view, meta: gameMeta(block.sport, view) };
+                      return {
+                        id: g.id,
+                        court: g.court,
+                        view,
+                        meta: gameMeta(block.sport, view),
+                        action:
+                          sel.canScore && scoreable(g, block.status) ? (
+                            <ScoreLink href={`/sports/score/${g.id}`} played={view.state === 'final'} label={view.label} />
+                          ) : undefined,
+                      };
                     }),
                   }))}
                 />

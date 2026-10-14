@@ -120,7 +120,10 @@ module.exports = {
   			'cis-lg': 'var(--cis-text-lg)',
   			'cis-xl': 'var(--cis-text-xl)',
   			'cis-display-md': 'var(--cis-display-md)',
-  			'cis-display-lg': 'var(--cis-display-lg)'
+  			'cis-display-lg': 'var(--cis-display-lg)',
+  			'cis-score': ['var(--cis-display-score)', '1'],
+  			'cis-score-md': ['var(--cis-display-score-md)', '1'],
+  			'cis-score-sm': ['var(--cis-display-score-sm)', '1']
   		},
   		borderRadius: {
   			// shadcn's scale. This used to be a second `borderRadius` key earlier in

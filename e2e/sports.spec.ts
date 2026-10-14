@@ -244,7 +244,7 @@ test('a coach reads standings, schedule and bracket, and is offered nothing to e
   for (const path of ['/sports', '/sports/schedule', '/sports/bracket']) {
     await page.goto(path);
     await expect(page.getByRole('navigation', { name: 'Sports' }).getByRole('link', { name: 'Manage' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: /enter score|edit score/i })).toHaveCount(0);
+    await expect(page.getByText(/enter score|edit score/i)).toHaveCount(0);
   }
 
   // Only one nav item is current at a time (Standings once matched every sub-page).
@@ -252,7 +252,84 @@ test('a coach reads standings, schedule and bracket, and is offered nothing to e
   await expect(page.getByRole('navigation', { name: 'Sports' }).locator('[aria-current="page"]')).toHaveCount(1);
   await expect(page.getByRole('link', { name: 'Schedule', exact: true })).toHaveAttribute('aria-current', 'page');
 
+  // The scoring screen itself sends a reader back to the schedule.
+  await page.goto('/sports/bracket?division=ambassadors');
+  await page.goto('/sports/score/00000000-0000-0000-0000-000000000000');
+  await expect(page.getByText('Page not found').or(page.getByRole('heading', { name: 'Schedule' })).first()).toBeVisible();
+
   // Only hydration and render errors are checked; other console noise (fonts,
   // the realtime socket) is not this screen's concern.
   expect(problems.filter((p) => /hydrat|did not match|Minified React error/i.test(p))).toEqual([]);
+});
+
+test('a Program Team member scores a knockout game, is asked for a tiebreak, and corrections are guarded', async ({ page }) => {
+  await signIn(page, PROGRAM);
+  await page.goto('/sports/bracket?division=ambassadors');
+  await expect(page.getByRole('navigation', { name: 'Sports' }).getByRole('link', { name: 'Manage' })).toHaveCount(0);
+
+  // ---- A level knockout game asks who won the tiebreak ---------------------
+  await page.getByRole('link', { name: 'Enter score: Quarter-final 2' }).click();
+  await expect(page.getByRole('heading', { name: 'Score entry' })).toBeVisible();
+  await expect(page.getByText('Knockout · no draws')).toBeVisible();
+  await page.getByRole('button', { name: /One more goal for/ }).nth(0).click();
+  await page.getByRole('button', { name: /One more goal for/ }).nth(1).click();
+  await expect(page.getByText('Level after full time')).toBeVisible();
+  await expect(page.getByText('Who won the penalty shootout?')).toBeVisible();
+
+  // Saving while level with nobody picked is stopped before it reaches the database.
+  await page.getByRole('button', { name: 'Save score' }).click();
+  await expect(page.locator('[role="alert"]:not(#__next-route-announcer__)')).toContainText("A knockout game can't end level");
+  await page.screenshot({ path: 'test-results/sports-4-tiebreak.png', fullPage: true });
+
+  const pickers = page.getByRole('button', { pressed: false }).filter({ hasText: /^E2E / });
+  await pickers.nth(1).click();
+  await page.getByRole('button', { name: 'Save score' }).click();
+
+  // ---- Saved panel names where the winner went -----------------------------
+  await expect(page.getByRole('heading', { name: 'Score saved' })).toBeVisible();
+  const advances = await page.getByText(/advance to Semi-final \d/).innerText();
+  const semi = /Semi-final \d/.exec(advances)![0];
+  await page.screenshot({ path: 'test-results/sports-5-saved.png', fullPage: true });
+  await page.getByRole('link', { name: 'Back to schedule' }).click();
+
+  // ---- Play the game it fed, then try to change the winner behind it -------
+  await page.goto('/sports/bracket?division=ambassadors');
+  await page.getByRole('link', { name: `Enter score: ${semi}` }).click();
+  await page.getByRole('button', { name: /One more goal for/ }).nth(0).click();
+  await page.getByRole('button', { name: 'Save score' }).click();
+  await expect(page.getByRole('heading', { name: 'Score saved' })).toBeVisible();
+
+  await page.goto('/sports/bracket?division=ambassadors');
+  await page.getByRole('link', { name: 'Edit score: Quarter-final 2' }).click();
+  await expect(page.getByRole('heading', { name: 'Edit score' })).toBeVisible();
+  // 2-1 to the home side flips the winner from the tiebreak pick.
+  await page.getByRole('button', { name: /One more goal for/ }).nth(0).click();
+  await expect(page.locator('[role="alert"]:not(#__next-route-announcer__)')).toContainText("Can't change the winner");
+  await expect(page.getByRole('button', { name: 'Save score' })).toBeDisabled();
+  await expect(page.getByRole('link', { name: `Open ${semi}` })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Clear this result' })).toBeDisabled();
+  await expect(page.getByText(`Blocked until ${semi} is cleared`)).toBeVisible();
+  await page.screenshot({ path: 'test-results/sports-6-blocked.png', fullPage: true });
+
+  // ---- Clear them in order, each with a confirmation -----------------------
+  await page.goto('/sports/bracket?division=ambassadors');
+  await page.getByRole('link', { name: `Edit score: ${semi}` }).click();
+  await page.getByRole('button', { name: 'Clear this result' }).click();
+  await expect(page.getByRole('heading', { name: `Clear ${semi}?` })).toBeVisible();
+  await page.getByRole('button', { name: 'Keep result' }).click();
+  await expect(page.getByRole('heading', { name: 'Edit score' })).toBeVisible();
+  await page.getByRole('button', { name: 'Clear this result' }).click();
+  await page.getByRole('button', { name: 'Clear result' }).click();
+  await expect(page).toHaveURL(/\/sports\/schedule/);
+
+  await page.goto('/sports/bracket?division=ambassadors');
+  await page.getByRole('link', { name: 'Edit score: Quarter-final 2' }).click();
+  await page.getByRole('button', { name: 'Clear this result' }).click();
+  await expect(page.getByText(/go back to waiting for Quarter-final 2/).first()).toBeVisible();
+  await page.screenshot({ path: 'test-results/sports-7-clear.png', fullPage: true });
+  await page.getByRole('button', { name: 'Clear result' }).click();
+  await expect(page).toHaveURL(/\/sports\/schedule/);
+
+  await page.goto('/sports/bracket?division=ambassadors');
+  await expect(page.getByRole('link', { name: 'Enter score: Quarter-final 2' })).toBeVisible();
 });

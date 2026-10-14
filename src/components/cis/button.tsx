@@ -28,22 +28,20 @@ const base =
   'text-cis-lg font-extrabold leading-none transition-none ' +
   'disabled:cursor-not-allowed disabled:opacity-60';
 
+/** The primary button's own classes, for a link that should look like one (see `secondaryButtonClasses`). */
+export const primaryButtonClasses = cn(
+  base,
+  'min-h-cis-tap-primary px-6 bg-cis-orange text-cis-ink-dark shadow-cis-press',
+  'hover:bg-cis-orange-hover',
+  // Pressed: down 3px, shadow shrinks 4px -> 1px.
+  'active:translate-y-[3px] active:shadow-[0_1px_0_var(--cis-orange-shadow)]',
+  // A disabled button must not look pressable.
+  'disabled:shadow-none disabled:active:translate-y-0',
+);
+
 export function PrimaryButton({ block, className, children, ...props }: ButtonProps) {
   return (
-    <button
-      className={cn(
-        base,
-        'min-h-cis-tap-primary px-6 bg-cis-orange text-cis-ink-dark shadow-cis-press',
-        'hover:bg-cis-orange-hover',
-        // Pressed: down 3px, shadow shrinks 4px -> 1px.
-        'active:translate-y-[3px] active:shadow-[0_1px_0_var(--cis-orange-shadow)]',
-        // A disabled button must not look pressable.
-        'disabled:shadow-none disabled:active:translate-y-0',
-        block && 'w-full',
-        className,
-      )}
-      {...props}
-    >
+    <button className={cn(primaryButtonClasses, block && 'w-full', className)} {...props}>
       {children}
     </button>
   );

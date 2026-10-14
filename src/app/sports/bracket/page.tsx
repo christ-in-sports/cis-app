@@ -5,9 +5,11 @@ import { BoardHeader } from '@/components/cis/board-shell';
 import { BracketSectionView, RoundJumpChips } from '@/components/cis/bracket';
 import { secondaryButtonClasses } from '@/components/cis/button';
 import { Chip } from '@/components/cis/chip';
+import { ScoreLink } from '@/components/cis/score-link';
 import { DivisionTabs } from '@/components/cis/division-tabs';
 import { EmptyNotice } from '@/components/cis/empty-notice';
 import { SheetHeading } from '@/components/cis/sheet';
+import { scoreable } from '@/lib/competition/entry';
 import { blockTitle, DIVISION_NAME, plural, sportLabel } from '@/lib/competition/labels';
 import { bracketSections } from '@/lib/competition/view';
 
@@ -93,7 +95,17 @@ export default async function BracketPage({
           <>
             <RoundJumpChips sections={sections} />
             {sections.map((section, i) => (
-              <BracketSectionView key={section.id} section={section} first={i === 0} />
+              <BracketSectionView
+                key={section.id}
+                section={section}
+                first={i === 0}
+                renderAction={(g) => {
+                  const record = games.find((x) => x.id === g.id);
+                  return sel.canScore && record && scoreable(record, block.status) ? (
+                    <ScoreLink href={`/sports/score/${g.id}`} played={g.state === 'final'} label={g.label} />
+                  ) : null;
+                }}
+              />
             ))}
           </>
         )}

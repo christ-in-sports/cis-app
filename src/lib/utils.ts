@@ -21,7 +21,7 @@ const twMerge = extendTailwindMerge({
         "cis-board", "cis-board-tab", "cis-board-hole",
       ],
       radius: ["cis-chip", "cis-box", "cis-sheet", "cis-shell", "cis-pill"],
-      text: ["cis-xs", "cis-sm", "cis-base", "cis-md", "cis-lg", "cis-xl", "cis-display-md", "cis-display-lg"],
+      text: ["cis-xs", "cis-sm", "cis-base", "cis-md", "cis-lg", "cis-xl", "cis-display-md", "cis-display-lg", "cis-score", "cis-score-md", "cis-score-sm"],
       spacing: ["cis-1", "cis-2", "cis-3", "cis-4", "cis-5", "cis-6", "cis-tap-min", "cis-tap-primary"],
     },
   },
