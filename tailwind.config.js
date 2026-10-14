@@ -8,11 +8,6 @@ module.exports = {
   ],
   theme: {
   	extend: {
-  		borderRadius: {
-  			lg: 'var(--radius)',
-  			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
-  		},
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
@@ -96,13 +91,15 @@ module.exports = {
   					dash: 'var(--cis-rule-dash)'
   				},
   				track: 'var(--cis-track)',
+  				'box-empty': 'var(--cis-box-empty)',
   				ink: {
   					DEFAULT: 'var(--cis-ink)',
   					dark: 'var(--cis-ink-dark)',
   					muted: 'var(--cis-ink-muted)',
   					'on-dark': 'var(--cis-ink-on-dark)',
   					'on-dark-muted': 'var(--cis-ink-on-dark-muted)',
-  					'on-danger': 'var(--cis-ink-on-danger)'
+  					'on-danger': 'var(--cis-ink-on-danger)',
+  					'on-ember': 'var(--cis-ink-on-ember)'
   				},
   				board: {
   					DEFAULT: 'var(--cis-board)',
@@ -126,8 +123,15 @@ module.exports = {
   			'cis-display-lg': 'var(--cis-display-lg)'
   		},
   		borderRadius: {
+  			// shadcn's scale. This used to be a second `borderRadius` key earlier in
+  			// the file, which the one below silently replaced.
+  			lg: 'var(--radius)',
+  			md: 'calc(var(--radius) - 2px)',
+  			sm: 'calc(var(--radius) - 4px)',
   			'cis-chip': 'var(--cis-radius-chip)',
   			'cis-box': 'var(--cis-radius-box)',
+  			// DivisionTabs top corners only (DESIGN_SYSTEM.md section 6).
+  			'cis-tab': 'var(--cis-radius-tab)',
   			'cis-sheet': 'var(--cis-radius-sheet)',
   			'cis-shell': 'var(--cis-radius-shell)',
   			'cis-pill': 'var(--cis-radius-pill)'
