@@ -224,21 +224,29 @@ export function clearImpact(
   return lines;
 }
 
-/** The next unplayed game on the same court that day, to offer after saving. */
-export function nextOnCourt(game: GameRecord, games: readonly GameRecord[]): GameRecord | null {
-  if (!game.scheduled_date || !game.scheduled_time || game.court === null) return null;
-  const after = games
+/**
+ * The next game to score after this one: another game in the same time slot if
+ * one is still unplayed (on any court, since games in a slot finish together and
+ * are scored together), otherwise the first game of the next slot. Only games
+ * with both teams known are offered, since a waiting game cannot be scored.
+ */
+export function nextToScore(game: GameRecord, games: readonly GameRecord[]): GameRecord | null {
+  if (!game.scheduled_date || !game.scheduled_time) return null;
+  const at = `${game.scheduled_date} ${game.scheduled_time}`;
+  const when = (g: GameRecord) => `${g.scheduled_date} ${g.scheduled_time}`;
+  const upcoming = games
     .filter(
       (g) =>
         g.id !== game.id &&
         g.status !== 'completed' &&
-        g.scheduled_date === game.scheduled_date &&
-        g.court === game.court &&
+        g.scheduled_date !== null &&
         g.scheduled_time !== null &&
-        g.scheduled_time > game.scheduled_time!
+        g.home_team_id !== null &&
+        g.away_team_id !== null &&
+        when(g) >= at
     )
-    .sort((a, b) => a.scheduled_time!.localeCompare(b.scheduled_time!));
-  return after[0] ?? null;
+    .sort((a, b) => when(a).localeCompare(when(b)) || (a.court ?? 0) - (b.court ?? 0));
+  return upcoming[0] ?? null;
 }
 
 /** Whether a game can be scored at all: both teams known and its block still open to it. */

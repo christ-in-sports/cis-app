@@ -169,7 +169,7 @@ test('Program Team creates, fills, schedules, clears, edits and resets a block',
 
   // ---- Schedule a game day, with its capacity shown first --------------------
   await page.getByRole('link', { name: 'Schedule a game day' }).click();
-  await page.getByLabel('Date').fill('2026-10-17');
+  await page.getByLabel('Date').fill('2026-11-14');
   await page.getByLabel('Slots').fill('3');
   await expect(page.getByText('3 slots × 2 courts = 6 games. 28 games have no time yet.')).toBeVisible();
   await page.getByRole('button', { name: 'Schedule day' }).click();
@@ -178,9 +178,16 @@ test('Program Team creates, fills, schedules, clears, edits and resets a block',
   await page.getByRole('link', { name: 'Done' }).click();
   await expect(page.getByText('scheduled', { exact: true })).toBeVisible();
 
+  // The first game day holds the earliest rounds: 3 slots x 2 courts is round 1 and
+  // the start of round 2, never a scatter of later rounds.
+  await page.goto('/sports/schedule?division=juniors');
+  await expect(page.getByText(/Basketball · Round 1/).first()).toBeVisible();
+  await expect(page.getByText(/Basketball · Round [3-7]\b/)).toHaveCount(0);
+  await page.goto('/sports/manage?division=juniors');
+
   // ---- Clear it again ---------------------------------------------------------
   await page.getByRole('link', { name: 'Clear a game day' }).click();
-  await expect(page.getByText('6 games on Saturday, Oct 17 go back to unscheduled')).toBeVisible();
+  await expect(page.getByText('6 games on Saturday, Nov 14 go back to unscheduled')).toBeVisible();
   await page.getByRole('button', { name: 'Clear game day' }).click();
   await expect(page.getByRole('status')).toContainText('6 games cleared');
   await page.getByRole('link', { name: 'Done' }).click();
