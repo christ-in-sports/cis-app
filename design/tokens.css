@@ -68,6 +68,9 @@
   --cis-text-xl: 22px;
   --cis-display-md: 26px;
   --cis-display-lg: 34px; /* matchup names */
+  --cis-display-score: 72px;    /* score entry: the number being set */
+  --cis-display-score-md: 64px; /* score entry: two numbers side by side */
+  --cis-display-score-sm: 56px; /* score entry: the saved result */
 
   /* Radius — 12 for chips/stamps, 26 for sheets, 40 for the app shell,
      999 for buttons only (per Organic). Do not introduce new steps.
