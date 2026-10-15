@@ -281,9 +281,12 @@ describe('submitting a new kid', () => {
       ]),
     );
 
-    // Errors are ember red, not ink, so they stand out on a long form.
+    // Errors are danger red with a warning icon, the Sports screens' treatment,
+    // so they stand out on a long form and ember keeps meaning "a score".
     for (const alert of screen.getAllByRole('alert')) {
-      expect(alert).toHaveClass('text-cis-ember');
+      expect(alert).toHaveClass('text-cis-danger');
+      expect(alert).not.toHaveClass('text-cis-ember');
+      expect(alert.querySelector('svg')).not.toBeNull();
     }
     expect(field('First name')).toHaveAttribute('aria-invalid', 'true');
 

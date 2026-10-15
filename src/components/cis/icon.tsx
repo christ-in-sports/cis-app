@@ -25,7 +25,11 @@ import {
   Plus,
   SlidersHorizontal,
   Trash2,
+  Trophy,
   TriangleAlert,
+  Upload,
+  UserPlus,
+  Users,
   X,
 } from 'lucide-react';
 import type { ComponentType } from 'react';
@@ -63,6 +67,11 @@ const GLYPHS = {
   schedule: Calendar,
   bracket: Bracket,
   manage: SlidersHorizontal,
+  // Registration section nav.
+  register: UserPlus,
+  roster: Users,
+  import: Upload,
+  sports: Trophy,
   lock: Lock,
   check: Check,
   plus: Plus,

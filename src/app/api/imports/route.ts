@@ -20,7 +20,7 @@
  *     action on the page too.
  *
  * The commit step has neither constraint -- it takes a single batch id -- and is
- * a Server Action, in `src/app/admin/imports/actions.ts`.
+ * a Server Action, in `src/app/(registration)/admin/imports/actions.ts`.
  */
 
 import { NextResponse } from 'next/server';

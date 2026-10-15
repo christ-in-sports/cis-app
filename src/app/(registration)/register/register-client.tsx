@@ -29,7 +29,8 @@ import {
   TextInput,
   TickRow,
 } from '@/components/cis/form';
-import { PageShell } from '@/components/cis/page-shell';
+import { BoardHeader } from '@/components/cis/board-shell';
+import { RegistrationColumn } from '@/components/cis/registration-frame';
 import { PrimaryButton, SecondaryButton, secondaryButtonClasses } from '@/components/cis/button';
 import { Sheet, SheetHeading, SheetRule } from '@/components/cis/sheet';
 import {
@@ -226,13 +227,10 @@ type Step =
 
 function Shell({ season, children }: { season: string; children: React.ReactNode }) {
   return (
-    <PageShell className="max-w-[460px]">
-      <div className="flex flex-col gap-1">
-        <h1 className="font-cis-display text-cis-xl font-normal leading-[1.1]">Register a kid</h1>
-        <p className="m-0 text-cis-sm font-semibold text-cis-ink-muted">{season}</p>
-      </div>
-      {children}
-    </PageShell>
+    <>
+      <BoardHeader kicker="Registration" title="Register a kid" meta={season} />
+      <RegistrationColumn>{children}</RegistrationColumn>
+    </>
   );
 }
 
@@ -459,7 +457,7 @@ export default function RegisterClient({
           e.preventDefault();
           submit(kidId);
         }}
-        className="flex flex-col gap-cis-4"
+        className="flex flex-col gap-3.5"
       >
         {/* ----------------------------------------------------- About the kid */}
         <Sheet className="flex flex-col gap-cis-3 px-cis-5 pb-cis-6 pt-cis-6">
