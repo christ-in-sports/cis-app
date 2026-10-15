@@ -39,8 +39,20 @@ export interface FieldControlProps {
 const focusRing =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-cis-orange';
 
+/**
+ * iOS Safari sizes a date or time input from its own intrinsic width and ignores
+ * `w-full`, so it pokes out of the sheet it sits in. Dropping the native look and
+ * letting it shrink (`min-w-0`, `max-w-full`) keeps it inside its column; the
+ * value is left-aligned because `appearance: none` would otherwise centre it.
+ * Exported for the few shadcn inputs that are also dates.
+ */
+export const dateTimeFix =
+  '[&:is([type=date],[type=time])]:min-w-0 [&:is([type=date],[type=time])]:max-w-full ' +
+  '[&:is([type=date],[type=time])]:appearance-none [&::-webkit-date-and-time-value]:text-left';
+
 const controlBase =
-  'w-full min-h-12 rounded-cis-chip border-2 border-cis-ink bg-cis-paper-light px-3 ' +
+  'w-full min-w-0 max-w-full min-h-12 rounded-cis-chip border-2 border-cis-ink bg-cis-paper-light px-3 ' +
+  dateTimeFix + ' ' +
   'text-cis-base text-cis-ink placeholder:text-cis-ink-muted ' +
   'aria-[invalid=true]:border-[3px] aria-[invalid=true]:border-cis-danger disabled:opacity-60 ' +
   focusRing;
