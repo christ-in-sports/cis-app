@@ -37,6 +37,7 @@ export default async function PlacesPage({
   if (!block) {
     return (
       <>
+        {sel.keep}
         <BoardHeader kicker={back} title="Final places" />
         <PlainSheet>
           <EmptyNotice title="Nothing to show yet">Final places appear once a sport has been played and completed.</EmptyNotice>
@@ -54,6 +55,7 @@ export default async function PlacesPage({
     const knockout = block.format !== 'league';
     return (
       <>
+        {sel.keep}
         <BoardHeader kicker={back} title="Final places" />
         <PlainSheet>
           <EmptyNotice
@@ -91,6 +93,7 @@ export default async function PlacesPage({
 
   return (
     <>
+      {sel.keep}
       <BoardHeader kicker={back} title="Final places" action={<Chip variant="sport">Final</Chip>} />
       <PlainSheet>
         <div className="flex items-baseline justify-between gap-2.5 pb-3">

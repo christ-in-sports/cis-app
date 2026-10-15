@@ -49,11 +49,62 @@ export function ScoreNumber({
   );
 }
 
+const SCORE_SIZE = { lg: 'text-cis-score', md: 'text-cis-score-md', sm: 'text-cis-score-sm' } as const;
+
+/**
+ * The number being set, which can also be typed: tap it, key in 25. A phone shows
+ * the number pad, the whole value is selected on focus so typing replaces it, and
+ * anything that is not a digit is dropped. Same ember display face as `ScoreNumber`,
+ * with a rule under it so it reads as a field.
+ */
+export function ScoreInput({
+  value,
+  label,
+  onSet,
+  size = 'lg',
+  disabled,
+  className,
+}: {
+  value: number;
+  /** Accessible name, e.g. "Goals for Falcons". */
+  label: string;
+  onSet: (value: number) => void;
+  size?: 'lg' | 'md' | 'sm';
+  disabled?: boolean;
+  className?: string;
+}) {
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      autoComplete="off"
+      aria-label={label}
+      value={String(value)}
+      disabled={disabled}
+      onFocus={(e) => e.currentTarget.select()}
+      onChange={(e) => {
+        const digits = e.target.value.replace(/\D/g, '').slice(0, 3);
+        onSet(digits === '' ? 0 : Number(digits));
+      }}
+      className={cn(
+        'min-w-0 rounded-cis-chip border-b-[3px] border-dashed border-cis-rule bg-transparent text-center',
+        'font-cis-display font-normal tabular-nums text-cis-ember',
+        'focus-visible:border-solid focus-visible:border-cis-orange focus-visible:outline-none',
+        'disabled:opacity-40',
+        SCORE_SIZE[size],
+        className,
+      )}
+    />
+  );
+}
+
 export function ScoreStepper({
   value,
   unit,
   teamName,
   onChange,
+  onSet,
   disabled,
   size = 'lg',
 }: {
@@ -62,31 +113,59 @@ export function ScoreStepper({
   unit: string;
   teamName: string;
   onChange: (delta: number) => void;
+  /** Called with the typed number. */
+  onSet: (value: number) => void;
   disabled?: boolean;
+  /** `lg`: minus, number, plus in a row. `md`: number above, buttons below, for two side by side. */
   size?: 'lg' | 'md';
 }) {
   const dim = size === 'lg' ? 'size-[72px]' : 'size-16';
-  return (
+  const minus = (
+    <button
+      type="button"
+      className={cn(ROUND_BUTTON, MINUS, dim)}
+      aria-label={`One fewer ${unit} for ${teamName}`}
+      disabled={disabled || value === 0}
+      onClick={() => onChange(-1)}
+    >
+      <Icon name="minus" size={36} />
+    </button>
+  );
+  const plus = (
+    <button
+      type="button"
+      className={cn(ROUND_BUTTON, PLUS, dim)}
+      aria-label={`One more ${unit} for ${teamName}`}
+      disabled={disabled}
+      onClick={() => onChange(1)}
+    >
+      <Icon name="plus" size={36} />
+    </button>
+  );
+  const input = (
+    <ScoreInput
+      value={value}
+      label={`${unit === 'goal' ? 'Goals' : 'Points'} for ${teamName}`}
+      onSet={onSet}
+      size={size}
+      disabled={disabled}
+      className={size === 'lg' ? 'flex-1' : 'w-full'}
+    />
+  );
+
+  return size === 'lg' ? (
     <div className="flex items-center justify-between gap-2.5">
-      <button
-        type="button"
-        className={cn(ROUND_BUTTON, MINUS, dim)}
-        aria-label={`One fewer ${unit} for ${teamName}`}
-        disabled={disabled || value === 0}
-        onClick={() => onChange(-1)}
-      >
-        <Icon name="minus" size={36} />
-      </button>
-      <ScoreNumber value={value} size={size} className="flex-1 text-center" />
-      <button
-        type="button"
-        className={cn(ROUND_BUTTON, PLUS, dim)}
-        aria-label={`One more ${unit} for ${teamName}`}
-        disabled={disabled}
-        onClick={() => onChange(1)}
-      >
-        <Icon name="plus" size={36} />
-      </button>
+      {minus}
+      {input}
+      {plus}
+    </div>
+  ) : (
+    <div className="flex flex-col items-center gap-2">
+      {input}
+      <div className="flex gap-2">
+        {minus}
+        {plus}
+      </div>
     </div>
   );
 }

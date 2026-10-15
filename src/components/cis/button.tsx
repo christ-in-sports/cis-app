@@ -56,19 +56,17 @@ export function PrimaryButton({ block, className, children, ...props }: ButtonPr
  * reserved for actions: a red thing you can press destroys something, a red
  * thing you cannot press is a score (§4).
  */
+/** The danger button's own classes, for a link that should look like one. */
+export const dangerButtonClasses = cn(
+  base,
+  'min-h-cis-tap-primary px-6 border-[3px] border-cis-danger bg-cis-paper-light text-cis-danger',
+  'hover:bg-cis-danger-tint',
+  'active:translate-y-[1px]',
+);
+
 export function DangerButton({ block, className, children, ...props }: ButtonProps) {
   return (
-    <button
-      className={cn(
-        base,
-        'min-h-cis-tap-primary px-6 border-[3px] border-cis-danger bg-cis-paper-light text-cis-danger',
-        'hover:bg-cis-danger-tint',
-        'active:translate-y-[1px]',
-        block && 'w-full',
-        className,
-      )}
-      {...props}
-    >
+    <button className={cn(dangerButtonClasses, block && 'w-full', className)} {...props}>
       {children}
     </button>
   );

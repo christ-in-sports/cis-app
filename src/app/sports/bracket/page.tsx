@@ -35,6 +35,7 @@ export default async function BracketPage({
   if (!data.season || !block) {
     return (
       <>
+        {sel.keep}
         {header}
         {data.season ? tabs : null}
         <SportsSheet>
@@ -55,6 +56,7 @@ export default async function BracketPage({
 
   return (
     <>
+      {sel.keep}
       {header}
       {tabs}
       <SportsSheet>

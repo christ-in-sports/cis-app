@@ -13,7 +13,7 @@
  */
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { Icon, type IconName } from '@/components/cis/icon';
 import { cn } from '@/lib/utils';
 
@@ -40,8 +40,25 @@ const ITEMS: Item[] = [
 
 const MANAGE: Item = { href: '/sports/manage', label: 'Manage', icon: 'manage' };
 
+/**
+ * The division and sport the viewer is on, carried onto every in-section link so
+ * they stay on that sport while moving between Standings, Schedule and Bracket.
+ * (`KeepSelection` puts what a page resolved into the URL for this to read.)
+ */
+function carry(href: string, params: URLSearchParams): string {
+  if (href === '/') return href;
+  const keep = new URLSearchParams();
+  for (const key of ['division', 'block']) {
+    const value = params.get(key);
+    if (value) keep.set(key, value);
+  }
+  const text = keep.toString();
+  return text ? `${href}?${text}` : href;
+}
+
 export function SportsNav({ canManage }: { canManage: boolean }) {
   const pathname = usePathname();
+  const params = useSearchParams();
   const items = canManage ? [...ITEMS, MANAGE] : ITEMS;
 
   const isOn = (item: Item) =>
@@ -62,7 +79,7 @@ export function SportsNav({ canManage }: { canManage: boolean }) {
           return (
             <li key={item.href}>
               <Link
-                href={item.href}
+                href={carry(item.href, params)}
                 aria-current={on ? 'page' : undefined}
                 className={cn(
                   'flex min-h-[48px] min-w-[56px] flex-col items-center justify-center gap-[5px] text-[11px] font-bold',

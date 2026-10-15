@@ -6,7 +6,12 @@
  * cells earliest slot first and:
  *
  *  - never puts a team in two games in the same slot;
- *  - spreads each team's games out, and avoids three slots in a row;
+ *  - plays games in round order: a cell goes to a game of the earliest round
+ *    that has one that fits, so a first game day holds rounds 1 and 2 rather
+ *    than a scatter of later rounds;
+ *  - within that round, spreads each team's games out, and avoids three slots
+ *    in a row (a game that would be a third in a row only goes ahead of a later
+ *    round's game if nothing else fits);
  *  - places games with both teams known before games still waiting on a result
  *    (knockout games), which take the leftover cells so the day stays full;
  *  - never places a waiting game in or before a slot of a game that feeds it.
@@ -106,9 +111,15 @@ export function scheduleDay(opts: {
       const slotsPlayed = history.get(team) ?? [];
       const earlier = slotsPlayed.filter((s) => s < slot);
       total += earlier.length ? slot - Math.max(...earlier) : WELL_RESTED;
-      if (slotsPlayed.includes(slot - 1) && slotsPlayed.includes(slot - 2)) total -= THREE_IN_A_ROW;
+      if (inARow(team, slot)) total -= THREE_IN_A_ROW;
     }
     return total;
+  };
+
+  /** Whether `team` playing in `slot` would be their third game in a row. */
+  const inARow = (team: string, slot: number) => {
+    const slotsPlayed = history.get(team) ?? [];
+    return slotsPlayed.includes(slot - 1) && slotsPlayed.includes(slot - 2);
   };
 
   const assignments: Assignment[] = [];
@@ -121,13 +132,20 @@ export function scheduleDay(opts: {
       if (taken.has(`${slot}:${court}`)) continue;
 
       let pick: SchedulableGame | undefined;
+      const options = remainingReady
+        .filter((g) => feedersAllow(g, slot))
+        .map((g) => ({ g, s: score(g, slot) }))
+        .filter((o): o is { g: SchedulableGame; s: number } => o.s !== null);
+      // A third game in a row is the last resort, so look past it for the earliest round.
+      const calm = options.filter((o) => !inARow(o.g.home!, slot) && !inARow(o.g.away!, slot));
+      const field = calm.length > 0 ? calm : options;
+      const roundKey = (g: SchedulableGame) => STAGE_ORDER[g.stage] * 1000 + g.round;
+      const earliest = Math.min(...field.map((o) => roundKey(o.g)));
       let best = -Infinity;
-      for (const g of remainingReady) {
-        if (!feedersAllow(g, slot)) continue;
-        const s = score(g, slot);
-        if (s !== null && s > best) {
-          best = s;
-          pick = g;
+      for (const o of field) {
+        if (roundKey(o.g) === earliest && o.s > best) {
+          best = o.s;
+          pick = o.g;
         }
       }
       if (pick) {

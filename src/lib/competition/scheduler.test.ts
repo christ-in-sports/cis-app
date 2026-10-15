@@ -14,6 +14,28 @@ const leagueGames = (n: number): SchedulableGame[] =>
   }));
 
 describe('scheduleDay', () => {
+  it('fills a first game day with the earliest rounds, not a scatter of later ones', () => {
+    // 8 teams, 4 slots x 2 courts = 8 games: exactly rounds 1 and 2 (4 games each).
+    const games = leagueGames(8);
+    const { assignments } = scheduleDay({ slots: 4, courts: 2, games });
+    const rounds = assignments.map((a) => games.find((g) => g.id === a.gameId)!.round);
+    expect(assignments).toHaveLength(8);
+    expect([...new Set(rounds)].sort()).toEqual([1, 2]);
+    // And round 1 is played before round 2.
+    const lastRound1 = Math.max(...assignments.filter((a, i) => rounds[i] === 1).map((a) => a.slot));
+    const firstRound2 = Math.min(...assignments.filter((a, i) => rounds[i] === 2).map((a) => a.slot));
+    expect(lastRound1).toBeLessThanOrEqual(firstRound2);
+  });
+
+  it('keeps rounds in order across several short days', () => {
+    const games = leagueGames(8);
+    const day1 = scheduleDay({ slots: 3, courts: 2, games });
+    const rest = games.filter((g) => !day1.assignments.some((a) => a.gameId === g.id));
+    const day2 = scheduleDay({ slots: 3, courts: 2, games: rest });
+    const roundsOf = (r: typeof day1) => r.assignments.map((a) => games.find((g) => g.id === a.gameId)!.round);
+    expect(Math.max(...roundsOf(day1))).toBeLessThanOrEqual(Math.min(...roundsOf(day2)) + 1);
+  });
+
   it('never puts a team in two games in the same slot', () => {
     const games = leagueGames(8);
     const { assignments } = scheduleDay({ slots: 14, courts: 2, games });

@@ -6,8 +6,11 @@ import {
   defaultActiveSet,
   entryTotals,
   isLevel,
+  levelSet,
+  setPoints,
+  setSetPoints,
   neededCount,
-  nextOnCourt,
+  nextToScore,
   pickRound,
   playedDownstream,
   scoreable,
@@ -127,6 +130,30 @@ describe('dodgeball rounds', () => {
   });
 });
 
+describe('typed scores', () => {
+  it('sets a side to exactly the typed number, clamped', () => {
+    expect(setPoints({ home: 3, away: 1 }, 'away', 25)).toEqual({ home: 3, away: 25 });
+    expect(setPoints({ home: 3, away: 1 }, 'home', -4).home).toBe(0);
+    expect(setPoints({ home: 3, away: 1 }, 'home', 5000).home).toBe(999);
+    expect(setPoints({ home: 3, away: 1 }, 'home', Number.NaN).home).toBe(0);
+  });
+
+  it('sets one volleyball set and leaves the rest', () => {
+    const d: SetsDetails = { sets: [{ home: 25, away: 21 }, { home: 0, away: 0 }] };
+    expect(setSetPoints(d, 1, 'home', 25).sets).toEqual([{ home: 25, away: 21 }, { home: 25, away: 0 }]);
+  });
+
+  it('finds a set that ended level, but not one that has not been played', () => {
+    expect(levelSet({ sets: [{ home: 25, away: 21 }, { home: 24, away: 24 }] })).toBe(1);
+    expect(levelSet({ sets: [{ home: 25, away: 21 }, { home: 0, away: 0 }] })).toBeNull();
+  });
+
+  it('still shows a running total while a set is level', () => {
+    const d: SetsDetails = { sets: [{ home: 25, away: 21 }, { home: 24, away: 24 }, { home: 0, away: 0 }] };
+    expect(entryTotals('volleyball', d, { maxSets: 5 })).toEqual({ home: 1, away: 0 });
+  });
+});
+
 describe('level games', () => {
   it('is level only when there are totals and they match', () => {
     expect(isLevel({ home: 2, away: 2 })).toBe(true);
@@ -203,19 +230,44 @@ describe('what a correction or clear touches', () => {
   });
 });
 
-describe('nextOnCourt', () => {
-  const at = (id: string, time: string, court: number, status: GameRecord['status'] = 'scheduled') =>
-    game({ id, scheduled_date: '2026-10-19', scheduled_time: time, court, status });
+describe('nextToScore', () => {
+  const at = (id: string, time: string, court: number, over: Partial<GameRecord> = {}) =>
+    game({ id, scheduled_date: '2026-10-19', scheduled_time: time, court, home_team_id: 'a', away_team_id: 'b', ...over });
 
-  it('finds the next unplayed game on the same court', () => {
-    const games = [at('g1', '09:45:00', 1), at('g2', '10:30:00', 2), at('g3', '10:30:00', 1), at('g4', '11:15:00', 1)];
-    expect(nextOnCourt(games[0], games)?.id).toBe('g3');
+  it('goes to the other game in the same slot before the next slot', () => {
+    const games = [at('g1', '09:45:00', 1), at('g2', '09:45:00', 2), at('g3', '10:30:00', 1)];
+    expect(nextToScore(games[0], games)?.id).toBe('g2');
   });
 
-  it('skips games already played, and finds nothing for an unscheduled game', () => {
-    const games = [at('g1', '09:45:00', 1), at('g2', '10:30:00', 1, 'completed')];
-    expect(nextOnCourt(games[0], games)).toBeNull();
-    expect(nextOnCourt(game({ id: 'x' }), games)).toBeNull();
+  it('still finds the unplayed game on a lower court in the same slot', () => {
+    const games = [at('g1', '09:45:00', 1), at('g2', '09:45:00', 2), at('g3', '10:30:00', 1)];
+    expect(nextToScore(games[1], games)?.id).toBe('g1');
+  });
+
+  it('moves to the next slot, lowest court first, once the slot is done', () => {
+    const games = [
+      at('g1', '09:45:00', 1),
+      at('g2', '09:45:00', 2, { status: 'completed' }),
+      at('g4', '10:30:00', 2),
+      at('g3', '10:30:00', 1),
+    ];
+    expect(nextToScore(games[0], games)?.id).toBe('g3');
+  });
+
+  it('skips played games and games still waiting on a team', () => {
+    const games = [
+      at('g1', '09:45:00', 1),
+      at('g2', '10:30:00', 1, { status: 'completed' }),
+      at('g3', '10:30:00', 2, { home_team_id: null }),
+      at('g4', '11:15:00', 1),
+    ];
+    expect(nextToScore(games[0], games)?.id).toBe('g4');
+  });
+
+  it('finds nothing after the last game, and nothing for an unscheduled game', () => {
+    const games = [at('g1', '09:45:00', 1)];
+    expect(nextToScore(games[0], games)).toBeNull();
+    expect(nextToScore(game({ id: 'x' }), games)).toBeNull();
   });
 });
 
