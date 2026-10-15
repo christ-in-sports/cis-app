@@ -11,11 +11,11 @@
  *    same treatment as the roster's search box.
  *  - Focus is the system-wide 2px orange outline at a 3px offset (§6), never
  *    the browser default.
- *  - Errors are bold ember-red text under the field (`FieldError`), with
- *    `role="alert"`, and the invalid control gets a heavier ember outline, so
- *    the error is not carried by colour alone. Ember is normally the sport
- *    colour; using it here was a deliberate 2026-09-28 decision -- see
- *    `FieldError`. `--cis-danger` stays reserved for destructive actions.
+ *  - Errors are bold danger-red text with a warning icon under the field
+ *    (`FieldError`), with `role="alert"`, and the invalid control gets a
+ *    heavier danger outline, so the error is not carried by colour alone. This
+ *    is the Sports screens' treatment (see `score-form.tsx`): ember stays
+ *    "this is a score", so it never marks an error.
  *  - Labels are sentence case, weight 700, 15px. No all-caps, no label above a
  *    label (§3, §5).
  *  - A ticked box is filled orange with an ink tick -- state is a filled tick
@@ -26,6 +26,7 @@
  */
 
 import { useId, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from 'react';
+import { Icon } from '@/components/cis/icon';
 import { cn } from '@/lib/utils';
 
 /** What `Field` hands its control so label, hint and error stay wired up. */
@@ -41,25 +42,29 @@ const focusRing =
 const controlBase =
   'w-full min-h-12 rounded-cis-chip border-2 border-cis-ink bg-cis-paper-light px-3 ' +
   'text-cis-base text-cis-ink placeholder:text-cis-ink-muted ' +
-  'aria-[invalid=true]:border-[3px] aria-[invalid=true]:border-cis-ember disabled:opacity-60 ' +
+  'aria-[invalid=true]:border-[3px] aria-[invalid=true]:border-cis-danger disabled:opacity-60 ' +
   focusRing;
 
 /**
- * A validation message. Ember red, bold, with `role="alert"` so a screen reader
- * announces it.
+ * A validation message: danger red, bold, with a warning icon and
+ * `role="alert"` so a screen reader announces it.
  *
- * Ember is the system's "sport" colour (scores, Game/Final chips), so this is a
- * deliberate widening of its job -- a decision made on 2026-09-28 after bold ink
- * text proved too easy to miss on a long form. It stays clear of the other red:
- * `--cis-danger` is reserved for destructive *actions* (`DESIGN_SYSTEM.md` §4).
- * Ember on ~13px bold text is 5.3:1 on paper-light, over the 4.5:1 AA floor.
- * The message never relies on colour alone -- it is text under the field, and
- * the field itself gets a heavier outline.
+ * The same treatment as the Sports score form (`score-form.tsx`), so an error
+ * looks the same wherever it appears. `--cis-danger` is otherwise for
+ * destructive actions (`DESIGN_SYSTEM.md` §4); errors are the one other place it
+ * is used, and ember is kept out of it so ember always means "this is a score".
+ * Danger on 13px bold text is 8.7:1 on paper-light, well over the 4.5:1 AA floor.
+ * The icon and the text carry the meaning, not the hue alone.
  */
 export function FieldError({ id, children }: { id?: string; children: ReactNode }) {
   return (
-    <p id={id} role="alert" className="m-0 text-cis-sm font-bold leading-[1.4] text-cis-ember">
-      {children}
+    <p
+      id={id}
+      role="alert"
+      className="m-0 flex items-start gap-1.5 text-cis-sm font-bold leading-[1.4] text-cis-danger"
+    >
+      <Icon name="warning" size={16} className="mt-px shrink-0" />
+      <span>{children}</span>
     </p>
   );
 }
@@ -183,7 +188,7 @@ export function ChoiceGroup<T extends string>({
                 'peer-focus-visible:outline peer-focus-visible:outline-2',
                 'peer-focus-visible:outline-offset-[3px] peer-focus-visible:outline-cis-orange',
                 'active:scale-[.94]',
-                error && 'border-[3px] border-cis-ember',
+                error && 'border-[3px] border-cis-danger',
               )}
             >
               {choice.label}
@@ -243,7 +248,7 @@ export function TickRow({
             // on paper-light, under the 3:1 WCAG asks of a control's boundary,
             // and this box records a legal agreement.
             checked ? 'border-cis-orange bg-cis-orange' : 'border-cis-ink',
-            error && !checked && 'border-cis-ember',
+            error && !checked && 'border-cis-danger',
             'peer-focus-visible:outline peer-focus-visible:outline-2',
             'peer-focus-visible:outline-offset-[3px] peer-focus-visible:outline-cis-orange',
           )}

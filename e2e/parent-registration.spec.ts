@@ -192,6 +192,11 @@ test('a parent completes an imported kid, then registers a new one', async ({ pa
   await signIn(page, PARENT_EMAIL);
   await page.goto('/register');
 
+  // ---- The Registration nav: a parent gets Register, and no roster or import --
+  const nav = page.getByRole('navigation', { name: 'Registration' });
+  await expect(nav.getByRole('link')).toHaveText(['Home', 'Register', 'Sports']);
+  await expect(nav.getByRole('link', { name: 'Register' })).toHaveAttribute('aria-current', 'page');
+
   // ---- The imported kid was linked by guardian email, and is not finished ----
   await expect(page.getByRole('heading', { name: 'Who are you registering?' })).toBeVisible();
   const mina = page.getByRole('button', { name: /Mina Guirguis/ });

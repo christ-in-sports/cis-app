@@ -68,7 +68,7 @@ screens, and flag it if a new screen seems to need breaking one.
 |---|---|---|
 | `--cis-orange` | `#EE6B2D` | Primary. Filled buttons (ink text), active nav, progress fill, present state |
 | `--cis-orange-text` | `#C2531B` | Orange as *text* on cream (passes 4.5:1). Links use this, `#9C3E12` on hover |
-| `--cis-ember` | `#C4341C` | Sport: scores, "Game"/"Final" chips, unverified flags, leader rank. Also form validation errors (2026-09-28 — see §7 Forms) |
+| `--cis-ember` | `#C4341C` | Sport: scores, "Game"/"Final" chips, unverified flags, leader rank |
 | `--cis-danger` / hover / press | `#8E1F17` / `#A3231A` / `#761A13` | **Destructive actions only** — delete, remove. Never a status, never a chip |
 | `--cis-danger-tint` / `--cis-ink-on-danger` | `#F7E4E0` / `#FFF6EE` | Hover wash behind an outlined danger action; text on a danger fill |
 | `--cis-sage` | `#6F8457` | Spiritual: psalm-point button, verse-huddle rules, verse chips |
@@ -93,8 +93,7 @@ unambiguous in practice:
 - **`--cis-danger` only ever appears on an action** the user can press — a delete or remove
   control. It is never a chip, a status, a rule or a fill behind text.
 - **`--cis-ember` never appears on an action.** It marks sport results: scores, "Game"/"Final"
-  chips, the leader row — and, since 2026-09-28, form validation messages, which are text and
-  never pressable.
+  chips, the leader row. It never marks an error.
 
 So a red thing you can press is destructive; a red thing you cannot press is a score. If a new
 screen needs red for anything that is neither, that is a signal to stop and flag it rather than
@@ -185,7 +184,7 @@ one-off markup per screen.
 | `ChoiceGroup` | Short exclusive lists (gender, T-shirt size, division) | Real radio inputs styled as 12px chips; selected is ink-filled. The whole chip is the tap target. |
 | `TickRow` | Checkboxes such as the waiver | Whole row is the tap target; the 44px tick box (14px radius) fills orange with an ink ✓ when set, as in `AttendanceRow`. Unticked, its outline is ink rather than `--cis-box-empty`: that tan is about 1.9:1 on paper-light, under the 3:1 WCAG asks of a control's boundary, and a form checkbox is not a glanceable roster mark. |
 
-**Validation errors are bold ember-red text (`FieldError`) with `role="alert"`, and the invalid control takes a 3px ember outline.** This widens ember beyond "sport" — a deliberate decision on 2026-09-28: the first version used bold ink text, on the reasoning that neither red could mark an error, and it proved too easy to miss on a five-sheet phone form. Ember was chosen over `--cis-danger` because danger is reserved for destructive *actions* (§4, and "never a status"), and over orange because orange is the primary-action and link colour that sits right beside these messages. Ember on 13px bold text is about 5.3:1 on paper-light (AA needs 4.5:1). The message is always text under the field and the outline is heavier, so colour is never the only signal. If a screen shows an error and a score together, revisit this.
+**Validation errors are bold `--cis-danger` text with a warning icon (`FieldError`), `role="alert"`, and the invalid control takes a 3px danger outline.** This is the Sports screens' treatment (§10), applied to every form so an error looks the same wherever it appears, and it keeps ember meaning "this is a score". It briefly used ember on the registration form (2026-09-28) after bold ink proved too easy to miss; that was reversed when the registration screens moved onto the Sports board. Danger on 13px bold text is 8.7:1 on paper-light; the icon and the text carry the meaning, so colour is never the only signal. `--cis-danger` is otherwise for destructive actions (§4); errors are the one other place it appears.
 
 **Domain components:**
 
@@ -214,6 +213,9 @@ one-off markup per screen.
 | `BlockAction`, `ResultStrip` | `label`, `disabledReason`; `text` | A disabled action always shows its reason ("3 league games still need a result"). Results read "6 placed, 3 left to schedule". |
 | `ConfirmSheet`, `LockedField` | `title`, `deletes[]`, `keeps[]`, `requireTick`; `value`, `reason` | Destructive confirmations use `--cis-danger` and name exactly what goes. Locked fields say why. |
 | `SportsNav` | `role` | Entering Sports swaps `BottomNav` to Home / Standings / Schedule / Bracket, plus Manage for Admin and Program Team. The global set proposed alongside it is Today / Sports / Calendar / Team. |
+| `SectionNav` | `label`, `items[]` | The fixed bottom bar itself, shared by `SportsNav` and `RegistrationNav`: board ground, 11px labels, 56×48 targets, apricot when current. A prefix only matches at a path boundary, so `/register` is not lit on `/registrations`. |
+| `RegistrationNav` | `isParent`, `isStaff`, `isAdmin` | The Registration section's items, by who is looking: Parent = Home · Register · Sports; staff = Home · Roster · Sports; Admin = Home · Roster · Import · Sports. A **proposal**, not an agreed design (§10). |
+| `RegistrationFrame` + `RegistrationColumn` | `nav`; — | `BoardShell` plus a nav slot, and the column that holds sheets 14px in from the board and 14px apart. **Rendered once by the route group's layout** (`app/(registration)/layout.tsx`), not by each page, so the board and nav stay on screen while a page loads — a frame built inside a page vanishes with it and leaves the root loading screen's cream background behind. The group has its own `loading.tsx` for the same reason. Anything placed directly on the board must be pale: dark ink and orange text are unreadable on it, so put controls in a sheet. |
 
 **Built so far (ENG-15, part 1 of 3: the screens everyone sees).** In `src/components/cis/`: `Chip` (variants `sport`, `active`, `outline`, `dashed`, `tint`; `faith` and `stamp` stay unbuilt), `Icon`, `Sheet` with `joined`, `DivisionTabs`, `BlockSwitcher`, `StandingsTable`, the schedule table (`ScheduleTable`, with `GameStateChip` and `TeamLines`), the bracket (`BracketSectionView`, `BracketGame`, `RoundJumpChips`), `SportsNav`, and three small ones the designs imply: `BoardShell` (the hardboard behind a screen, with the header), `LinkRow` (a ruled row that links on) and `EmptyNotice` (the waiting state: heading, sentence, optional note and action). Final places is a page in `src/app/sports/places`. **Part 2 (score entry):** `ScoreStepper`, `QuickPoints`, `SetTable`, `RoundWinnerPicker`, `PickButton` and `ScoreNumber` in `score-controls.tsx`, and `ScoreLink` (the "Enter score" / "Edit score" link scorers see under a game). The sheet itself, the tiebreak prompt, the clear confirmation and the saved panel live with the screen in `src/app/sports/score/[gameId]`: they are specific to it, so they are not shared components, and `ScoreSheet` / `TiebreakPrompt` / `StickyActionBar` from the table above are built as that page rather than as separate parts. **Part 3 (block management, `/sports/manage`):** `StageTracker` (boxes joined by a rule, each with a Done / Now / Later word), `ResultStrip`, `ActionNote` (a lock and the reason an action is closed), `Fixtures` (the three counts) and `LockedField`, in `stage-tracker.tsx` and `manage-parts.tsx`; plus `BlockSwitcher` gained an optional icon. The block form, the schedule / clear / reset forms and the action list live with the screens, not as shared components, because only Manage uses them; `BlockAction` is the action list, and `ConfirmSheet` is built as the reset and clear screens. ENG-15 is now fully built.
 
@@ -246,12 +248,16 @@ new screens compose from the same set instead of reinventing layout.
   `Manage Stages`, `Manage Forms`, `Final Places`, `Navigation` `.dc.html`). Standings, schedule,
   bracket and final places for everyone; score entry and block management for Admin and Program
   Team. Assumptions behind them are logged in `docs/decisions.md` (2026-10-08).
-- **Parent registration** (`/register`). Designed in code from this document's rules and the
-  roster/import screens, **without a Claude Design prototype** — none existed when it was built.
-  Treat it as provisional: a picker sheet ("Who are you registering?"), then one sheet per
-  section (about the kid, this season, parent/guardian + emergency contact, waiver). Nothing on
-  it is colour-coded: a registration is neither a score nor a verse, so orange marks only the
-  primary action and ticked state.
+- **Registration** (`/register`, `/registrations`, `/admin/imports`). Moved onto the Sports board
+  with `RegistrationFrame`, a `BoardHeader` and the Registration bottom nav (2026-10-14), so the
+  app reads as one product. **Designed in code from this document's rules and the Sports
+  screens, without a Claude Design prototype** — none existed. Treat as provisional.
+  - *Parent form:* a picker sheet ("Who are you registering?"), then one sheet per section (about
+    the kid, this season, parent/guardian + emergency contact, waiver). Nothing on it is
+    colour-coded: a registration is neither a score nor a verse, so orange marks only the primary
+    action and ticked state.
+  - *Roster:* the search box, grade filter and "still owe" chips share one sheet at the top.
+  - *Import:* an error that used to sit on the page now sits in a paper sheet.
 
 State shape for reference (local UI state — real app fetches roster/schedule/standings/verified
 flags from Supabase):
@@ -283,7 +289,7 @@ differential, independent of sort — the rank number never changes on re-sort.
 
 ## 10. Open items
 
-- **Sports screens, decided in ENG-15 part 2:** (1) the score numerals are tokens, `--cis-display-score` 72px (the number being set), `-md` 64px (two numbers side by side, volleyball and dodgeball totals) and `-sm` 56px (the saved result), as Tailwind `text-cis-score`, `-md`, `-sm`; (2) errors beside scores use `--cis-danger` with a warning icon, never ember, so ember keeps meaning "this is a score". Still open: (3) standings sort headers are 34px tall, under the 44px tap minimum, as in the Admin Standings reference; (4) the Sports nav item sets and the global Today / Sports / Calendar / Team set are proposals, not agreed; (5) the designs show "Recorded by Mina" and a time on the saved screen, but results store only the user id, so the saved screen says "Recorded result" until the name is read through a profile join.
+- **Sports screens, decided in ENG-15 part 2:** (1) the score numerals are tokens, `--cis-display-score` 72px (the number being set), `-md` 64px (two numbers side by side, volleyball and dodgeball totals) and `-sm` 56px (the saved result), as Tailwind `text-cis-score`, `-md`, `-sm`; (2) errors beside scores use `--cis-danger` with a warning icon, never ember, so ember keeps meaning "this is a score". Still open: (3) standings sort headers are 34px tall, under the 44px tap minimum, as in the Admin Standings reference; (4) the Sports nav item sets and the global Today / Sports / Calendar / Team set are proposals, not agreed — and so are the Registration nav sets (Parent: Home · Register · Sports; staff: Home · Roster · Sports; Admin adds Import), which also add a Sports shortcut that the Sports set itself does not have; (5) the designs show "Recorded by Mina" and a time on the saved screen, but results store only the user id, so the saved screen says "Recorded result" until the name is read through a profile join.
 - Vector logo artwork, plus a reversed/white version for dark grounds (currently raster only,
   light grounds only).
 - The program's own icon set, if one exists, to replace Lucide.

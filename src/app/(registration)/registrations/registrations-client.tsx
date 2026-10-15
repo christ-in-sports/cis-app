@@ -1,7 +1,6 @@
 'use client';
 
 import { Fragment, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Papa from 'papaparse';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/toast';
 import { Sheet, SheetHeading, SheetRule } from '@/components/cis/sheet';
-import { PageShell } from '@/components/cis/page-shell';
+import { BoardHeader } from '@/components/cis/board-shell';
+import { RegistrationColumn } from '@/components/cis/registration-frame';
 import { deletePayment, recordPayments, setRegistrationsConsent } from './actions';
 import {
   PaymentFields,
@@ -164,7 +164,6 @@ export default function RegistrationsClient({
   isAdmin: boolean;
   season: { id: string; name: string } | null;
 }) {
-  const router = useRouter();
   const supabase = createClient();
   const { toast } = useToast();
 
@@ -562,18 +561,18 @@ export default function RegistrationsClient({
 
   if (!isStaff) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-cis-page p-4 font-cis-body text-cis-ink">
-        <Sheet className="flex w-full max-w-sm flex-col gap-cis-3 px-cis-5 pb-cis-6 pt-cis-6">
-          <SheetHeading className="text-cis-xl">Staff only</SheetHeading>
-          <p className="m-0 text-cis-base leading-[1.5]">
-            Registration records contain minors&apos; personal information and are limited
-            to approved staff.
-          </p>
-          <SecondaryButton block onClick={() => router.push('/')}>
-            Back
-          </SecondaryButton>
-        </Sheet>
-      </div>
+      <>
+        <BoardHeader kicker="Registration" title="Roster" />
+        <RegistrationColumn>
+          <Sheet tone="paper" className="flex flex-col gap-cis-3 px-cis-5 pb-cis-6 pt-cis-6">
+            <SheetHeading className="text-cis-xl">Staff only</SheetHeading>
+            <p className="m-0 text-cis-base leading-[1.5]">
+              Registration records contain minors&apos; personal information and are limited
+              to approved staff.
+            </p>
+          </Sheet>
+        </RegistrationColumn>
+      </>
     );
   }
 
@@ -584,35 +583,35 @@ export default function RegistrationsClient({
 
   return (
     <>
-      <PageShell>
-        <div className="flex items-end justify-between gap-cis-3">
-          <div className="flex flex-col gap-1">
-            <button
-              type="button"
-              onClick={() => router.push('/')}
-              className="self-start text-cis-sm font-bold text-cis-orange-text underline-offset-2 hover:text-cis-orange-deep hover:underline"
-            >
-              Back
-            </button>
-            <h1 className="font-cis-display text-cis-xl font-normal leading-[1.1]">Registration</h1>
-            <p className="m-0 text-cis-sm font-semibold text-cis-ink-muted">
-              {season ? season.name : 'No active season'} · {rows.length} registered
-              {filtered.length !== rows.length && ` · ${filtered.length} shown`}
-            </p>
-          </div>
+      {/* The Add button takes the header's right-hand slot, so the season and
+          counts that used to sit under the title live in the filters sheet. */}
+      <BoardHeader
+        kicker="Registration"
+        title="Roster"
+        action={
           <PrimaryButton className="px-5" onClick={openNew} disabled={!season}>
             Add
           </PrimaryButton>
-        </div>
+        }
+      />
+      <RegistrationColumn>
 
-        {!season && (
-          <Sheet tone="paper" className="px-cis-5 py-cis-5">
-            <p className="m-0 text-cis-base leading-[1.5]">
-              No season is marked current, so nobody can be registered yet.
-            </p>
-          </Sheet>
-        )}
+      {!season && (
+        <Sheet tone="paper" className="px-cis-5 py-cis-5">
+          <p className="m-0 text-cis-base leading-[1.5]">
+            No season is marked current, so nobody can be registered yet.
+          </p>
+        </Sheet>
+      )}
 
+      {/* Everything that narrows the roster sits in one sheet. These controls
+          would otherwise be loose on the dark board, where ink text and orange
+          links are unreadable. */}
+      <Sheet className="flex flex-col gap-cis-3 px-cis-4 pb-cis-4 pt-cis-4">
+        <p className="m-0 text-cis-sm font-semibold text-cis-ink-muted">
+          {season ? season.name : 'No active season'} · {rows.length} registered
+          {filtered.length !== rows.length && ` · ${filtered.length} shown`}
+        </p>
         <div className="flex gap-cis-2">
           <Input
             placeholder="Search name, guardian, phone…"
@@ -663,292 +662,294 @@ export default function RegistrationsClient({
           </div>
         )}
 
-        {selected.size > 0 && (
-          <div className="sticky top-2 z-20 flex flex-wrap items-center gap-cis-3 rounded-cis-sheet bg-cis-ink px-cis-4 py-cis-3 text-cis-paper-light shadow-cis-sheet">
-            <span className="text-cis-base font-bold">
-              {selected.size} selected
-            </span>
-            <button
-              type="button"
-              onClick={() => setSelected(new Set())}
-              className="text-cis-sm font-bold underline underline-offset-2"
-            >
-              Clear
-            </button>
-            {chase === 'payment' ? (
-              <>
-                <div className="w-full rounded-cis-chip bg-cis-paper-light p-cis-3 text-cis-ink">
-                  <PaymentFields
-                    draft={bulkPayment}
-                    onChange={setBulkPayment}
-                    errors={bulkPaymentErrors}
-                    idPrefix="Each kid's"
-                  />
-                </div>
-                <PrimaryButton
-                  className="ml-auto min-h-cis-tap-min px-5 text-cis-base"
-                  disabled={paymentBusy}
-                  onClick={submitBulkPayment}
-                >
-                  {paymentBusy ? 'Saving…' : `Record for ${selected.size}`}
-                </PrimaryButton>
-              </>
-            ) : (
+      </Sheet>
+
+      {selected.size > 0 && (
+        <div className="sticky top-2 z-20 flex flex-wrap items-center gap-cis-3 rounded-cis-sheet bg-cis-ink px-cis-4 py-cis-3 text-cis-paper-light shadow-cis-sheet">
+          <span className="text-cis-base font-bold">
+            {selected.size} selected
+          </span>
+          <button
+            type="button"
+            onClick={() => setSelected(new Set())}
+            className="text-cis-sm font-bold underline underline-offset-2"
+          >
+            Clear
+          </button>
+          {chase === 'payment' ? (
+            <>
+              <div className="w-full rounded-cis-chip bg-cis-paper-light p-cis-3 text-cis-ink">
+                <PaymentFields
+                  draft={bulkPayment}
+                  onChange={setBulkPayment}
+                  errors={bulkPaymentErrors}
+                  idPrefix="Each kid's"
+                />
+              </div>
               <PrimaryButton
                 className="ml-auto min-h-cis-tap-min px-5 text-cis-base"
-                disabled={consentBusy}
-                onClick={() => applyConsent([...selected], true)}
+                disabled={paymentBusy}
+                onClick={submitBulkPayment}
               >
-                {consentBusy ? 'Saving…' : `Mark ${selected.size} received`}
+                {paymentBusy ? 'Saving…' : `Record for ${selected.size}`}
               </PrimaryButton>
-            )}
-          </div>
-        )}
-
-        {filtered.length === 0 ? (
-          <Sheet className="flex flex-col gap-cis-2 px-cis-5 pb-cis-6 pt-cis-6 text-center">
-            <SheetHeading className="text-cis-xl">
-              {rows.length === 0
-                ? 'No registrations yet'
-                : chase !== null
-                  ? 'Nobody left to chase'
-                  : 'No matches'}
-            </SheetHeading>
-            <p className="m-0 text-cis-base leading-[1.5] text-cis-ink-muted">
-              {rows.length === 0
-                ? 'Tap Add to register a kid.'
-                : chase === 'consent'
-                  ? 'Every kid matching these filters has a consent form recorded.'
-                  : chase === 'payment'
-                    ? 'Every kid matching these filters has a payment recorded.'
-                    : 'Try a different search.'}
-            </p>
-            {/* The roster is empty at the start of a season, which is exactly
-                when the once-a-year import matters. Saying so here is what makes
-                the feature findable without anyone having to remember it. */}
-            {rows.length === 0 && isAdmin && (
-              <p className="m-0 text-cis-base leading-[1.5]">
-                Registering a whole season?{' '}
-                <Link
-                  href="/admin/imports"
-                  className="font-bold text-cis-orange-text underline underline-offset-2 hover:text-cis-orange-deep"
-                >
-                  Import this year&apos;s roster from a CSV
-                </Link>
-                .
-              </p>
-            )}
-          </Sheet>
-        ) : (
-          <Sheet className="flex flex-col gap-cis-3 px-cis-4 pb-cis-4 pt-cis-5">
-            <SheetHeading>Roster</SheetHeading>
-
-            {/* A real table, per DESIGN_SYSTEM.md §3 -- a roster is tabular data,
-                so it is not a grid of cards. Details expand into a row beneath
-                rather than opening a second screen, which keeps the whole record
-                reachable in one tap on a phone. */}
-            <table className="w-full table-fixed border-collapse">
-              <colgroup>
-                {canSelect && <col className="w-[72px]" />}
-                <col />
-                <col className="w-[52px]" />
-                <col className="w-[112px]" />
-              </colgroup>
-              <thead>
-                <tr className="border-b-4 border-cis-ink-dark">
-                  {canSelect && (
-                    <th scope="col" className="pb-2 pr-2 text-left text-cis-sm font-bold text-cis-ink-muted">
-                      {chase === 'payment' ? 'Select' : 'Received'}
-                    </th>
-                  )}
-                  <th scope="col" className="pb-2 text-left text-cis-sm font-bold text-cis-ink-muted">
-                    Name
-                  </th>
-                  <th scope="col" className="pb-2 text-right text-cis-sm font-bold text-cis-ink-muted">
-                    Grade
-                  </th>
-                  <th scope="col" className="pb-2 pl-3 text-left text-cis-sm font-bold text-cis-ink-muted">
-                    Division
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((r) => {
-                  const open = expanded === r.registration_id;
-                  const panelId = `roster-${r.registration_id}`;
-
-                  return (
-                    <Fragment key={r.registration_id}>
-                      {/* The whole row is the tap target, not just the name. On a
-                          phone a 3-word link is a small thing to hit accurately, and
-                          every cell in the row describes the same kid, so there is
-                          nothing else a tap here could reasonably mean. */}
-                      <tr
-                        onClick={() => setExpanded(open ? null : r.registration_id)}
-                        className={[
-                          'group cursor-pointer align-top',
-                          'hover:bg-[rgba(36,31,28,.05)] active:bg-[rgba(36,31,28,.08)]',
-                          open ? '' : 'border-b border-cis-rule',
-                        ].join(' ')}
-                      >
-                        {canSelect && (
-                          /* Swallows the click so ticking a box never also expands the
-                             row -- while marking consent the checkbox is the point, and
-                             a panel springing open under every tick would be in the way.
-                             The label widens the target to the whole cell. */
-                          <td className="py-[10px] pr-2" onClick={(e) => e.stopPropagation()}>
-                            <label className="flex min-h-cis-tap-min cursor-pointer items-center">
-                              <input
-                                type="checkbox"
-                                aria-label={
-                                  chase === 'payment'
-                                    ? `Record payment for ${r.kid.first_name} ${r.kid.last_name}`
-                                    : `Consent form received for ${r.kid.first_name} ${r.kid.last_name}`
-                                }
-                                checked={selected.has(r.registration_id)}
-                                onChange={() => toggleSelected(r.registration_id)}
-                                className="h-5 w-5 accent-[color:var(--cis-orange)]"
-                              />
-                            </label>
-                          </td>
-                        )}
-                        <td className="py-[10px] pr-[6px]">
-                          {/* Deliberately carries no onClick: the row above handles the
-                              toggle, and both a pointer click and a keyboard Enter or
-                              Space on this button raise a click that bubbles up to it.
-                              The real <button> stays because it is what makes the row
-                              focusable and announces its expanded state -- an onClick on
-                              the <tr> alone would be unreachable without a mouse. */}
-                          <button
-                            type="button"
-                            aria-expanded={open}
-                            aria-controls={panelId}
-                            className="text-left text-cis-base font-bold leading-[1.3] group-hover:underline"
-                          >
-                            {r.kid.last_name}, {r.kid.first_name}
-                          </button>
-                          <div className="text-cis-xs font-semibold text-cis-ink-muted">
-                            {fmtDate(r.kid.dob)}
-                          </div>
-                        </td>
-                        <td className="py-[10px] text-right text-cis-base font-extrabold tabular-nums">
-                          {r.grade}
-                        </td>
-                        <td className="py-[10px] pl-3 text-cis-sm font-semibold leading-[1.35]">
-                          {DIVISION_SHORT[r.division]}
-                        </td>
-                      </tr>
-
-                      {open && (
-                        <tr id={panelId} className="border-b border-cis-rule">
-                          <td colSpan={canSelect ? 4 : 3} className="pb-cis-4">
-                            <SheetRule className="mb-cis-3 h-[2px] rounded-none" />
-
-                            <div className="mb-cis-3 flex flex-wrap items-center gap-cis-2 text-cis-sm">
-                              <span className="font-semibold text-cis-ink-muted">Consent</span>
-                              <span className="font-bold">
-                                {r.consent_given_at
-                                  ? `Recorded ${fmtDate(r.consent_given_at.slice(0, 10))}`
-                                  : 'Not recorded'}
-                              </span>
-                              {isAdmin && (
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    applyConsent([r.registration_id], r.consent_given_at === null)
-                                  }
-                                  disabled={consentBusy}
-                                  className="rounded-cis-chip border-2 border-cis-ink px-3 py-[5px] text-cis-sm font-bold hover:bg-[rgba(36,31,28,.07)] disabled:opacity-50"
-                                >
-                                  {consentBusy ? 'Saving…' : r.consent_given_at ? 'Clear' : 'Mark received'}
-                                </button>
-                              )}
-                            </div>
-
-                            {isAdmin && (
-                              <PaymentsPanel
-                                kidName={`${r.kid.first_name} ${r.kid.last_name}`}
-                                payments={r.payments}
-                                busy={paymentBusy}
-                                onRecord={(draft) => applyPayment([r.registration_id], draft)}
-                                onRemove={(p) =>
-                                  removePayment(r.registration_id, p, `${r.kid.first_name} ${r.kid.last_name}`)
-                                }
-                              />
-                            )}
-
-                            <dl className="m-0 grid grid-cols-1 gap-[6px] text-cis-sm">
-                              {(
-                                [
-                                  ['T-shirt', r.tshirt_size],
-                                  ['Kid email', r.kid.email],
-                                  ['Kid phone', r.kid.phone],
-                                  ['Gender', r.kid.gender],
-                                  ['Guardian', r.kid.guardian_name],
-                                  ['Guardian phone', r.kid.guardian_phone],
-                                  ['Guardian email', r.kid.guardian_email],
-                                  ['Address', r.kid.home_address],
-                                  ['Emergency contact', r.kid.emergency_contact_name],
-                                  ['Emergency phone', r.kid.emergency_contact_phone],
-                                  ['Allergies', r.kid.allergies],
-                                ] as Array<[string, string | null]>
-                              )
-                                .filter(([, v]) => v)
-                                .map(([k, v]) => (
-                                  <div key={k} className="flex gap-cis-2">
-                                    <dt className="w-36 flex-shrink-0 font-semibold text-cis-ink-muted">
-                                      {k}
-                                    </dt>
-                                    <dd className="m-0 min-w-0 break-words">{v}</dd>
-                                  </div>
-                                ))}
-                            </dl>
-
-                            <div className="mt-cis-3 flex gap-cis-2">
-                              <SecondaryButton
-                                className="min-h-cis-tap-min flex-1 px-4 text-cis-base"
-                                onClick={() => openEdit(r)}
-                              >
-                                Edit
-                              </SecondaryButton>
-                              <DangerButton
-                                className="min-h-cis-tap-min px-4 text-cis-base"
-                                onClick={() => remove(r)}
-                              >
-                                Remove
-                              </DangerButton>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-          </Sheet>
-        )}
-
-        {/* Import sits beside Export because they are the same idea in opposite
-            directions, and an Admin looking for "get the roster in" looks where
-            "get the roster out" already is. Admin-only, matching the import
-            page's own gate. */}
-        <div className="flex flex-col gap-cis-2 sm:flex-row">
-          <SecondaryButton
-            block
-            className="sm:flex-1"
-            onClick={exportCsv}
-            disabled={filtered.length === 0}
-          >
-            Export CSV
-          </SecondaryButton>
-          {isAdmin && (
-            <Link href="/admin/imports" className={`${secondaryButtonClasses} w-full sm:flex-1`}>
-              Import from CSV
-            </Link>
+            </>
+          ) : (
+            <PrimaryButton
+              className="ml-auto min-h-cis-tap-min px-5 text-cis-base"
+              disabled={consentBusy}
+              onClick={() => applyConsent([...selected], true)}
+            >
+              {consentBusy ? 'Saving…' : `Mark ${selected.size} received`}
+            </PrimaryButton>
           )}
         </div>
-      </PageShell>
+      )}
+
+      {filtered.length === 0 ? (
+        <Sheet className="flex flex-col gap-cis-2 px-cis-5 pb-cis-6 pt-cis-6 text-center">
+          <SheetHeading className="text-cis-xl">
+            {rows.length === 0
+              ? 'No registrations yet'
+              : chase !== null
+                ? 'Nobody left to chase'
+                : 'No matches'}
+          </SheetHeading>
+          <p className="m-0 text-cis-base leading-[1.5] text-cis-ink-muted">
+            {rows.length === 0
+              ? 'Tap Add to register a kid.'
+              : chase === 'consent'
+                ? 'Every kid matching these filters has a consent form recorded.'
+                : chase === 'payment'
+                  ? 'Every kid matching these filters has a payment recorded.'
+                  : 'Try a different search.'}
+          </p>
+          {/* The roster is empty at the start of a season, which is exactly
+              when the once-a-year import matters. Saying so here is what makes
+              the feature findable without anyone having to remember it. */}
+          {rows.length === 0 && isAdmin && (
+            <p className="m-0 text-cis-base leading-[1.5]">
+              Registering a whole season?{' '}
+              <Link
+                href="/admin/imports"
+                className="font-bold text-cis-orange-text underline underline-offset-2 hover:text-cis-orange-deep"
+              >
+                Import this year&apos;s roster from a CSV
+              </Link>
+              .
+            </p>
+          )}
+        </Sheet>
+      ) : (
+        <Sheet className="flex flex-col gap-cis-3 px-cis-4 pb-cis-4 pt-cis-5">
+          <SheetHeading>Roster</SheetHeading>
+
+          {/* A real table, per DESIGN_SYSTEM.md §3 -- a roster is tabular data,
+              so it is not a grid of cards. Details expand into a row beneath
+              rather than opening a second screen, which keeps the whole record
+              reachable in one tap on a phone. */}
+          <table className="w-full table-fixed border-collapse">
+            <colgroup>
+              {canSelect && <col className="w-[72px]" />}
+              <col />
+              <col className="w-[52px]" />
+              <col className="w-[112px]" />
+            </colgroup>
+            <thead>
+              <tr className="border-b-4 border-cis-ink-dark">
+                {canSelect && (
+                  <th scope="col" className="pb-2 pr-2 text-left text-cis-sm font-bold text-cis-ink-muted">
+                    {chase === 'payment' ? 'Select' : 'Received'}
+                  </th>
+                )}
+                <th scope="col" className="pb-2 text-left text-cis-sm font-bold text-cis-ink-muted">
+                  Name
+                </th>
+                <th scope="col" className="pb-2 text-right text-cis-sm font-bold text-cis-ink-muted">
+                  Grade
+                </th>
+                <th scope="col" className="pb-2 pl-3 text-left text-cis-sm font-bold text-cis-ink-muted">
+                  Division
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((r) => {
+                const open = expanded === r.registration_id;
+                const panelId = `roster-${r.registration_id}`;
+
+                return (
+                  <Fragment key={r.registration_id}>
+                    {/* The whole row is the tap target, not just the name. On a
+                        phone a 3-word link is a small thing to hit accurately, and
+                        every cell in the row describes the same kid, so there is
+                        nothing else a tap here could reasonably mean. */}
+                    <tr
+                      onClick={() => setExpanded(open ? null : r.registration_id)}
+                      className={[
+                        'group cursor-pointer align-top',
+                        'hover:bg-[rgba(36,31,28,.05)] active:bg-[rgba(36,31,28,.08)]',
+                        open ? '' : 'border-b border-cis-rule',
+                      ].join(' ')}
+                    >
+                      {canSelect && (
+                        /* Swallows the click so ticking a box never also expands the
+                           row -- while marking consent the checkbox is the point, and
+                           a panel springing open under every tick would be in the way.
+                           The label widens the target to the whole cell. */
+                        <td className="py-[10px] pr-2" onClick={(e) => e.stopPropagation()}>
+                          <label className="flex min-h-cis-tap-min cursor-pointer items-center">
+                            <input
+                              type="checkbox"
+                              aria-label={
+                                chase === 'payment'
+                                  ? `Record payment for ${r.kid.first_name} ${r.kid.last_name}`
+                                  : `Consent form received for ${r.kid.first_name} ${r.kid.last_name}`
+                              }
+                              checked={selected.has(r.registration_id)}
+                              onChange={() => toggleSelected(r.registration_id)}
+                              className="h-5 w-5 accent-[color:var(--cis-orange)]"
+                            />
+                          </label>
+                        </td>
+                      )}
+                      <td className="py-[10px] pr-[6px]">
+                        {/* Deliberately carries no onClick: the row above handles the
+                            toggle, and both a pointer click and a keyboard Enter or
+                            Space on this button raise a click that bubbles up to it.
+                            The real <button> stays because it is what makes the row
+                            focusable and announces its expanded state -- an onClick on
+                            the <tr> alone would be unreachable without a mouse. */}
+                        <button
+                          type="button"
+                          aria-expanded={open}
+                          aria-controls={panelId}
+                          className="text-left text-cis-base font-bold leading-[1.3] group-hover:underline"
+                        >
+                          {r.kid.last_name}, {r.kid.first_name}
+                        </button>
+                        <div className="text-cis-xs font-semibold text-cis-ink-muted">
+                          {fmtDate(r.kid.dob)}
+                        </div>
+                      </td>
+                      <td className="py-[10px] text-right text-cis-base font-extrabold tabular-nums">
+                        {r.grade}
+                      </td>
+                      <td className="py-[10px] pl-3 text-cis-sm font-semibold leading-[1.35]">
+                        {DIVISION_SHORT[r.division]}
+                      </td>
+                    </tr>
+
+                    {open && (
+                      <tr id={panelId} className="border-b border-cis-rule">
+                        <td colSpan={canSelect ? 4 : 3} className="pb-cis-4">
+                          <SheetRule className="mb-cis-3 h-[2px] rounded-none" />
+
+                          <div className="mb-cis-3 flex flex-wrap items-center gap-cis-2 text-cis-sm">
+                            <span className="font-semibold text-cis-ink-muted">Consent</span>
+                            <span className="font-bold">
+                              {r.consent_given_at
+                                ? `Recorded ${fmtDate(r.consent_given_at.slice(0, 10))}`
+                                : 'Not recorded'}
+                            </span>
+                            {isAdmin && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  applyConsent([r.registration_id], r.consent_given_at === null)
+                                }
+                                disabled={consentBusy}
+                                className="rounded-cis-chip border-2 border-cis-ink px-3 py-[5px] text-cis-sm font-bold hover:bg-[rgba(36,31,28,.07)] disabled:opacity-50"
+                              >
+                                {consentBusy ? 'Saving…' : r.consent_given_at ? 'Clear' : 'Mark received'}
+                              </button>
+                            )}
+                          </div>
+
+                          {isAdmin && (
+                            <PaymentsPanel
+                              kidName={`${r.kid.first_name} ${r.kid.last_name}`}
+                              payments={r.payments}
+                              busy={paymentBusy}
+                              onRecord={(draft) => applyPayment([r.registration_id], draft)}
+                              onRemove={(p) =>
+                                removePayment(r.registration_id, p, `${r.kid.first_name} ${r.kid.last_name}`)
+                              }
+                            />
+                          )}
+
+                          <dl className="m-0 grid grid-cols-1 gap-[6px] text-cis-sm">
+                            {(
+                              [
+                                ['T-shirt', r.tshirt_size],
+                                ['Kid email', r.kid.email],
+                                ['Kid phone', r.kid.phone],
+                                ['Gender', r.kid.gender],
+                                ['Guardian', r.kid.guardian_name],
+                                ['Guardian phone', r.kid.guardian_phone],
+                                ['Guardian email', r.kid.guardian_email],
+                                ['Address', r.kid.home_address],
+                                ['Emergency contact', r.kid.emergency_contact_name],
+                                ['Emergency phone', r.kid.emergency_contact_phone],
+                                ['Allergies', r.kid.allergies],
+                              ] as Array<[string, string | null]>
+                            )
+                              .filter(([, v]) => v)
+                              .map(([k, v]) => (
+                                <div key={k} className="flex gap-cis-2">
+                                  <dt className="w-36 flex-shrink-0 font-semibold text-cis-ink-muted">
+                                    {k}
+                                  </dt>
+                                  <dd className="m-0 min-w-0 break-words">{v}</dd>
+                                </div>
+                              ))}
+                          </dl>
+
+                          <div className="mt-cis-3 flex gap-cis-2">
+                            <SecondaryButton
+                              className="min-h-cis-tap-min flex-1 px-4 text-cis-base"
+                              onClick={() => openEdit(r)}
+                            >
+                              Edit
+                            </SecondaryButton>
+                            <DangerButton
+                              className="min-h-cis-tap-min px-4 text-cis-base"
+                              onClick={() => remove(r)}
+                            >
+                              Remove
+                            </DangerButton>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </Sheet>
+      )}
+
+      {/* Import sits beside Export because they are the same idea in opposite
+          directions, and an Admin looking for "get the roster in" looks where
+          "get the roster out" already is. Admin-only, matching the import
+          page's own gate. */}
+      <div className="flex flex-col gap-cis-2 sm:flex-row">
+        <SecondaryButton
+          block
+          className="sm:flex-1"
+          onClick={exportCsv}
+          disabled={filtered.length === 0}
+        >
+          Export CSV
+        </SecondaryButton>
+        {isAdmin && (
+          <Link href="/admin/imports" className={`${secondaryButtonClasses} w-full sm:flex-1`}>
+            Import from CSV
+          </Link>
+        )}
+      </div>
+      </RegistrationColumn>
 
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">

@@ -9,7 +9,8 @@
 
 import { redirect } from 'next/navigation';
 
-import { PageShell } from '@/components/cis/page-shell';
+import { BoardHeader } from '@/components/cis/board-shell';
+import { RegistrationColumn } from '@/components/cis/registration-frame';
 import { Sheet, SheetHeading } from '@/components/cis/sheet';
 import { loadParentRegistrationContext } from '@/lib/registration/parent';
 import RegisterClient from './register-client';
@@ -18,13 +19,15 @@ export const dynamic = 'force-dynamic';
 
 function Notice({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <PageShell className="max-w-[460px]">
-      <h1 className="font-cis-display text-cis-xl font-normal leading-[1.1]">Register a kid</h1>
-      <Sheet tone="paper" className="flex flex-col gap-cis-2 px-cis-5 pb-cis-6 pt-cis-6">
-        <SheetHeading>{title}</SheetHeading>
-        <p className="m-0 text-cis-base leading-[1.5]">{children}</p>
-      </Sheet>
-    </PageShell>
+    <>
+      <BoardHeader kicker="Registration" title="Register a kid" />
+      <RegistrationColumn>
+        <Sheet tone="paper" className="flex flex-col gap-cis-2 px-cis-5 pb-cis-6 pt-cis-6">
+          <SheetHeading>{title}</SheetHeading>
+          <p className="m-0 text-cis-base leading-[1.5]">{children}</p>
+        </Sheet>
+      </RegistrationColumn>
+    </>
   );
 }
 

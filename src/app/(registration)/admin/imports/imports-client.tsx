@@ -18,7 +18,9 @@ import { useRouter } from 'next/navigation';
 
 import { Sheet, SheetHeading, SheetRule } from '@/components/cis/sheet';
 import { PrimaryButton, SecondaryButton } from '@/components/cis/button';
-import { PageShell } from '@/components/cis/page-shell';
+import { BoardHeader } from '@/components/cis/board-shell';
+import { FieldError } from '@/components/cis/form';
+import { RegistrationColumn } from '@/components/cis/registration-frame';
 import { commitImportBatch } from './actions';
 
 export interface ReviewRow {
@@ -51,10 +53,10 @@ function statusText(row: ReviewRow): string {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <PageShell className="max-w-[460px]">
-      <h1 className="font-cis-display text-cis-xl font-normal leading-[1.1]">Roster import</h1>
-      {children}
-    </PageShell>
+    <>
+      <BoardHeader kicker="Registration" title="Roster import" />
+      <RegistrationColumn>{children}</RegistrationColumn>
+    </>
   );
 }
 
@@ -310,9 +312,9 @@ export default function ImportsClient({
         </Sheet>
 
         {error && (
-          <p className="m-0 text-cis-base font-bold leading-[1.45]" role="alert">
-            {error}
-          </p>
+          <Sheet tone="paper" className="px-cis-5 py-cis-4">
+            <FieldError>{error}</FieldError>
+          </Sheet>
         )}
 
         <div className="flex gap-cis-2">
@@ -340,11 +342,7 @@ export default function ImportsClient({
           Choose the roster CSV for the current season. You&apos;ll see every row before anything
           is saved.
         </p>
-        {error && (
-          <p className="m-0 text-cis-base font-bold leading-[1.45]" role="alert">
-            {error}
-          </p>
-        )}
+        {error && <FieldError>{error}</FieldError>}
         <label className="mt-cis-1 flex">
           <input
             ref={fileRef}
