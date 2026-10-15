@@ -160,7 +160,9 @@ const byCourt = (a: GameRecord, b: GameRecord) =>
   (a.court ?? Infinity) - (b.court ?? Infinity) || a.label.localeCompare(b.label);
 
 /**
- * Scheduled games grouped by day, then by time, then by court. A game with no date
+ * Scheduled games grouped by day (latest day first, so what just happened is at
+ * the top and nobody scrolls to the end), then by time and court (earliest first
+ * within a day, as a game day is read). A game with no date
  * is not on the schedule. With `teamIds`, only games one of those teams is already
  * known to play in: a knockout game stays off a team's schedule until it is decided.
  */
@@ -177,7 +179,7 @@ export function buildSchedule(
         (g.away_team_id !== null && teamIds.has(g.away_team_id)))
   );
 
-  const dates = [...new Set(scheduled.map((g) => g.scheduled_date!))].sort();
+  const dates = [...new Set(scheduled.map((g) => g.scheduled_date!))].sort((a, b) => b.localeCompare(a));
   return dates.map((date) => {
     const dayGames = scheduled.filter((g) => g.scheduled_date === date);
     const times = [...new Set(dayGames.map((g) => g.scheduled_time))].sort((a, b) => {

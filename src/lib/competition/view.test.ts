@@ -254,14 +254,19 @@ describe('the schedule', () => {
 
   it('groups by day, then time, then court, and leaves unscheduled games off', () => {
     const days = buildSchedule(games);
-    expect(days.map((d) => d.date)).toEqual(['2026-10-12', '2026-10-19']);
-    expect(days[0].slots.map((s) => s.time)).toEqual(['09:00:00', '12:00:00']);
-    expect(days[0].slots[0].games.map((g) => g.id)).toEqual(['c1', 'c2']);
+    expect(days[1].slots.map((s) => s.time)).toEqual(['09:00:00', '12:00:00']);
+    expect(days[1].slots[0].games.map((g) => g.id)).toEqual(['c1', 'c2']);
     expect(days.flatMap((d) => d.slots.flatMap((s) => s.games)).map((g) => g.id)).not.toContain('none');
   });
 
+  it('lists the latest day first, with each day still read earliest slot first', () => {
+    const days = buildSchedule(games);
+    expect(days.map((d) => d.date)).toEqual(['2026-10-19', '2026-10-12']);
+    expect(days[1].slots.map((s) => s.time)).toEqual(['09:00:00', '12:00:00']);
+  });
+
   it('counts slots, courts and games for the day heading', () => {
-    const [first] = buildSchedule(games);
+    const first = buildSchedule(games).find((d) => d.date === '2026-10-12')!;
     expect(first).toMatchObject({ count: 3, courts: 2 });
     expect(dayNote(first, false)).toBe('2 slots · 2 courts');
     expect(dayNote({ ...first, count: 1 }, true)).toBe('1 game');

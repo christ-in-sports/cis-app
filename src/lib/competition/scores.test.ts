@@ -37,6 +37,16 @@ describe('parseDetails', () => {
     expect(result).toMatchObject({ ok: true, totals: { home: 2, away: 1 } });
   });
 
+  it('does not let a volleyball set end level: someone has to win it', () => {
+    const level = parseDetails('volleyball', { sets: [{ home: 25, away: 21 }, { home: 20, away: 20 }] });
+    expect(level).toEqual({ ok: false, error: "Set 2 can't end level. Someone has to win the set." });
+  });
+
+  it('needs at least one volleyball set to have been played', () => {
+    const none = parseDetails('volleyball', { sets: [{ home: 0, away: 0 }, { home: 0, away: 0 }] });
+    expect(none).toEqual({ ok: false, error: 'Enter the score of at least one set.' });
+  });
+
   it('limits volleyball sets to the block setting, defaulting to 5', () => {
     const six = { sets: Array.from({ length: 6 }, () => ({ home: 25, away: 20 })) };
     expect(parseDetails('volleyball', six)).toEqual({ ok: false, error: 'At most 5 sets' });
@@ -77,11 +87,13 @@ describe('sport helpers', () => {
     expect(sportSettings('dodgeball')).toMatchObject({ maxRounds: 5, gameMinutes: 15 });
   });
 
-  it('builds blank details that pass validation', () => {
-    for (const sport of ['soccer', 'basketball', 'volleyball', 'dodgeball']) {
+  it('builds blank details that pass validation, except a volleyball game with no set played', () => {
+    for (const sport of ['soccer', 'basketball', 'dodgeball']) {
       const blank = emptyDetails(sport);
       expect(parseDetails(sport, blank)).toMatchObject({ ok: true, totals: { home: 0, away: 0 } });
     }
+    // A blank volleyball sheet is the starting point, not a result: a set must be played.
+    expect(parseDetails('volleyball', emptyDetails('volleyball')).ok).toBe(false);
     expect(emptyDetails('volleyball', { maxSets: 3 })).toEqual({
       sets: [
         { home: 0, away: 0 },

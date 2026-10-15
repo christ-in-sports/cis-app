@@ -16,7 +16,13 @@ import { Icon, type IconName } from '@/components/cis/icon';
 import { cn } from '@/lib/utils';
 
 export interface SectionNavItem {
+  /** The item's path. Used to decide whether it is the current page. */
   href: string;
+  /**
+   * Where the link actually goes, when that differs from `href` -- Sports carries
+   * the chosen division and sport in the query string. Defaults to `href`.
+   */
+  to?: string;
   label: string;
   icon: IconName;
   /**
@@ -58,7 +64,7 @@ export function SectionNav({ label, items }: { label: string; items: readonly Se
           return (
             <li key={item.href}>
               <Link
-                href={item.href}
+                href={item.to ?? item.href}
                 aria-current={on ? 'page' : undefined}
                 className={cn(
                   'flex min-h-[48px] min-w-[56px] flex-col items-center justify-center gap-[5px] text-[11px] font-bold',

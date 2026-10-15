@@ -6,11 +6,14 @@
  * falls back to something sensible rather than an error (see `pickDivision`).
  */
 
+import { createElement, type ReactElement } from 'react';
+
 import type { SportsData } from '@/lib/competition/read';
 import { blocksInDivision, pickBlock, pickDivision } from '@/lib/competition/read';
 import type { BlockRecord, GameRecord, ResultRecord, TeamRecord } from '@/lib/competition/types';
 
 import { getSportsData, param } from './data';
+import { KeepSelection } from './keep-selection';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -26,6 +29,8 @@ export interface Selection {
   teams: Map<string, TeamRecord>;
   results: Map<string, ResultRecord>;
   gamesOf: (blockId: string) => GameRecord[];
+  /** Put in the page: adds the resolved division and sport to the URL, for the nav to carry. */
+  keep: ReactElement;
 }
 
 export async function selectSports(
@@ -53,5 +58,6 @@ export async function selectSports(
     teams: new Map(data.teams.map((t) => [t.id, t])),
     results: new Map(data.results.map((r) => [r.game_id, r])),
     gamesOf: (blockId) => data.games.filter((g) => g.sport_block_id === blockId),
+    keep: createElement(KeepSelection, { division, block: block?.id ?? null }),
   };
 }

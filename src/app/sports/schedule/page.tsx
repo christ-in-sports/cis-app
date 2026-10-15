@@ -20,6 +20,7 @@ import type { GameRecord } from '@/lib/competition/types';
 import { buildSchedule, dayNote, gameMeta, gameView, nextUpIds } from '@/lib/competition/view';
 
 import { param, sportsHref } from '../data';
+import { KeepSelection } from '../keep-selection';
 import { UpdatedAt } from '../live';
 import { SportsSheet } from '../parts';
 import { selectSports } from '../selection';
@@ -47,6 +48,7 @@ export default async function SchedulePage({
   if (!data.season) {
     return (
       <>
+        {sel.keep}
         {header}
         <SportsSheet>
           <EmptyNotice title="No season yet">The schedule shows up here once the program team starts a season.</EmptyNotice>
@@ -59,6 +61,7 @@ export default async function SchedulePage({
     const other = DIVISION_ORDER.find((d) => d !== division && data.blocks.some((b) => b.division === d));
     return (
       <>
+        {sel.keep}
         {header}
         {tabs}
         <SportsSheet>
@@ -81,7 +84,10 @@ export default async function SchedulePage({
   }
 
   // Filters: one block, or all; and optionally only the viewer's own team.
-  const filterBlock = inDivision.find((b) => b.id === param(sp, 'block')) ?? null;
+  // The sport being played is the default, like every other screen; "All blocks"
+  // is an explicit choice (`block=all`) so it survives moving between screens.
+  const allBlocks = param(sp, 'block') === 'all';
+  const filterBlock = allBlocks ? null : (sel.block ?? null);
   const mine = param(sp, 'mine') === '1';
   const myIds = new Set(data.myTeamIds.filter((id) => sel.teams.get(id)?.division === division));
 
@@ -99,13 +105,13 @@ export default async function SchedulePage({
   const hrefWith = (over: { block?: string | null; mine?: boolean }) =>
     sportsHref('/sports/schedule', {
       division,
-      block: over.block === undefined ? filterBlock?.id : over.block,
+      block: over.block === undefined ? (allBlocks ? 'all' : filterBlock?.id) : over.block,
       mine: (over.mine ?? mine) ? '1' : null,
     });
 
   const [onlyTeam] = myIds;
   const chips = [
-    { key: 'all', label: 'All blocks', href: hrefWith({ block: null }), selected: !filterBlock },
+    { key: 'all', label: 'All blocks', href: hrefWith({ block: 'all' }), selected: !filterBlock },
     ...inDivision.map((b) => ({
       key: b.id,
       label: sportLabel(b.sport),
@@ -135,6 +141,7 @@ export default async function SchedulePage({
 
   return (
     <>
+      <KeepSelection division={division} block={allBlocks ? 'all' : (filterBlock?.id ?? null)} />
       {header}
       {tabs}
       <SportsSheet>

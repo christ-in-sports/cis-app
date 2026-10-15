@@ -12,6 +12,8 @@
  * Team) is not agreed and is not built; this is the in-section nav only.
  */
 
+import { useSearchParams } from 'next/navigation';
+
 import { SectionNav, type SectionNavItem } from '@/components/cis/section-nav';
 
 const ITEMS: SectionNavItem[] = [
@@ -23,6 +25,30 @@ const ITEMS: SectionNavItem[] = [
 
 const MANAGE: SectionNavItem = { href: '/sports/manage', label: 'Manage', icon: 'manage' };
 
+/**
+ * The division and sport the viewer is on, carried onto every in-section link so
+ * they stay on that sport while moving between Standings, Schedule and Bracket.
+ * (`KeepSelection` puts what a page resolved into the URL for this to read.)
+ */
+function carry(href: string, params: URLSearchParams): string {
+  if (href === '/') return href;
+  const keep = new URLSearchParams();
+  for (const key of ['division', 'block']) {
+    const value = params.get(key);
+    if (value) keep.set(key, value);
+  }
+  const text = keep.toString();
+  return text ? `${href}?${text}` : href;
+}
+
 export function SportsNav({ canManage }: { canManage: boolean }) {
-  return <SectionNav label="Sports" items={canManage ? [...ITEMS, MANAGE] : ITEMS} />;
+  const params = useSearchParams();
+  const items = (canManage ? [...ITEMS, MANAGE] : ITEMS).map((item) => ({
+    ...item,
+    // The link carries the viewer's division and sport; `href` stays the plain
+    // path so `SectionNav` still matches the current page against it.
+    to: carry(item.href, params),
+  }));
+
+  return <SectionNav label="Sports" items={items} />;
 }

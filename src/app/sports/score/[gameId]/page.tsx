@@ -7,11 +7,12 @@ import { EmptyNotice } from '@/components/cis/empty-notice';
 import { Icon } from '@/components/cis/icon';
 import { ScoreNumber } from '@/components/cis/score-controls';
 import { SheetHeading, SheetRule } from '@/components/cis/sheet';
-import { startingDetails, nextOnCourt, scoreable } from '@/lib/competition/entry';
+import { startingDetails, nextToScore, scoreable } from '@/lib/competition/entry';
 import {
   blockTitle,
   formatClock,
   ordinal,
+  sportLabel,
 } from '@/lib/competition/labels';
 import { sportSettings } from '@/lib/competition/scores';
 import type { GameRecord, TeamRecord } from '@/lib/competition/types';
@@ -93,8 +94,12 @@ export default async function ScorePage({
       game.stage !== 'league' && game.winner_to_game_id
         ? blockGames.find((g) => g.id === game.winner_to_game_id)
         : null;
-    const next = nextOnCourt(game, blockGames);
-    const nextHref = next && scoreable(next, block.status) ? sportsHref(`/sports/score/${next.id}`, {}) : null;
+    // Games in a slot end together, so the next one to score is the next game in
+    // the slot (any court, any sport in this division), then the next slot.
+    const divisionBlocks = new Map(data.blocks.filter((b) => b.division === division).map((b) => [b.id, b]));
+    const next = nextToScore(game, data.games.filter((g) => divisionBlocks.has(g.sport_block_id)));
+    const nextBlock = next ? divisionBlocks.get(next.sport_block_id) : undefined;
+    const nextHref = next && nextBlock && scoreable(next, nextBlock.status) ? `/sports/score/${next.id}` : null;
     const loser = (id: string | null) => winner !== null && id !== winner;
 
     return (
@@ -139,12 +144,14 @@ export default async function ScorePage({
             <>
               <SheetRule />
               <div className="pt-3.5">
-                <div className="text-cis-xs font-bold text-cis-ink-muted">Next on Court {next.court}</div>
+                <div className="text-cis-xs font-bold text-cis-ink-muted">
+                  {next.scheduled_time === game.scheduled_time ? 'Next in this slot' : 'Next game'}
+                  {next.court !== null ? ` · Court ${next.court}` : ''}
+                </div>
                 <div className="mt-0.5 text-cis-md font-extrabold">
                   {next.scheduled_time ? formatClock(next.scheduled_time) : 'TBD'} ·{' '}
-                  {next.home_team_id && next.away_team_id
-                    ? `${name(next.home_team_id)} vs. ${name(next.away_team_id)}`
-                    : next.label}
+                  {`${name(next.home_team_id)} vs. ${name(next.away_team_id)}`}
+                  {nextBlock && nextBlock.id !== block.id ? ` · ${sportLabel(nextBlock.sport)}` : ''}
                 </div>
               </div>
             </>

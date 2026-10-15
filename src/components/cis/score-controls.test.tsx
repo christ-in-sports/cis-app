@@ -7,7 +7,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-import { PickButton, QuickPoints, RoundWinnerPicker, ScoreNumber, ScoreStepper, SetTable } from './score-controls';
+import { PickButton, ScoreInput, QuickPoints, RoundWinnerPicker, ScoreNumber, ScoreStepper, SetTable } from './score-controls';
 
 describe('ScoreNumber', () => {
   it.each(['lg', 'md', 'sm'] as const)('is ember at size %s', (size) => {
@@ -19,17 +19,50 @@ describe('ScoreNumber', () => {
 describe('ScoreStepper', () => {
   it('reports one up or one down, and names the team in each button', () => {
     const onChange = jest.fn();
-    render(<ScoreStepper value={2} unit="goal" teamName="Falcons" onChange={onChange} />);
+    render(<ScoreStepper value={2} unit="goal" teamName="Falcons" onChange={onChange} onSet={() => {}} />);
     fireEvent.click(screen.getByRole('button', { name: 'One more goal for Falcons' }));
     fireEvent.click(screen.getByRole('button', { name: 'One fewer goal for Falcons' }));
     expect(onChange.mock.calls).toEqual([[1], [-1]]);
   });
 
   it('cannot go below zero, and locks while saving', () => {
-    const { rerender } = render(<ScoreStepper value={0} unit="goal" teamName="Falcons" onChange={() => {}} />);
+    const { rerender } = render(<ScoreStepper value={0} unit="goal" teamName="Falcons" onChange={() => {}} onSet={() => {}} />);
     expect(screen.getByRole('button', { name: 'One fewer goal for Falcons' })).toBeDisabled();
-    rerender(<ScoreStepper value={3} unit="goal" teamName="Falcons" onChange={() => {}} disabled />);
+    rerender(<ScoreStepper value={3} unit="goal" teamName="Falcons" onChange={() => {}} onSet={() => {}} disabled />);
     expect(screen.getByRole('button', { name: 'One more goal for Falcons' })).toBeDisabled();
+  });
+});
+
+describe('ScoreInput', () => {
+  it('takes a typed score, keeping only digits and at most three', () => {
+    const onSet = jest.fn();
+    render(<ScoreInput value={0} label="Points for Saints" onSet={onSet} />);
+    const input = screen.getByRole('textbox', { name: 'Points for Saints' });
+    fireEvent.change(input, { target: { value: '25' } });
+    fireEvent.change(input, { target: { value: '2a5b' } });
+    fireEvent.change(input, { target: { value: '12345' } });
+    expect(onSet.mock.calls).toEqual([[25], [25], [123]]);
+  });
+
+  it('clearing the field is a zero, and the number pad is asked for', () => {
+    const onSet = jest.fn();
+    render(<ScoreInput value={7} label="Goals" onSet={onSet} />);
+    const input = screen.getByRole('textbox', { name: 'Goals' });
+    fireEvent.change(input, { target: { value: '' } });
+    expect(onSet).toHaveBeenCalledWith(0);
+    expect(input).toHaveAttribute('inputmode', 'numeric');
+  });
+
+  it('is ember at every size, like the numbers it replaces', () => {
+    render(<ScoreInput value={3} label="Goals" onSet={() => {}} size="md" />);
+    expect(screen.getByRole('textbox')).toHaveClass('text-cis-ember');
+  });
+
+  it('is typeable from a stepper too', () => {
+    const onSet = jest.fn();
+    render(<ScoreStepper value={0} unit="goal" teamName="Falcons" onChange={() => {}} onSet={onSet} />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'Goals for Falcons' }), { target: { value: '4' } });
+    expect(onSet).toHaveBeenCalledWith(4);
   });
 });
 
