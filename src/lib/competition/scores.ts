@@ -36,7 +36,20 @@ const score = z.number().int().min(0).max(999);
 const pointsDetails = z.object({ home: score, away: score });
 
 const volleyballDetails = z.object({
-  sets: z.array(z.object({ home: score, away: score })).min(1),
+  sets: z
+    .array(z.object({ home: score, away: score }))
+    .min(1)
+    // Someone has to win a set: a played set cannot end level. 0-0 is a set not played.
+    .superRefine((sets, ctx) => {
+      sets.forEach((set, i) => {
+        if (set.home === set.away && set.home !== 0) {
+          ctx.addIssue({ code: 'custom', path: [i], message: `Set ${i + 1} can't end level. Someone has to win the set.` });
+        }
+      });
+      if (sets.every((set) => set.home === 0 && set.away === 0)) {
+        ctx.addIssue({ code: 'custom', message: 'Enter the score of at least one set.' });
+      }
+    }),
 });
 
 const dodgeballDetails = z.object({

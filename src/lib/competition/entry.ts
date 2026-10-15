@@ -8,7 +8,7 @@
  * database functions decide what may be saved; this only shapes what is on screen.
  */
 
-import { parseDetails, emptyDetails, type Side, type SportSettings, type Totals } from './scores';
+import { parseDetails, emptyDetails, SPORTS, isKnownSport, type Side, type SportSettings, type Totals } from './scores';
 import type { GameRecord, ResultRecord, TeamRecord } from './types';
 
 export interface PointsDetails {
@@ -55,10 +55,44 @@ export function pickRound(details: RoundsDetails, index: number, side: Side): Ro
   };
 }
 
-/** Totals for what is on screen, or null while the details are not valid yet. */
+/** Sets one side's points to exactly `value` (typed in), clamped to 0 to 999. */
+export function setPoints(details: PointsDetails, side: Side, value: number): PointsDetails {
+  return { ...details, [side]: clampPoints(value) };
+}
+
+/** Volleyball: sets one side's points in one set to exactly `value`. */
+export function setSetPoints(details: SetsDetails, index: number, side: Side, value: number): SetsDetails {
+  return { sets: details.sets.map((s, i) => (i === index ? { ...s, [side]: clampPoints(value) } : s)) };
+}
+
+function clampPoints(value: number): number {
+  return Number.isFinite(value) ? Math.min(MAX_POINTS, Math.max(0, Math.trunc(value))) : 0;
+}
+
+/** The first set that has been played and ended level, as a 0-based index, or null. Someone has to win a set. */
+export function levelSet(details: SetsDetails): number | null {
+  const i = details.sets.findIndex((s) => s.home === s.away && s.home !== 0);
+  return i === -1 ? null : i;
+}
+
+/**
+ * Totals for what is on screen. While the detail is not valid yet (a level set, no
+ * set played) the running total still shows, worked out without the validation, so
+ * the sheet reads as it is typed; saving is what insists on a valid score.
+ */
 export function entryTotals(sport: string, details: unknown, settings: SportSettings): Totals | null {
   const parsed = parseDetails(sport, details, settings);
-  return parsed.ok ? parsed.totals : null;
+  if (parsed.ok) return parsed.totals;
+  if (!isKnownSport(sport)) return null;
+  try {
+    return SPORTS[sport].totals(details as never, sportSettingsFor(sport, settings));
+  } catch {
+    return null;
+  }
+}
+
+function sportSettingsFor(sport: string, settings: SportSettings): SportSettings {
+  return { ...(isKnownSport(sport) ? SPORTS[sport].defaults : {}), ...settings };
 }
 
 /** Sets or rounds to win a best-of series: 3 of 5, 2 of 3. */

@@ -162,6 +162,7 @@ test('Program Team creates, fills, schedules, clears, edits and resets a block',
   await expect(page.getByText('8 teams in one table makes 28 games. Each team plays 7.')).toBeVisible();
 
   // ---- Generate fixtures ------------------------------------------------------
+  await page.waitForTimeout(4000); // let the live-refresh reload that creating the block triggers finish
   await page.getByRole('button', { name: 'Generate fixtures' }).click();
   await expect(page.getByRole('status')).toContainText('28 fixtures generated');
   await expect(page.getByText('Schedule a game day').first()).toBeVisible();
@@ -213,4 +214,60 @@ test('Program Team creates, fills, schedules, clears, edits and resets a block',
   await page.getByRole('button', { name: 'Reset block' }).click();
   await expect(page.getByText('Generate fixtures').first()).toBeVisible();
   await expect(page.getByRole('link', { name: 'Reset block' })).toHaveCount(0);
+});
+
+test('volleyball: every set can be scored, a level set is refused, and points can be typed', async ({ page }) => {
+  await signIn(page, PROGRAM);
+
+  // A volleyball block, its fixtures, and a game day to score from.
+  await page.goto('/sports/manage?division=juniors');
+  await page.getByRole('link', { name: 'New block' }).click();
+  await page.getByText('Volleyball', { exact: true }).click();
+  await page.getByText('League only', { exact: true }).click();
+  await page.getByRole('button', { name: 'Create block' }).click();
+  await expect(page.getByRole('heading', { name: 'Juniors volleyball' })).toBeVisible();
+  // Creating the block makes the live-refresh socket reload the page about half a
+  // second later; generating inside that window can show the page from before it.
+  await page.waitForTimeout(4000);
+  await page.getByRole('button', { name: 'Generate fixtures' }).click();
+  await expect(page.getByRole('status')).toContainText('28 fixtures generated');
+  await expect(page.getByRole('link', { name: 'Schedule a game day' })).toBeVisible();
+  await page.getByRole('link', { name: 'Schedule a game day' }).click();
+  await page.getByLabel('Date').fill('2026-11-21');
+  await page.getByRole('button', { name: 'Schedule day' }).click();
+  await expect(page.getByRole('status')).toContainText('placed');
+
+  await page.goto('/sports/schedule?division=juniors');
+  await page.getByRole('link', { name: /Enter score/ }).first().click();
+  await expect(page.getByText('League · best of 5')).toBeVisible();
+
+  // Set 1: typed from the keyboard, not tapped 25 times.
+  const home = page.getByRole('textbox', { name: /^Points for/ }).first();
+  const away = page.getByRole('textbox', { name: /^Points for/ }).nth(1);
+  await home.fill('25');
+  await away.fill('21');
+  await expect(page.getByRole('row', { name: /Edit set 1 25 21/ })).toBeVisible();
+
+  // Move on with Next set, and a level set is refused until someone wins it.
+  await page.getByRole('button', { name: 'Next set' }).click();
+  await expect(page.getByRole('heading', { name: 'Set 2 points' })).toBeVisible();
+  await home.fill('20');
+  await away.fill('20');
+  await expect(page.getByRole('alert').filter({ hasText: "Set 2 can't end level" })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Save score' })).toBeDisabled();
+  await page.screenshot({ path: 'test-results/volleyball-level.png', fullPage: true });
+  await away.fill('25');
+  await expect(page.getByRole('button', { name: 'Save score' })).toBeEnabled();
+
+  // Set 3 by tapping a row, then +/- still work.
+  await page.getByRole('button', { name: 'Edit set 3' }).click();
+  await expect(page.getByRole('heading', { name: 'Set 3 points' })).toBeVisible();
+  await home.fill('24');
+  await page.getByRole('button', { name: /One more point for/ }).first().click();
+  await away.fill('22');
+  await expect(page.getByRole('row', { name: /Edit set 3 25 22/ })).toBeVisible();
+  await page.screenshot({ path: 'test-results/volleyball-sets.png', fullPage: true });
+
+  await page.getByRole('button', { name: 'Save score' }).click();
+  await expect(page.getByRole('heading', { name: 'Score saved' })).toBeVisible();
 });

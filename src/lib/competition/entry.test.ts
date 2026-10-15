@@ -6,6 +6,9 @@ import {
   defaultActiveSet,
   entryTotals,
   isLevel,
+  levelSet,
+  setPoints,
+  setSetPoints,
   neededCount,
   nextToScore,
   pickRound,
@@ -124,6 +127,30 @@ describe('dodgeball rounds', () => {
   it('drops unplayed rounds before saving', () => {
     const trimmed = trimDetails('dodgeball', rounds('home', 'home', 'home', null, null)) as RoundsDetails;
     expect(trimmed.rounds).toHaveLength(3);
+  });
+});
+
+describe('typed scores', () => {
+  it('sets a side to exactly the typed number, clamped', () => {
+    expect(setPoints({ home: 3, away: 1 }, 'away', 25)).toEqual({ home: 3, away: 25 });
+    expect(setPoints({ home: 3, away: 1 }, 'home', -4).home).toBe(0);
+    expect(setPoints({ home: 3, away: 1 }, 'home', 5000).home).toBe(999);
+    expect(setPoints({ home: 3, away: 1 }, 'home', Number.NaN).home).toBe(0);
+  });
+
+  it('sets one volleyball set and leaves the rest', () => {
+    const d: SetsDetails = { sets: [{ home: 25, away: 21 }, { home: 0, away: 0 }] };
+    expect(setSetPoints(d, 1, 'home', 25).sets).toEqual([{ home: 25, away: 21 }, { home: 25, away: 0 }]);
+  });
+
+  it('finds a set that ended level, but not one that has not been played', () => {
+    expect(levelSet({ sets: [{ home: 25, away: 21 }, { home: 24, away: 24 }] })).toBe(1);
+    expect(levelSet({ sets: [{ home: 25, away: 21 }, { home: 0, away: 0 }] })).toBeNull();
+  });
+
+  it('still shows a running total while a set is level', () => {
+    const d: SetsDetails = { sets: [{ home: 25, away: 21 }, { home: 24, away: 24 }, { home: 0, away: 0 }] };
+    expect(entryTotals('volleyball', d, { maxSets: 5 })).toEqual({ home: 1, away: 0 });
   });
 });
 

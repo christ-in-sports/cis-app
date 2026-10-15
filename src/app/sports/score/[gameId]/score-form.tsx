@@ -24,6 +24,7 @@ import {
   PickButton,
   QuickPoints,
   RoundWinnerPicker,
+  ScoreInput,
   ScoreNumber,
   ScoreStepper,
   SetTable,
@@ -37,10 +38,13 @@ import {
   defaultActiveSet,
   entryTotals,
   isLevel,
+  levelSet,
   neededCount,
   pickRound,
   playedDownstream,
   roundWinners,
+  setPoints,
+  setSetPoints,
   setWinners,
   tiebreakAsk,
   tiebreakWord,
@@ -107,6 +111,7 @@ export function ScoreForm(props: ScoreFormProps) {
   const knockout = game.stage !== 'league';
   const level = isLevel(totals);
   const askTiebreak = knockout && level;
+  const tiedSet = sport === 'volleyball' ? levelSet(details as SetsDetails) : null;
 
   const winnerSide: Side | null =
     totals && !level ? (totals.home > totals.away ? 'home' : 'away') : askTiebreak ? tiebreak : null;
@@ -215,12 +220,19 @@ export function ScoreForm(props: ScoreFormProps) {
               teamName={names[side]}
               disabled={pending}
               onChange={(delta) => edit(bump(d, side, delta))}
+              onSet={(n) => edit(setPoints(d, side, n))}
             />
           </div>
         ) : (
           <>
-            <div className="mt-1 text-right">
-              <ScoreNumber value={d[side]} />
+            <div className="mt-1 flex justify-end">
+              <ScoreInput
+                value={d[side]}
+                label={`Points for ${names[side]}`}
+                disabled={pending}
+                className="w-40 text-right"
+                onSet={(n) => edit(setPoints(d, side, n))}
+              />
             </div>
             <QuickPoints
               teamName={names[side]}
@@ -253,13 +265,23 @@ export function ScoreForm(props: ScoreFormProps) {
                 teamName={names[side]}
                 disabled={pending}
                 onChange={(delta) => edit(bumpSet(d, active, side, delta))}
+                onSet={(n) => edit(setSetPoints(d, active, side, n))}
               />
             </div>
           ))}
         </div>
+        {tiedSet !== null ? (
+          <ErrorNote>{`Set ${tiedSet + 1} can't end level. Someone has to win the set.`}</ErrorNote>
+        ) : null}
+        {active + 1 < needed ? (
+          <SecondaryButton block className="mt-3.5" disabled={pending} onClick={() => setActiveSet(active + 1)}>
+            Next set
+            <Icon name="arrow" size={16} strokeWidth={3} />
+          </SecondaryButton>
+        ) : null}
         <p className="pt-3.5 text-cis-xs font-bold leading-[1.45] text-cis-ink-muted">
-          The higher score wins the set. Tap a set row to edit it. Later sets are only needed if neither team has won
-          the series.
+          Tap + and − or type the points. The higher score wins the set. Tap a set row, or Next set, to move between
+          sets. Later sets are only needed if neither team has won the series.
         </p>
       </>
     );
@@ -375,7 +397,7 @@ export function ScoreForm(props: ScoreFormProps) {
         >
           Cancel
         </Link>
-        <PrimaryButton className="flex-1" disabled={pending || blocker !== null} onClick={save}>
+        <PrimaryButton className="flex-1" disabled={pending || blocker !== null || tiedSet !== null} onClick={save}>
           {pending ? 'Saving…' : 'Save score'}
         </PrimaryButton>
       </div>
