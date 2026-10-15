@@ -954,7 +954,7 @@ export default function RegistrationsClient({
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
           <div className="fixed inset-0 bg-black/80" onClick={() => setShowForm(false)} />
-          <div className="relative z-50 w-full max-w-md max-h-[88vh] overflow-auto rounded-t-2xl sm:rounded-2xl border bg-background p-6 pb-32 shadow-lg">
+          <div className="relative z-50 w-full max-w-md max-h-[88vh] overflow-auto rounded-t-2xl sm:rounded-2xl border bg-background p-6 pb-32 shadow-lg text-cis-ink">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-bold">
                 {editing ? 'Edit registration' : 'New registration'}

@@ -358,3 +358,16 @@ describe('payments -- the per-kid Payments block', () => {
     expect(screen.queryByRole('button', { name: 'Record payment' })).not.toBeInTheDocument();
   });
 });
+
+describe('the Add / Edit registration form', () => {
+  it('sets its own text colour, since the board behind it sets a pale one', () => {
+    // The form sits inside the Registration board, whose text is pale cream. With no
+    // colour of its own, its labels, headings and select values inherited that and were
+    // pale on the form's cream ground.
+    renderRoster();
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+    const panel = screen.getByRole('heading', { name: 'New registration' }).closest('div[class*="bg-background"]');
+    expect(panel).toHaveClass('text-cis-ink');
+  });
+});
