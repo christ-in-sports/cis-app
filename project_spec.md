@@ -69,6 +69,10 @@ The app supports **6 roles**. A person may hold more than one role simultaneousl
 | AI team generation | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
 | View equipment list | ✓ | ✓ | ✗ | ✓ | ✗ | ✗ |
 | Update equipment list | ✓ | ✓ | ✗ | ✓ | ✗ | ✗ |
+| Submit own servant registration | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ |
+| View all servant registrations | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
+
+A servant registration (the season commitment form, which replaced the Google Form) is submitted by any signed-in servant, including one with no role yet. A servant reads only their own; only Admin reads all, because it holds DOB, home address and emergency contacts. Sub-teams on it are a preference and never grant a role.
 
 **Permissions must be enforced server-side via Supabase Row Level Security — never client-side only.**
 
@@ -206,6 +210,7 @@ Divisions (`juniors` / `ambassadors`) are an attribute on `Registration` and `Te
 | `UserRole` | user_id, role, granted_at, granted_by | belongs to `User` |
 | `Kid` | id, first_name, last_name, email?, phone?, gender, dob, allergies, home_address, emergency_contact_name, emergency_contact_phone, guardian_name, guardian_phone, guardian_email, skill_tags[], parent_user_id? | has many `Registration`, belongs to `User` (parent) |
 | `Registration` | id, kid_id, season_id, grade, division, tshirt_size, top_sports[]?, consent_given_at?, consent_by_user_id?, team_id?, created_at | belongs to `Kid`, `Season`, `Team` |
+| `ServantRegistration` | id, user_id, season_id, full_name, evaluation_status, is_serving, sessions[], juniors_subteams[], ambassadors_subteams[], juniors_other?, ambassadors_other?, notes?, dates_missing?, email, phone, emergency_contact_name, emergency_contact_phone, gender, dob, home_address | belongs to `User`, `Season`; unique on (`user_id`, `season_id`) |
 | `Team` | id, name, division, color?, season_id | has many `Registration`, `Game`; has coaches via `team_coaches`; belongs to `Season`. Lasts the whole season, so it has no sport. |
 | `Season` | id, name, start_date, end_date, is_current | has many `Event`, `Team` |
 | `Event` | id, season_id, title, date, time, location, type | belongs to `Season` |
@@ -231,7 +236,8 @@ Divisions (`juniors` / `ambassadors`) are an attribute on `Registration` and `Te
 - **`consent_given_at`** replaces a yes/no flag. `null` means no consent, and a registration is not complete until it is set. It is set server-side, together with `consent_by_user_id`. CSV-imported registrations may leave it null for now; the parent registration form always sets it.
 - **No photo is stored.** Registration captured one until 2026-09-23, when it was dropped for simplicity and the Drive dependency it carried was removed with it (`docs/decisions.md`, `docs/arch_decisions.md`). The Google Form may still ask for a photo; the importer reports that column as unrecognised and ignores it.
 - **`home_address` and the emergency contact** are visible to Admin, Program Team, the coach of the kid's team, and the kid's linked parent (see the §1.5 matrix). Those are the same readers as the roster row, so the row-level `can_read_kid()` policy is sufficient (resolved 2026-09-22, see §2.8).
-- **Parents write through `register_kid()`, not table policies.** It creates the kid or updates a returning one, then upserts this season's `Registration`, in one transaction. Consent (`consent_given_at`, `consent_by_user_id`) is stamped inside it with `now()` and `auth.uid()`. For a returning kid the parent may edit everything except `first_name`, `last_name`, `dob` and `gender` (the returning-kid matching key, plus gender), and never `skill_tags`. Submitting again in the same season edits the registration and re-stamps consent, until an Admin assigns a `team_id`. A new registration has `source = 'parent'`. Parents can read only the current `Season`.
+- **Parents write through `register_kid()`, not table policies.** It creates the kid or updates a returning one, then upserts this season's `Registration`, in one transaction. Consent (`consent_given_at`, `consent_by_user_id`) is stamped inside it with `now()` and `auth.uid()`. For a returning kid the parent may edit everything except `first_name`, `last_name`, `dob` and `gender` (the returning-kid matching key, plus gender), and never `skill_tags`. Submitting again in the same season edits the registration and re-stamps consent, until an Admin assigns a `team_id`. A new registration has `source = 'parent'`. Any signed-in user can read only the current `Season`.
+- **Servants write through `submit_servant_registration()`, not table policies.** `user_id`, `season_id` (the current season) and `email` are set by the function; the table grants API roles `SELECT` only, with a policy for the owner and Admin. Submitting again edits the row, and it returns whether the row was new. Not serving clears the session and sub-team answers. Any signed-in user can read the current `Season` (the form needs its name).
 - **`Registration` is unique on (`kid_id`, `season_id`).** `Attendance_Kid` and `SpiritualRecord` still reference `kid_id` for now.
 - **Payments are recorded by an Admin, by hand, until Stripe (v1.0).** Writes go only through `record_payments(registration_ids[], amount_cents, method)` and `delete_payment(id)`, both admin-only, with `received_at` and `recorded_by` stamped by the database. The table has no write policy. Admin and the kid's linked parent can read payments; Program Team and coaches cannot. The fee and the payment methods shown to parents are constants in `src/lib/registration/payment.ts`. The fee is `null` (to be announced) until pricing is confirmed. The parent form never shows payment status, and the CSV import never creates payments.
 

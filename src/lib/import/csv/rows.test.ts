@@ -2,7 +2,6 @@ import { mapHeaders } from './columns';
 import {
   cleanCell,
   parseDate,
-  normalizePhone,
   parseGender,
   parseTshirtSize,
   parseDivisionChoice,
@@ -112,28 +111,6 @@ describe('parseDate', () => {
   it('returns null for unparseable text so the raw value can be reported back', () => {
     expect(parseDate('sometime in March')).toBeNull();
     expect(parseDate('')).toBeNull();
-  });
-});
-
-describe('normalizePhone', () => {
-  it('formats a 10-digit number consistently however it was typed', () => {
-    expect(normalizePhone('5105551234')).toBe('(510) 555-1234');
-    expect(normalizePhone('510-555-1234')).toBe('(510) 555-1234');
-    expect(normalizePhone('(510) 555 1234')).toBe('(510) 555-1234');
-  });
-
-  it('strips a leading country code', () => {
-    expect(normalizePhone('1-510-555-1234')).toBe('(510) 555-1234');
-  });
-
-  // These reach a parent in an emergency; an odd format must never be dropped.
-  it('passes through anything it does not recognise, rather than discarding it', () => {
-    expect(normalizePhone('+44 20 7946 0958')).toBe('+44 20 7946 0958');
-    expect(normalizePhone('ask at front desk')).toBe('ask at front desk');
-  });
-
-  it('returns null for a blank cell', () => {
-    expect(normalizePhone('  ')).toBeNull();
   });
 });
 

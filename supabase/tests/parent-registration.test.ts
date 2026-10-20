@@ -1,7 +1,7 @@
 /**
  * RLS + behaviour tests for the parent registration functions
  * (supabase/migrations/*_parent_registration.sql): `register_kid()`,
- * `link_my_kids()` and the "parents read current season" policy.
+ * `link_my_kids()` and the "authenticated reads current season" policy.
  *
  * Both functions are SECURITY DEFINER and write records about minors, so what
  * is worth protecting is: who may call them (AGENTS.md §7), that a parent can
@@ -519,7 +519,7 @@ describe('link_my_kids', () => {
   });
 });
 
-describe('seasons -- parents read the current season only', () => {
+describe('seasons -- signed-in users read the current season only', () => {
   it('shows a parent the current season and not past ones', async () => {
     await withTx(pool, async (client) => {
       const parentId = await makeParent(client, 'season-parent@test.local');
@@ -534,12 +534,19 @@ describe('seasons -- parents read the current season only', () => {
     });
   });
 
-  it('shows a user with no role nothing', async () => {
+  // Replaced the Parent-only policy (ENG-18): a roleless servant needs the
+  // season name for their form. Past seasons stay hidden from them.
+  it('shows a user with no role the current season and not past ones', async () => {
     await withTx(pool, async (client) => {
       const id = await createProfile(client, { email: 'season-nobody@test.local' });
+      await client.query(
+        `insert into seasons (name, is_current, starts_on) values ('Old Season', false, '2020-01-01')`
+      );
 
-      const rows = await asUser(client, id, async () => (await client.query('select 1 from seasons')).rows);
-      expect(rows).toHaveLength(0);
+      const names = await asUser(client, id, async () =>
+        (await client.query('select name from seasons')).rows.map((r) => r.name)
+      );
+      expect(names).toEqual([(await client.query('select name from seasons where is_current')).rows[0].name]);
     });
   });
 });

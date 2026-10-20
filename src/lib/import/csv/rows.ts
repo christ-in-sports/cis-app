@@ -14,6 +14,7 @@
  */
 
 import { gradeNum, defaultDivision, type Division } from '@/lib/attendance';
+import { normalizePhone } from '@/lib/validation/phone';
 import { kidRegistrationSchema, type KidRegistrationInput } from '@/lib/validation/kid';
 import { headerFor, type CsvField, type HeaderMapping } from './columns';
 
@@ -110,25 +111,6 @@ export function parseDate(value: unknown): string | null {
   if (!isRealDate) return null;
 
   return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-}
-
-/**
- * Normalises a phone number for display consistency.
- *
- * Anything that is not recognisably a 10-digit US number is passed through as
- * typed -- these are contact details for reaching a parent in an emergency, so
- * an unusual format must never be discarded.
- */
-export function normalizePhone(value: unknown): string | null {
-  const text = cleanCell(value);
-  if (text === null) return null;
-
-  const digits = text.replace(/\D/g, '');
-  const local = digits.length === 11 && digits.startsWith('1') ? digits.slice(1) : digits;
-
-  if (local.length !== 10) return text;
-
-  return `(${local.slice(0, 3)}) ${local.slice(3, 6)}-${local.slice(6)}`;
 }
 
 /** Lower-cases gender so "Male" from the form matches the stored enum. */

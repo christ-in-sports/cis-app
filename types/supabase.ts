@@ -776,6 +776,89 @@ export type Database = {
         }
         Relationships: []
       }
+      servant_registrations: {
+        Row: {
+          ambassadors_other: string | null
+          ambassadors_subteams: string[]
+          created_at: string
+          dates_missing: string | null
+          dob: string
+          email: string
+          emergency_contact_name: string
+          emergency_contact_phone: string
+          evaluation_status: string
+          full_name: string
+          gender: string
+          home_address: string
+          id: string
+          is_serving: boolean
+          juniors_other: string | null
+          juniors_subteams: string[]
+          notes: string | null
+          phone: string
+          season_id: string
+          sessions: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ambassadors_other?: string | null
+          ambassadors_subteams?: string[]
+          created_at?: string
+          dates_missing?: string | null
+          dob: string
+          email: string
+          emergency_contact_name: string
+          emergency_contact_phone: string
+          evaluation_status: string
+          full_name: string
+          gender: string
+          home_address: string
+          id?: string
+          is_serving: boolean
+          juniors_other?: string | null
+          juniors_subteams?: string[]
+          notes?: string | null
+          phone: string
+          season_id: string
+          sessions?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ambassadors_other?: string | null
+          ambassadors_subteams?: string[]
+          created_at?: string
+          dates_missing?: string | null
+          dob?: string
+          email?: string
+          emergency_contact_name?: string
+          emergency_contact_phone?: string
+          evaluation_status?: string
+          full_name?: string
+          gender?: string
+          home_address?: string
+          id?: string
+          is_serving?: boolean
+          juniors_other?: string | null
+          juniors_subteams?: string[]
+          notes?: string | null
+          phone?: string
+          season_id?: string
+          sessions?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "servant_registrations_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sport_block_places: {
         Row: {
           place: number
@@ -1053,6 +1136,7 @@ export type Database = {
         }[]
       }
       start_new_season: { Args: { p_name: string }; Returns: string }
+      submit_servant_registration: { Args: { p: Json }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "program" | "coach" | "prayer" | "parent" | "kid"
