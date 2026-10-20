@@ -36,6 +36,13 @@ heading followed by:
 
 ## Decisions
 
+### 2026-10-21 — Servant registration: its own table, written only through a SECURITY DEFINER function
+- **Status:** Accepted
+- **Context:** Servants register each season (see `decisions.md`, 2026-10-21). The record holds DOB, home address and emergency contacts, and the person filling it in usually has no role yet, so no role-based policy can describe them.
+- **Decision:** A new `servant_registrations` table, one row per (`user_id`, `season_id`), instead of reusing the kid `registrations` table: the two share almost no fields and have different readers. RLS allows `SELECT` for `user_id = auth.uid()` or `has_role('admin')`; there are no write policies and `INSERT`/`UPDATE`/`DELETE` are not granted to API roles. Writes go through `submit_servant_registration(jsonb)`, which any signed-in user may call (a servant has no role). It takes `user_id` from `auth.uid()`, `season_id` from the current season and `email` from `auth.users`, upserts on (`user_id`, `season_id`), and returns whether the row was new so the app sends the confirmation email once. The shape rules (sessions, sub-teams, "Other") are CHECK constraints, mirrored by the Zod schema `servantRegistrationSchema`. A new policy lets any signed-in user read the current season, replacing the Parent-only one.
+- **Consequences / tradeoffs:** A caller cannot move a row to another user or season, which a table policy could not prevent. Not serving discards the session answers instead of keeping an earlier "yes". Every signed-in user can now read the current season's name and dates, which are not sensitive; past seasons stay hidden from non-staff. The same pattern as `register_kid()`. Hosted needs the migration applied by hand.
+- **Reference:** `project_spec.md` §1.5, §2.4; Linear [ENG-18](https://linear.app/cis-app/issue/ENG-18)
+
 ### 2026-10-20 — `profiles` is readable only by its owner and Admin; users may edit only their display name
 - **Status:** Accepted
 - **Context:** The baseline schema (inherited from the tournament prototype) had `"Profiles viewable by everyone"` (`FOR SELECT TO public USING (true)`) and `SELECT` granted to `anon`. The anon key is public, so anyone, signed in or not, could list every account's email and display name from `/rest/v1/profiles`. With servants and parents signing up, that is a ready-made phishing list for a church's families. Separately, `"Users can update own profile"` had no column restriction, so a user could rewrite their own `email`, which the Admin roles screen shows when an Admin decides who gets a role.

@@ -4,7 +4,7 @@
  * Kept out of the page so the (later) UI stays a thin consumer and this can be
  * tested and reused. Reads run under the parent's own session, so RLS decides
  * what comes back -- `can_read_kid()` for kids and registrations, and the
- * "parents read current season" policy for the season.
+ * "authenticated reads current season" policy for the season.
  */
 
 import { checkRole } from '@/lib/auth/roles';

@@ -28,6 +28,14 @@ issue holds the detail; this file is the index of "what's now different from the
 
 ## Decisions
 
+### 2026-10-21 — Servants register for the season in the app (replaces the Google Form)
+- **PRD reference:** not in the PRD. The PRD has no servant-side registration; the "CIS Servants Commitment" Google Form did this.
+- **What changed:** Each season a servant submits one registration: whether they are serving, which sessions (Juniors, Ambassadors, or both) and, per session, which sub-teams they prefer (Admin, Coaches, Fellowship, Prayer, Program, or Other), plus contact and emergency details, DOB and home address. It is editable at any time, with no approval step and no open or close window.
+- **Admin-only visibility:** only the servant and an Admin can read a registration. Program Team, Coaches, Prayer Team and Parents cannot, because it holds DOB, home address and emergency contacts.
+- **Sub-teams are preference only:** they are something an Admin reads when assigning roles. Choosing "Coaches" never grants the Coach role, and "Fellowship Team" is a form choice, not an app role.
+- **Why:** Servants were already being counted on a form outside the app. Moving it in lets an Admin see every servant's answers next to the role screen. Past Google Form responses are not imported.
+- **Linear:** ENG-17, ENG-18 (schema, RPC and RLS). The form and the Admin list are later sub-issues.
+
 ### 2026-10-19 — One signup code; roles are granted by an Admin after signup
 - **PRD reference:** user accounts and roles (signup, the six roles)
 - **What changed:** Anyone who is not a parent or a kid signs up with one shared servant code and starts with **no role**. "Servant" is not a role. An Admin then grants the specific roles (Admin, Program Team, Coach, Prayer Team) on an Admin-only screen. The separate staff and coach signup codes are retired, so the code someone was given no longer decides what they can do.
