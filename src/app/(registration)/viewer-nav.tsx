@@ -10,29 +10,12 @@
  */
 
 import { RegistrationNav } from '@/components/cis/registration-nav';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { getMyRoles } from '@/lib/auth/roles';
 
 export async function ViewerNav() {
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { userId, roles } = await getMyRoles();
 
-  if (!user) return <RegistrationNav isParent={false} isStaff={false} isAdmin={false} />;
+  if (!userId) return <RegistrationNav isParent={false} isAdmin={false} />;
 
-  // `is_staff` is the legacy profile flag the roster page also reads for its
-  // "Staff only" gate; Admin comes from `user_roles`, which is what the import
-  // screen and RLS actually check.
-  const [{ data: profile }, { data: roles }] = await Promise.all([
-    supabase.from('profiles').select('is_staff').eq('id', user.id).maybeSingle(),
-    supabase.from('user_roles').select('role').eq('user_id', user.id).in('role', ['admin', 'parent']),
-  ]);
-
-  return (
-    <RegistrationNav
-      isStaff={!!profile?.is_staff}
-      isAdmin={(roles ?? []).some((r) => r.role === 'admin')}
-      isParent={(roles ?? []).some((r) => r.role === 'parent')}
-    />
-  );
+  return <RegistrationNav isAdmin={roles.has('admin')} isParent={roles.has('parent')} />;
 }

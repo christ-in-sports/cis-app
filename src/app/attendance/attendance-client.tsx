@@ -14,10 +14,10 @@ import {
 } from '@/lib/attendance';
 
 export default function AttendanceClient({
-  isStaff, isCoach, groups, days: initialDays, summary,
+  isAdmin, isCoachOrAdmin, groups, days: initialDays, summary,
 }: {
-  isStaff: boolean;
-  isCoach: boolean;
+  isAdmin: boolean;
+  isCoachOrAdmin: boolean;
   groups: AttendanceGroup[];
   days: AttendanceDay[];
   summary: Record<string, { total: number; present: number; unmarked: number }>;
@@ -87,7 +87,7 @@ export default function AttendanceClient({
     toast({ title: 'Day deleted' });
   };
 
-  if (!isCoach) {
+  if (!isCoachOrAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="max-w-sm w-full">
@@ -116,13 +116,13 @@ export default function AttendanceClient({
               <h1 className="text-xl font-bold">✅ Attendance</h1>
               <p className="text-sm text-muted-foreground">{days.length} days recorded</p>
             </div>
-            {isStaff && <Button className="h-12 px-5" onClick={() => setShowAdd((v) => !v)}>+ Add Day</Button>}
+            {isAdmin && <Button className="h-12 px-5" onClick={() => setShowAdd((v) => !v)}>+ Add Day</Button>}
           </div>
         </div>
       </div>
 
       <div className="max-w-2xl mx-auto p-4 space-y-4">
-        {isStaff && (
+        {isAdmin && (
           <Button variant="outline" className="w-full h-12"
                   onClick={() => router.push('/attendance/teams')}>
             🧑‍🤝‍🧑 Teams &amp; Sessions
@@ -134,7 +134,7 @@ export default function AttendanceClient({
           📊 Attendance Summary
         </Button>
 
-        {showAdd && isStaff && (
+        {showAdd && isAdmin && (
           <Card className="border-primary/50">
             <CardHeader className="pb-2"><CardTitle className="text-sm">New Attendance Day</CardTitle></CardHeader>
             <CardContent>
@@ -170,7 +170,7 @@ export default function AttendanceClient({
           <Card className="border-dashed">
             <CardContent className="py-12 text-center text-muted-foreground">
               <p className="text-lg mb-2">No attendance days yet</p>
-              {isStaff && <p className="text-sm">Tap + Add Day to start</p>}
+              {isAdmin && <p className="text-sm">Tap + Add Day to start</p>}
             </CardContent>
           </Card>
         ) : (
@@ -204,7 +204,7 @@ export default function AttendanceClient({
                         )}
                       </div>
                     </button>
-                    {isStaff && (
+                    {isAdmin && (
                       <button onClick={() => removeDay(d)} className="px-4 py-4 text-red-400 text-sm">✕</button>
                     )}
                   </div>

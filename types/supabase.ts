@@ -644,24 +644,18 @@ export type Database = {
           display_name: string | null
           email: string | null
           id: string
-          is_coach: boolean
-          is_staff: boolean
         }
         Insert: {
           created_at?: string | null
           display_name?: string | null
           email?: string | null
           id: string
-          is_coach?: boolean
-          is_staff?: boolean
         }
         Update: {
           created_at?: string | null
           display_name?: string | null
           email?: string | null
           id?: string
-          is_coach?: boolean
-          is_staff?: boolean
         }
         Relationships: []
       }
@@ -1006,8 +1000,6 @@ export type Database = {
         Returns: boolean
       }
       import_commit: { Args: { p_batch_id: string }; Returns: Json }
-      is_coach: { Args: never; Returns: boolean }
-      is_staff: { Args: never; Returns: boolean }
       link_my_kids: { Args: never; Returns: number }
       parse_session_choice: {
         Args: { p_choice: string; p_grade: string }

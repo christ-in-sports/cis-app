@@ -24,10 +24,8 @@ export interface AdminCheck {
 /**
  * Resolves the caller's identity and whether they hold the `admin` role.
  *
- * Reads `user_roles` rather than the legacy `profiles.is_staff`: since the
- * six-role migration, `is_staff()` means admin *only*, but `user_roles` is the
- * primitive everything else is defined in terms of, and going through it keeps
- * this check aligned with the RLS policies it is mirroring. See `checkRole`.
+ * Reads `user_roles`, the primitive `has_role()` is defined in terms of, so this
+ * check stays aligned with the RLS policies it mirrors. See `checkRole`.
  */
 export async function checkAdmin(): Promise<AdminCheck> {
   const { supabase, userId, hasRole } = await checkRole('admin');

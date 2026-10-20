@@ -154,13 +154,11 @@ const sortRows = (rows: RosterEntry[]) =>
 
 export default function RegistrationsClient({
   initial,
-  isStaff,
   isAdmin,
   season,
 }: {
   initial: RosterEntry[];
-  isStaff: boolean;
-  /** Holds the `admin` role, so may run the CSV import. See page.tsx. */
+  /** Holds the `admin` role: the roster, payments and the CSV import are Admin-only. */
   isAdmin: boolean;
   season: { id: string; name: string } | null;
 }) {
@@ -559,7 +557,7 @@ export default function RegistrationsClient({
     URL.revokeObjectURL(url);
   };
 
-  if (!isStaff) {
+  if (!isAdmin) {
     return (
       <>
         <BoardHeader kicker="Registration" title="Roster" />

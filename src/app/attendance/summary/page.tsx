@@ -1,18 +1,13 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { getMyRoles } from '@/lib/auth/roles';
 import { redirect } from 'next/navigation';
 import SummaryClient from './summary-client';
 
 export default async function SummaryPage() {
-  const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/login?redirect=/attendance/summary');
+  const { supabase, userId, roles } = await getMyRoles();
+  if (!userId) redirect('/login?redirect=/attendance/summary');
 
-  const { data: profile } = await supabase
-    .from('profiles').select('is_staff, is_coach').eq('id', user.id).single();
-
-  const isStaff = !!profile?.is_staff;
-  const isCoach = isStaff || !!profile?.is_coach;
-  if (!isCoach) redirect('/attendance');
+  const isAdmin = roles.has('admin');
+  if (!isAdmin && !roles.has('coach')) redirect('/attendance');
 
   const { data: seasons } = await supabase
     .from('seasons').select('*').order('starts_on', { ascending: false });
@@ -30,7 +25,7 @@ export default async function SummaryPage() {
 
   return (
     <SummaryClient
-      isStaff={isStaff}
+      isAdmin={isAdmin}
       seasons={seasons ?? []}
       initialSeasonId={current?.id ?? null}
       initialRows={rows ?? []}

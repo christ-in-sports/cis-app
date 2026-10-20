@@ -77,7 +77,6 @@ function renderRoster(opts: { isAdmin?: boolean; rows?: RosterEntry[] } = {}) {
   return render(
     <RegistrationsClient
       initial={opts.rows ?? [entry()]}
-      isStaff
       isAdmin={opts.isAdmin ?? true}
       season={{ id: 'season-1', name: '2026' }}
     />,
@@ -239,11 +238,13 @@ describe('payments -- the "haven\'t paid" chase mode', () => {
     expect(screen.getByRole('button', { name: 'Guirguis, Mina' })).toBeInTheDocument();
   });
 
-  // Payments are hidden from every role but Admin, so to anyone else the whole
-  // roster would read as unpaid.
-  it('is not offered to staff who are not Admin', () => {
+  // The roster, payments and the import are Admin-only, so anyone else gets the gate
+  // rather than a roster that would read as entirely unpaid.
+  it('shows the Staff only gate, not the roster, to anyone who is not Admin', () => {
     renderRoster({ isAdmin: false });
 
+    expect(screen.getByRole('heading', { name: 'Staff only' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Guirguis, Mina' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /haven't paid/i })).not.toBeInTheDocument();
   });
 
@@ -350,13 +351,6 @@ describe('payments -- the per-kid Payments block', () => {
     expect(screen.getByText('None recorded')).toBeInTheDocument();
   });
 
-  it('is not shown to staff who are not Admin', () => {
-    renderRoster({ isAdmin: false });
-    open();
-
-    expect(screen.queryByText('Payments')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Record payment' })).not.toBeInTheDocument();
-  });
 });
 
 describe('the Add / Edit registration form', () => {

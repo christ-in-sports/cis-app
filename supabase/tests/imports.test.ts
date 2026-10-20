@@ -213,7 +213,7 @@ describe('import staging tables -- Admin only', () => {
       expect(visible).toBe(0);
 
       // Resolved as superuser: Program Team cannot read `seasons` either (that
-      // policy is is_coach()), so looking it up inside the impersonated block
+      // policy is admin-or-coach), so looking it up inside the impersonated block
       // would fail for the wrong reason and mask what is being asserted.
       const seasonId = await currentSeasonId(client);
 

@@ -17,9 +17,9 @@ import {
 type SortKey = 'attended' | 'pct' | 'name';
 
 export default function SummaryClient({
-  isStaff, seasons: initialSeasons, initialSeasonId, initialRows, initialDayCount, teams,
+  isAdmin, seasons: initialSeasons, initialSeasonId, initialRows, initialDayCount, teams,
 }: {
-  isStaff: boolean;
+  isAdmin: boolean;
   seasons: Season[];
   initialSeasonId: string | null;
   initialRows: SummaryRow[];
@@ -199,7 +199,7 @@ export default function SummaryClient({
               </div>
             </div>
 
-            {isStaff && (
+            {isAdmin && (
               <Button
                 onClick={openRollover}
                 className="h-11 px-4 flex-shrink-0 bg-amber-500/15 text-amber-300 border border-amber-500/40 hover:bg-amber-500/25"
@@ -359,7 +359,7 @@ export default function SummaryClient({
       </div>
 
       {/* ── Rollover modal ─────────────────────────────────── */}
-      {showRollover && isStaff && (
+      {showRollover && isAdmin && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
           <div className="fixed inset-0 bg-black/80" onClick={closeRollover} />
 

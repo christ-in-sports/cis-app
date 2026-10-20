@@ -20,7 +20,7 @@ export default function RegistrationLayout({ children }: { children: ReactNode }
     <RegistrationFrame
       nav={
         <Suspense
-          fallback={<RegistrationNav isParent={false} isStaff={false} isAdmin={false} />}
+          fallback={<RegistrationNav isParent={false} isAdmin={false} />}
         >
           <ViewerNav />
         </Suspense>

@@ -1,17 +1,13 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { getMyRoles } from '@/lib/auth/roles';
 import { redirect } from 'next/navigation';
 import AttendanceClient from './attendance-client';
 
 export default async function AttendancePage() {
-  const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/login?redirect=/attendance');
+  const { supabase, userId, roles } = await getMyRoles();
+  if (!userId) redirect('/login?redirect=/attendance');
 
-  const { data: profile } = await supabase
-    .from('profiles').select('is_staff, is_coach').eq('id', user.id).single();
-
-  const isStaff = !!profile?.is_staff;
-  const isCoach = isStaff || !!profile?.is_coach;
+  const isAdmin = roles.has('admin');
+  const isCoachOrAdmin = isAdmin || roles.has('coach');
 
   const [{ data: groups }, { data: days }, { data: counts }] = await Promise.all([
     supabase.from('attendance_groups').select('*').eq('active', true).order('name'),
@@ -29,8 +25,8 @@ export default async function AttendancePage() {
 
   return (
     <AttendanceClient
-      isStaff={isStaff}
-      isCoach={isCoach}
+      isAdmin={isAdmin}
+      isCoachOrAdmin={isCoachOrAdmin}
       groups={groups ?? []}
       days={days ?? []}
       summary={summary}

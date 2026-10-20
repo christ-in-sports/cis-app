@@ -17,7 +17,7 @@ import {
 const NO_TEAM = '__none__';
 
 export default function TakeClient({
-  day, groupName, records: initial, kids, teams, myTeamIds, isStaff, userId,
+  day, groupName, records: initial, kids, teams, myTeamIds, isAdmin, userId,
 }: {
   day: AttendanceDay;
   groupName: string;
@@ -25,7 +25,7 @@ export default function TakeClient({
   kids: RosterKid[];
   teams: MinistryTeam[];
   myTeamIds: string[];
-  isStaff: boolean;
+  isAdmin: boolean;
   userId: string;
 }) {
   const router = useRouter();
@@ -51,8 +51,8 @@ export default function TakeClient({
 
   /** Coaches land on their own team; staff stay on "All". */
   useEffect(() => {
-    if (!isStaff && myTeams.size > 0) setTeamTab([...myTeams][0]);
-  }, [isStaff, myTeams]);
+    if (!isAdmin && myTeams.size > 0) setTeamTab([...myTeams][0]);
+  }, [isAdmin, myTeams]);
 
   // Two coaches marking side by side
   useEffect(() => {
@@ -115,7 +115,7 @@ export default function TakeClient({
   }, [kids, teams]);
 
   const canMark = (kid: RosterKid) =>
-    isStaff || (kid.team_id ? myTeams.has(kid.team_id) : false);
+    isAdmin || (kid.team_id ? myTeams.has(kid.team_id) : false);
 
   const mark = async (rec: AttendanceRecord, kid: RosterKid, status: AttStatus) => {
     if (day.locked) return toast({ title: 'Day is locked', variant: 'destructive' });
@@ -204,7 +204,7 @@ export default function TakeClient({
                 No active kids matched this session. Check that sessions are set —
                 they come from the registration form.
               </p>
-              {isStaff && (
+              {isAdmin && (
                 <div className="flex flex-col gap-2 pt-2">
                   <Button variant="outline" className="h-11" onClick={() => router.push('/attendance/teams')}>
                     🧑‍🤝‍🧑 Teams &amp; Sessions
@@ -282,7 +282,7 @@ export default function TakeClient({
               </CardContent>
             </Card>
 
-            {isStaff && (
+            {isAdmin && (
               <Button variant="ghost" className="w-full h-11 text-xs" onClick={refreshRoster} disabled={busy}>
                 🔄 Add newly registered kids to this day
               </Button>

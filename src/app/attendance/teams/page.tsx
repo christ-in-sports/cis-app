@@ -1,15 +1,20 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { getMyRoles } from '@/lib/auth/roles';
 import { redirect } from 'next/navigation';
 import { embeddedOne, type RosterKid } from '@/lib/attendance';
 import TeamsClient from './teams-client';
 
 export default async function TeamsPage() {
-  const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/login?redirect=/attendance/teams');
+  const { supabase, userId, roles } = await getMyRoles();
+  if (!userId) redirect('/login?redirect=/attendance/teams');
 
-  const { data: profile } = await supabase
-    .from('profiles').select('is_staff').eq('id', user.id).single();
+  const isAdmin = roles.has('admin');
+
+  // Coach picker: everyone holding the Coach or Admin role. `user_roles` is
+  // readable in full by an Admin, which is the only role this screen is for.
+  const { data: coachRoles } = isAdmin
+    ? await supabase.from('user_roles').select('user_id').in('role', ['coach', 'admin'])
+    : { data: [] as { user_id: string }[] };
+  const coachIds = [...new Set((coachRoles ?? []).map((r) => r.user_id))];
 
   const [{ data: teams }, { data: rows }, { data: coaches }, { data: links }] =
     await Promise.all([
@@ -20,10 +25,12 @@ export default async function TeamsPage() {
         .select('id, kid_id, grade, division, team_id, kids!inner(first_name, last_name)')
         .eq('active', true)
         .order('last_name', { referencedTable: 'kids' }),
-      supabase.from('profiles')
-        .select('id, display_name, email')
-        .or('is_coach.eq.true,is_staff.eq.true')
-        .order('display_name'),
+      coachIds.length
+        ? supabase.from('profiles')
+            .select('id, display_name, email')
+            .in('id', coachIds)
+            .order('display_name')
+        : Promise.resolve({ data: [] as { id: string; display_name: string | null; email: string | null }[] }),
       supabase.from('team_coaches').select('team_id, user_id'),
     ]);
 
@@ -43,7 +50,7 @@ export default async function TeamsPage() {
 
   return (
     <TeamsClient
-      isStaff={!!profile?.is_staff}
+      isAdmin={isAdmin}
       teams={teams ?? []}
       kids={kids}
       coaches={coaches ?? []}

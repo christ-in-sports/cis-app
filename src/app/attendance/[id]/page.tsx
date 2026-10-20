@@ -1,20 +1,15 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { getMyRoles } from '@/lib/auth/roles';
 import { redirect } from 'next/navigation';
 import { embeddedOne, type RosterKid } from '@/lib/attendance';
 import TakeClient from './take-client';
 
 export default async function TakePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect(`/login?redirect=/attendance/${id}`);
+  const { supabase, userId, roles } = await getMyRoles();
+  if (!userId) redirect(`/login?redirect=/attendance/${id}`);
 
-  const { data: profile } = await supabase
-    .from('profiles').select('is_staff, is_coach').eq('id', user.id).single();
-
-  const isStaff = !!profile?.is_staff;
-  const isCoach = isStaff || !!profile?.is_coach;
-  if (!isCoach) redirect('/attendance');
+  const isAdmin = roles.has('admin');
+  if (!isAdmin && !roles.has('coach')) redirect('/attendance');
 
   const { data: day } = await supabase
     .from('attendance_days').select('*').eq('id', id).single();
@@ -25,7 +20,7 @@ export default async function TakePage({ params }: { params: Promise<{ id: strin
       supabase.from('attendance_groups').select('*').eq('id', day.group_id).single(),
       supabase.from('attendance_records').select('*').eq('day_id', id),
       supabase.from('ministry_teams').select('id, name, division, active').order('name'),
-      supabase.from('team_coaches').select('team_id').eq('user_id', user.id),
+      supabase.from('team_coaches').select('team_id').eq('user_id', userId),
     ]);
 
   const ids = (records ?? []).map((r) => r.registration_id);
@@ -58,8 +53,8 @@ export default async function TakePage({ params }: { params: Promise<{ id: strin
       kids={kids}
       teams={teams ?? []}
       myTeamIds={(myLinks ?? []).map((l) => l.team_id)}
-      isStaff={isStaff}
-      userId={user.id}
+      isAdmin={isAdmin}
+      userId={userId}
     />
   );
 }
