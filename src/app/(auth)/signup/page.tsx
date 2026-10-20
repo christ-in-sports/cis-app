@@ -11,7 +11,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 export default function SignupPage() {
-  const [adminCode, setAdminCode] = useState('');
+  const [signupCode, setSignupCode] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -40,7 +40,7 @@ export default function SignupPage() {
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, displayName, adminCode }),
+        body: JSON.stringify({ email, password, displayName, signupCode }),
       });
 
       const json = await res.json().catch(() => ({}));
@@ -83,7 +83,7 @@ export default function SignupPage() {
             />
           </div>
           <CardTitle className="text-2xl">Create Account</CardTitle>
-          <CardDescription>Invite-only — a signup code is required</CardDescription>
+          <CardDescription>Invite-only — use the servant signup code</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignup} className="space-y-4">
@@ -93,20 +93,19 @@ export default function SignupPage() {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="adminCode">Signup Code</Label>
+              <Label htmlFor="signupCode">Servant signup code</Label>
               <Input
-                id="adminCode"
+                id="signupCode"
                 type="password"
-                placeholder="Code from Admin"
-                value={adminCode}
-                onChange={(e) => setAdminCode(e.target.value)}
+                placeholder="Code from the servants' group chat"
+                value={signupCode}
+                onChange={(e) => setSignupCode(e.target.value)}
                 required
                 autoComplete="off"
                 className="h-12 text-base"
               />
               <p className="text-xs text-muted-foreground">
-                Coaches: use the coach code you were given. Your access level is set
-                automatically.
+                An Admin will give you access after you sign up.
               </p>
             </div>
             <div className="space-y-2">

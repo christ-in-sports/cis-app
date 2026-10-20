@@ -69,20 +69,16 @@ export async function asUser<T>(
 
 /**
  * Creates an auth.users row (firing handle_new_user(), which creates the
- * matching `profiles` row), then sets is_staff/is_coach directly. Must be
- * called as the superuser (i.e. before any `asUser` call in the same test).
+ * matching `profiles` row). The new user has no roles; use `grantRole` to give
+ * them some. Must be called as the superuser (i.e. before any `asUser` call in
+ * the same test).
  */
 export async function createProfile(
   client: PoolClient,
-  opts: { email: string; isStaff?: boolean; isCoach?: boolean }
+  opts: { email: string }
 ): Promise<string> {
   const id = randomUUID();
   await client.query('insert into auth.users (id, email) values ($1, $2)', [id, opts.email]);
-  await client.query('update profiles set is_staff = $2, is_coach = $3 where id = $1', [
-    id,
-    opts.isStaff ?? false,
-    opts.isCoach ?? false,
-  ]);
   return id;
 }
 

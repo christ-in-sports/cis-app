@@ -33,7 +33,7 @@ Build a **Progressive Web App (PWA)** that centralizes all operational aspects o
 
 ### 1.4 Users & Roles
 
-The app supports **6 roles**. A person may hold more than one role simultaneously (e.g., a Coach who is also on the Prayer Team).
+The app supports **6 roles**. A person may hold more than one role simultaneously (e.g., a Coach who is also on the Prayer Team). New servant accounts start with no role; an Admin grants roles after signup.
 
 | Role | Who They Are |
 |---|---|
@@ -191,6 +191,7 @@ Most state in this app is **server state** — rosters, standings, attendance, c
 ```
 
 - **Auth** happens through Supabase Auth (email/OTP or magic link). JWT includes role claims used by RLS policies.
+- **Roles** live only in `user_roles` and are checked with `has_role('<role>')` (SQL) or `checkRole()` / `getMyRoles()` (server code). There are no `is_staff()` / `is_coach()` helpers or profile flags (removed 2026-10-19, ENG-16). New accounts, created with the shared servant signup code, start with no role until an Admin grants one.
 - **All permission enforcement lives in Postgres RLS policies**, not just the UI. The UI hides/shows based on role for UX only — it is not the security boundary.
 - **Server Actions / API routes** in Next.js are the only layer allowed to call Stripe and Claude APIs — never call these directly from the client.
 - **Edge Functions** handle background/triggered work: sending push notifications, processing scheduled reminders.

@@ -15,19 +15,15 @@ jest.mock('next/navigation', () => ({ usePathname: () => pathname }));
 const labels = (roles: Parameters<typeof registrationNavItems>[0]) =>
   registrationNavItems(roles).map((i) => i.label);
 
-const none = { isParent: false, isStaff: false, isAdmin: false };
+const none = { isParent: false, isAdmin: false };
 
 describe('registrationNavItems', () => {
   it('gives a parent Register, and no roster or import', () => {
     expect(labels({ ...none, isParent: true })).toEqual(['Home', 'Register', 'Sports']);
   });
 
-  it('gives staff the roster but not the import', () => {
-    expect(labels({ ...none, isStaff: true })).toEqual(['Home', 'Roster', 'Sports']);
-  });
-
   it('gives an Admin the roster and the import', () => {
-    expect(labels({ ...none, isStaff: true, isAdmin: true })).toEqual([
+    expect(labels({ ...none, isAdmin: true })).toEqual([
       'Home',
       'Roster',
       'Import',
@@ -35,14 +31,8 @@ describe('registrationNavItems', () => {
     ]);
   });
 
-  // The Admin role alone is enough: Admin does not depend on the legacy
-  // `profiles.is_staff` flag, which the roster page reads separately.
-  it('treats an Admin as able to read the roster even without the staff flag', () => {
-    expect(labels({ ...none, isAdmin: true })).toContain('Roster');
-  });
-
   it('merges the sets for someone who is both a parent and an Admin, in a fixed order', () => {
-    expect(labels({ isParent: true, isStaff: true, isAdmin: true })).toEqual([
+    expect(labels({ isParent: true, isAdmin: true })).toEqual([
       'Home',
       'Register',
       'Roster',
@@ -57,7 +47,7 @@ describe('registrationNavItems', () => {
 });
 
 describe('RegistrationNav', () => {
-  const all = { isParent: true, isStaff: true, isAdmin: true };
+  const all = { isParent: true, isAdmin: true };
 
   function current() {
     const nav = screen.getByRole('navigation', { name: 'Registration' });

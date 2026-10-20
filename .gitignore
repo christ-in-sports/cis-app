@@ -53,3 +53,4 @@ docs/diagrams/
 # entries (launch.json) that point at a developer's own local Supabase stack.
 .claude/settings.local.json
 .claude/launch.json
+.claude/skills/

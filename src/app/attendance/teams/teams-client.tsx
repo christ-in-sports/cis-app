@@ -39,9 +39,9 @@ interface Link {
 const coachLabel = (c: Coach) => c.display_name?.trim() || c.email || 'Unnamed user';
 
 export default function TeamsClient({
-  isStaff, teams: initialTeams, kids: initialKids, coaches, links: initialLinks,
+  isAdmin, teams: initialTeams, kids: initialKids, coaches, links: initialLinks,
 }: {
-  isStaff: boolean;
+  isAdmin: boolean;
   teams: Team[];
   kids: RosterKid[];
   coaches: Coach[];
@@ -208,7 +208,7 @@ export default function TeamsClient({
     toast({ title: 'Team deleted' });
   };
 
-  if (!isStaff) {
+  if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <Card className="max-w-sm w-full">
@@ -271,7 +271,7 @@ export default function TeamsClient({
                   <Label className="text-xs">Coaches (pick any number)</Label>
                   {coaches.length === 0 ? (
                     <p className="text-xs text-muted-foreground">
-                      No coach accounts yet. Share the coach signup code first.
+                      No coach accounts yet. Share the servant signup code first, then give them the Coach role.
                     </p>
                   ) : (
                     <div className="max-h-40 overflow-auto border border-muted rounded-lg">

@@ -1,35 +1,14 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { getMyRoles } from '@/lib/auth/roles';
 import { redirect } from 'next/navigation';
 import { embeddedOne } from '@/lib/attendance';
 import { type PaymentMethod } from '@/lib/registration/payment';
 import RegistrationsClient, { type RosterEntry } from './registrations-client';
 
 export default async function RegistrationsPage() {
-  const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/login?redirect=/registrations');
+  const { supabase, userId, roles } = await getMyRoles();
+  if (!userId) redirect('/login?redirect=/registrations');
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('is_staff')
-    .eq('id', user.id)
-    .single();
-
-  const isStaff = !!profile?.is_staff;
-
-  // Deliberately NOT `isStaff`. That reads the legacy `profiles.is_staff`
-  // column, which the signup flow still writes; the roles migration made
-  // `has_role('admin')` the real thing, and /admin/imports checks exactly that.
-  // Gating the import link on the column would offer it to someone the import
-  // page then redirects away -- or hide it from an Admin who can use it.
-  const { data: adminRole } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', user.id)
-    .eq('role', 'admin')
-    .maybeSingle();
-
-  const isAdmin = adminRole !== null;
+  const isAdmin = roles.has('admin');
 
   // A roster row is a kid plus their registration for the active season. The
   // season has to be resolved first because registrations are per-season now.
@@ -84,7 +63,6 @@ export default async function RegistrationsPage() {
   return (
     <RegistrationsClient
       initial={entries}
-      isStaff={isStaff}
       isAdmin={isAdmin}
       season={season ?? null}
     />

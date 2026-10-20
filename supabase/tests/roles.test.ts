@@ -12,6 +12,7 @@
  * Run with `npm run test:db` -- requires `npx supabase start` first (see
  * .github/workflows/ci.yml's `db-tests` job for how CI does this).
  */
+import { randomUUID } from 'crypto';
 import type { Pool } from 'pg';
 import { asUser, createProfile, grantRole, makePool, withTx } from './helpers';
 
@@ -25,7 +26,7 @@ afterAll(async () => {
   await pool.end();
 });
 
-describe('has_role() / is_staff() / is_coach()', () => {
+describe('has_role()', () => {
   it('has_role reflects an explicit grant', async () => {
     await withTx(pool, async (client) => {
       const userId = await createProfile(client, { email: 'admin-grant@test.local' });
@@ -48,54 +49,78 @@ describe('has_role() / is_staff() / is_coach()', () => {
       const userId = await createProfile(client, { email: 'no-role@test.local' });
 
       const result = await asUser(client, userId, async () => {
-        const r = await client.query<{ has_admin: boolean; staff: boolean; coach: boolean }>(
-          `select has_role('admin'::app_role) as has_admin, is_staff() as staff, is_coach() as coach`
+        const r = await client.query<{ has_admin: boolean; has_any: boolean }>(
+          `select has_role('admin'::app_role) as has_admin, has_any_role() as has_any`
         );
         return r.rows[0];
       });
 
       expect(result.has_admin).toBe(false);
-      expect(result.staff).toBe(false);
-      expect(result.coach).toBe(false);
+      expect(result.has_any).toBe(false);
+    });
+  });
+});
+
+// ENG-16: roles come only from user_roles. Signup creates a profile and nothing
+// else, and the legacy flag columns and helpers are gone.
+describe('signup and the legacy role flags', () => {
+  it('a new account gets a profile and no roles', async () => {
+    await withTx(pool, async (client) => {
+      const userId = await createProfile(client, { email: 'fresh-signup@test.local' });
+
+      const profile = await client.query('select id, email from profiles where id = $1', [userId]);
+      const roles = await client.query('select role from user_roles where user_id = $1', [userId]);
+
+      expect(profile.rows).toHaveLength(1);
+      expect(profile.rows[0].email).toBe('fresh-signup@test.local');
+      expect(roles.rows).toHaveLength(0);
     });
   });
 
-  it('is_staff() is true only for the admin role, not the old is_staff boolean alone', async () => {
-    // Regression guard for the migration's core behavior-preservation claim:
-    // is_staff() now means has_role('admin'), not profiles.is_staff.
+  it('ignores a signup_role in the account metadata', async () => {
     await withTx(pool, async (client) => {
-      const userId = await createProfile(client, {
-        email: 'legacy-staff-flag-only@test.local',
-        isStaff: true, // the OLD boolean is true, but no role has been granted
-      });
+      const id = randomUUID();
+      await client.query(
+        `insert into auth.users (id, email, raw_user_meta_data)
+         values ($1, 'meta-role@test.local', '{"signup_role":"staff","display_name":"Meta"}'::jsonb)`,
+        [id]
+      );
 
-      const staff = await asUser(client, userId, async () => {
-        const r = await client.query<{ staff: boolean }>(`select is_staff() as staff`);
-        return r.rows[0].staff;
-      });
+      const roles = await client.query('select role from user_roles where user_id = $1', [id]);
+      const profile = await client.query('select display_name from profiles where id = $1', [id]);
 
-      expect(staff).toBe(false);
+      expect(roles.rows).toHaveLength(0);
+      expect(profile.rows[0].display_name).toBe('Meta');
     });
   });
 
-  it('is_coach() is true for admin (via is_staff) or an explicit coach grant', async () => {
+  it('has dropped the profiles.is_staff / is_coach columns', async () => {
+    const r = await pool.query(
+      `select column_name from information_schema.columns
+        where table_schema = 'public' and table_name = 'profiles'
+          and column_name in ('is_staff', 'is_coach')`
+    );
+    expect(r.rows).toHaveLength(0);
+  });
+
+  it('has dropped the is_staff() and is_coach() helpers', async () => {
+    const r = await pool.query(
+      `select proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+        where n.nspname = 'public' and proname in ('is_staff', 'is_coach')`
+    );
+    expect(r.rows).toHaveLength(0);
+  });
+
+  it('lets a user edit their own profile but never grants them a role', async () => {
     await withTx(pool, async (client) => {
-      const adminId = await createProfile(client, { email: 'admin-is-coach-too@test.local' });
-      await grantRole(client, adminId, 'admin');
-      const coachId = await createProfile(client, { email: 'coach-grant@test.local' });
-      await grantRole(client, coachId, 'coach');
+      const userId = await createProfile(client, { email: 'self-edit@test.local' });
 
-      const adminCoach = await asUser(client, adminId, async () => {
-        const r = await client.query<{ coach: boolean }>(`select is_coach() as coach`);
-        return r.rows[0].coach;
-      });
-      const coachCoach = await asUser(client, coachId, async () => {
-        const r = await client.query<{ coach: boolean }>(`select is_coach() as coach`);
-        return r.rows[0].coach;
+      await asUser(client, userId, async () => {
+        await client.query(`update profiles set display_name = 'Me' where id = $1`, [userId]);
       });
 
-      expect(adminCoach).toBe(true);
-      expect(coachCoach).toBe(true);
+      const roles = await client.query('select role from user_roles where user_id = $1', [userId]);
+      expect(roles.rows).toHaveLength(0);
     });
   });
 });

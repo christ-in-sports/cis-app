@@ -28,6 +28,12 @@ issue holds the detail; this file is the index of "what's now different from the
 
 ## Decisions
 
+### 2026-10-19 — One signup code; roles are granted by an Admin after signup
+- **PRD reference:** user accounts and roles (signup, the six roles)
+- **What changed:** Anyone who is not a parent or a kid signs up with one shared servant code and starts with **no role**. "Servant" is not a role. An Admin then grants the specific roles (Admin, Program Team, Coach, Prayer Team) on an Admin-only screen. The separate staff and coach signup codes are retired, so the code someone was given no longer decides what they can do.
+- **Why:** Granting access by whichever code a person received was easy to get wrong and left no record of who approved what. Servants also register for the season in the app (ENG-17) and their preferred sub-team is only a preference an Admin reads when assigning roles.
+- **Linear:** [ENG-16](https://linear.app/cis-app/issue/ENG-16), [ENG-17](https://linear.app/cis-app/issue/ENG-17)
+
 ### 2026-10-08 — Sports screens: how the build differs from the mockups, and no score verification
 - **PRD reference:** sports competition screens (standings, schedule, bracket, final places); the Admin Standings design's "unverified" flag
 - **What changed:** (1) **Rank is points, then head-to-head among the tied teams, then difference.** The Sports mockups say points, then difference; the Director has not decided, so the library's order is kept and the screen's footnote says so. Both orders are supported in `rankStandings`. (2) **Seed numbers are not shown** in the bracket; seeds are not stored. (3) **No changeover**: a slot is exactly one game long, so the mockups' 45-minute spacing for 30-minute games does not apply. (4) **There is no score verification step**: a saved score is final, so the Admin Standings "unverified" chip and filter are dropped. (5) **"Next up" is the next slot to start in schedule order, not by the clock**, so it is right whenever the page is read. (6) **"Your team"** marks every team the viewer coaches or has a kid on.

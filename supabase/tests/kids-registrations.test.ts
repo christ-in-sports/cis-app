@@ -145,7 +145,7 @@ describe('kids / registrations -- write access is Admin-only', () => {
 
   // The ticket is explicit that Program Team does NOT get the CSV import, and the
   // Role Permission Matrix gives "Update full roster" to Admin alone. This is the
-  // reason the six-role model exists at all -- is_staff() could not express it.
+  // reason the six-role model exists at all -- the old is_staff flag could not express it.
   it('program team can read but cannot write', async () => {
     await withTx(pool, async (client) => {
       const programId = await createProfile(client, { email: 'program-rw@test.local' });
@@ -451,7 +451,7 @@ describe('attendance functions after the kid/registration split', () => {
   /**
    * Runs populate_attendance_day as a freshly-granted coach.
    *
-   * It is gated on is_coach(), which reads auth.uid() -- so calling it as the
+   * It is gated on has_role('admin') or has_role('coach'), which read auth.uid() -- so calling it as the
    * superuser (where auth.uid() is null) is now rejected, exactly as an
    * anonymous PostgREST request would be.
    */
@@ -599,7 +599,7 @@ describe('attendance functions after the kid/registration split', () => {
         [dayId, regId]
       );
 
-      // SECURITY DEFINER, but gated internally on is_coach() -- so it must be
+      // SECURITY DEFINER, but gated internally on the admin/coach roles -- so it must be
       // called as a user who passes that check.
       const row = await asUser(client, adminId, async () => {
         const r = await client.query<{

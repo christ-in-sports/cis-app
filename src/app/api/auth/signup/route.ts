@@ -9,14 +9,17 @@ function codeMatches(input: string, expected: string) {
   return timingSafeEqual(a, b);
 }
 
-type Role = 'staff' | 'coach';
-
+/**
+ * Servant signup. One shared code (SERVANT_SIGNUP_CODE, passed around the
+ * servants' group chat) creates an account with NO role. An Admin grants roles
+ * afterwards; the code never decides what someone can do.
+ */
 export async function POST(request: Request) {
   let body: {
     email?: unknown;
     password?: unknown;
     displayName?: unknown;
-    adminCode?: unknown;
+    signupCode?: unknown;
   };
 
   try {
@@ -25,38 +28,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid request.' }, { status: 400 });
   }
 
-  const { email, password, displayName, adminCode } = body;
+  const { email, password, displayName, signupCode } = body;
 
-  const staffCode = process.env.STAFF_SIGNUP_CODE ?? process.env.ADMIN_SIGNUP_CODE;
-  const coachCode = process.env.COACH_SIGNUP_CODE;
+  const expectedCode = process.env.SERVANT_SIGNUP_CODE;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 
-  if (!staffCode || !coachCode || !serviceKey || !supabaseUrl) {
-    console.error('Missing env: STAFF_SIGNUP_CODE / COACH_SIGNUP_CODE / SUPABASE_SERVICE_ROLE_KEY / NEXT_PUBLIC_SUPABASE_URL');
+  if (!expectedCode || !serviceKey || !supabaseUrl) {
+    console.error('Missing env: SERVANT_SIGNUP_CODE / SUPABASE_SERVICE_ROLE_KEY / NEXT_PUBLIC_SUPABASE_URL');
     return NextResponse.json({ error: 'Signup is misconfigured.' }, { status: 500 });
   }
 
-  // Guard against the two codes being identical — coach would silently win
-  if (staffCode === coachCode) {
-    console.error('STAFF_SIGNUP_CODE and COACH_SIGNUP_CODE must differ.');
-    return NextResponse.json({ error: 'Signup is misconfigured.' }, { status: 500 });
-  }
-
-  // 1. Which code was used? Check staff first.
-  let role: Role | null = null;
-  if (typeof adminCode === 'string') {
-    const trimmed = adminCode.trim();
-    if (codeMatches(trimmed, staffCode)) role = 'staff';
-    else if (codeMatches(trimmed, coachCode)) role = 'coach';
-  }
-
-  if (!role) {
+  if (typeof signupCode !== 'string' || !codeMatches(signupCode.trim(), expectedCode)) {
     await new Promise((r) => setTimeout(r, 700)); // slow down guessing
     return NextResponse.json({ error: 'Invalid signup code.' }, { status: 403 });
   }
 
-  // 2. Validate — never trust the client's own checks
+  // Validate — never trust the client's own checks
   if (
     typeof email !== 'string' ||
     !email.includes('@') ||
@@ -80,8 +68,7 @@ export async function POST(request: Request) {
     email: email.trim().toLowerCase(),
     password,
     email_confirm: true,
-    // signup_role is read by handle_new_user(). Server-set only.
-    user_metadata: { display_name: cleanName, signup_role: role },
+    user_metadata: { display_name: cleanName },
   });
 
   if (error) {
@@ -92,5 +79,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 
-  return NextResponse.json({ ok: true, role });
+  return NextResponse.json({ ok: true });
 }

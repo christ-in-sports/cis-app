@@ -83,7 +83,7 @@ async function ensureAdmin(): Promise<void> {
       email: EMAIL,
       password: PASSWORD,
       email_confirm: true,
-      user_metadata: { display_name: 'E2E Admin', signup_role: 'staff' },
+      user_metadata: { display_name: 'E2E Admin' },
     }),
   }).catch(() => undefined); // already exists is fine
 
@@ -242,7 +242,7 @@ test('a non-admin cannot reach the import screen', async ({ page }) => {
       email,
       password: PASSWORD,
       email_confirm: true,
-      user_metadata: { display_name: 'E2E Coach', signup_role: 'coach' },
+      user_metadata: { display_name: 'E2E Coach' },
     }),
   }).catch(() => undefined);
 

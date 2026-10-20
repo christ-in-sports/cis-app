@@ -48,6 +48,33 @@ export async function checkAnyRole(roles: readonly AppRole[]): Promise<RoleCheck
   return { supabase, userId: user.id, hasRole: (data?.length ?? 0) > 0 };
 }
 
+export interface MyRoles {
+  supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>;
+  userId: string | null;
+  roles: ReadonlySet<AppRole>;
+}
+
+/**
+ * Resolves the caller's identity and every role they hold, in one query. For
+ * pages that need more than one answer ("admin?" and "coach?") and would
+ * otherwise run `checkRole` several times.
+ */
+export async function getMyRoles(): Promise<MyRoles> {
+  const supabase = await createServerSupabaseClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { supabase, userId: null, roles: new Set() };
+  }
+
+  const { data } = await supabase.from('user_roles').select('role').eq('user_id', user.id);
+
+  return { supabase, userId: user.id, roles: new Set((data ?? []).map((r) => r.role)) };
+}
+
 /** Whether the caller holds `role`. See `checkAnyRole`. */
 export function checkRole(role: AppRole): Promise<RoleCheck> {
   return checkAnyRole([role]);

@@ -24,26 +24,23 @@ const IMPORT: SectionNavItem = { href: '/admin/imports', label: 'Import', icon: 
 
 export interface RegistrationNavRoles {
   isParent: boolean;
-  /** Anyone who may read the roster. */
-  isStaff: boolean;
-  /** Admin only: the CSV import. */
+  /** Holds the `admin` role: the roster and the CSV import. */
   isAdmin: boolean;
 }
 
 /**
- * Staff and Admin see the roster; a Parent who is also staff sees both sets, so
- * the two are merged in a fixed order rather than one replacing the other.
+ * An Admin sees the roster and the import; a Parent who is also an Admin sees
+ * both sets, so the two are merged in a fixed order rather than one replacing
+ * the other.
  */
 export function registrationNavItems({
   isParent,
-  isStaff,
   isAdmin,
 }: RegistrationNavRoles): SectionNavItem[] {
-  const canReadRoster = isStaff || isAdmin;
   return [
     HOME,
     ...(isParent ? [REGISTER] : []),
-    ...(canReadRoster ? [ROSTER] : []),
+    ...(isAdmin ? [ROSTER] : []),
     ...(isAdmin ? [IMPORT] : []),
     SPORTS,
   ];
