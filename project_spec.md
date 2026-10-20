@@ -33,7 +33,7 @@ Build a **Progressive Web App (PWA)** that centralizes all operational aspects o
 
 ### 1.4 Users & Roles
 
-The app supports **6 roles**. A person may hold more than one role simultaneously (e.g., a Coach who is also on the Prayer Team). New servant accounts start with no role; an Admin grants roles after signup.
+The app supports **6 roles**. A person may hold more than one role simultaneously (e.g., a Coach who is also on the Prayer Team). New servant accounts start with no role; an Admin grants roles after signup. The `kid` role is the exception: it is never assigned by an Admin, and a kid's account gets it automatically when they self-register (not built yet).
 
 | Role | Who They Are |
 |---|---|

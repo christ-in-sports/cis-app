@@ -96,6 +96,49 @@ describe('the roles screen', () => {
     expect(revokeRoleMock).not.toHaveBeenCalled();
   });
 
+  it('offers the servant roles and never Kid', () => {
+    renderRoles();
+
+    const names = screen
+      .getAllByRole('checkbox')
+      .map((c) => c.getAttribute('aria-label') ?? c.closest('label')?.textContent?.replace('✓', ''));
+    expect(names.every((n) => !/kid/i.test(n ?? ''))).toBe(true);
+    expect(screen.queryByRole('checkbox', { name: /^Kid for/ })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('checkbox', { name: /^Parent for/ })).toHaveLength(3);
+  });
+
+  it('shows the reason under the person it happened to, not at the top of the list', async () => {
+    grantRoleMock.mockResolvedValue({ ok: false, error: 'Only Admins can change roles.' });
+    renderRoles();
+
+    await act(async () => {
+      fireEvent.click(box('Prayer Team', 'Nabil New'));
+    });
+
+    const row = screen.getByRole('region', { name: 'Nabil New' });
+    expect(row).toHaveTextContent('Only Admins can change roles.');
+    expect(screen.getByRole('region', { name: 'Carol Coach' })).not.toHaveTextContent('Only Admins');
+  });
+
+  it('puts the box back when the request itself fails', async () => {
+    grantRoleMock.mockRejectedValue(new Error('network'));
+    renderRoles();
+
+    await act(async () => {
+      fireEvent.click(box('Prayer Team', 'Nabil New'));
+    });
+
+    expect(box('Prayer Team', 'Nabil New')).not.toBeChecked();
+    expect(screen.getByRole('alert')).toHaveTextContent(/could not reach the server/i);
+
+    // The box is usable again, not stuck as "saving".
+    grantRoleMock.mockResolvedValue({ ok: true });
+    await act(async () => {
+      fireEvent.click(box('Prayer Team', 'Nabil New'));
+    });
+    expect(box('Prayer Team', 'Nabil New')).toBeChecked();
+  });
+
   it('lets an Admin change another Admin', () => {
     renderRoles([me, { id: 'other', name: 'Omar Admin', email: 'omar@example.com', roles: ['admin'] }]);
     expect(box('Admin', 'Omar Admin')).toBeEnabled();
