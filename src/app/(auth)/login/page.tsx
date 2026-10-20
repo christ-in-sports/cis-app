@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -110,9 +110,12 @@ export default function LoginPage() {
 
           <div className="mt-6 pt-4 border-t border-border text-center">
             <p className="text-sm text-muted-foreground mb-3">Have the servant signup code?</p>
-            <Button variant="outline" className="w-full h-12 text-base">
-              <Link href="/signup">Sign Up</Link>
-            </Button>
+            <Link
+              href="/signup"
+              className={buttonVariants({ variant: 'outline', className: 'w-full h-12 text-base' })}
+            >
+              Sign Up
+            </Link>
           </div>
         </CardContent>
       </Card>

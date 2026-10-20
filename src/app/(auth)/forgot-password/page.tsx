@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -53,9 +53,9 @@ export default function ForgotPasswordPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Button className="w-full h-12">
-              <Link href="/login">Back to Login</Link>
-            </Button>
+            <Link href="/login" className={buttonVariants({ className: 'w-full h-12' })}>
+              Back to Login
+            </Link>
             <Button
               variant="ghost"
               className="w-full h-12"

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -82,9 +82,9 @@ export default function ResetPasswordPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button className="w-full h-12">
-              <Link href="/forgot-password">Request a New Link</Link>
-            </Button>
+            <Link href="/forgot-password" className={buttonVariants({ className: 'w-full h-12' })}>
+              Request a New Link
+            </Link>
           </CardContent>
         </Card>
       </div>

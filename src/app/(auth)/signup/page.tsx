@@ -83,7 +83,7 @@ export default function SignupPage() {
             />
           </div>
           <CardTitle className="text-2xl">Create Account</CardTitle>
-          <CardDescription>Invite-only — use the servant signup code</CardDescription>
+          <CardDescription>Invite-only... use the servant signup code</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignup} className="space-y-4">
@@ -97,7 +97,7 @@ export default function SignupPage() {
               <Input
                 id="signupCode"
                 type="password"
-                placeholder="Code from the servants' group chat"
+                placeholder="Servants code sent to you"
                 value={signupCode}
                 onChange={(e) => setSignupCode(e.target.value)}
                 required
