@@ -109,7 +109,7 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6 pt-4 border-t border-border text-center">
-            <p className="text-sm text-muted-foreground mb-3">Have an admin code?</p>
+            <p className="text-sm text-muted-foreground mb-3">Have the servant signup code?</p>
             <Button variant="outline" className="w-full h-12 text-base">
               <Link href="/signup">Sign Up</Link>
             </Button>
