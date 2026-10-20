@@ -77,19 +77,26 @@ async function signedInPage(browser: Browser, email: string): Promise<Page> {
   return page;
 }
 
+const KID = 'e2e-roles-kid@local.test';
+const KID_NAME = 'E2E Roles Kid';
+
 let adminId: string;
 let servantId: string;
+let kidId: string;
 
 test.beforeEach(async () => {
   adminId = await ensureUser(ADMIN, 'E2E Roles Admin');
   servantId = await ensureUser(SERVANT, SERVANT_NAME);
+  kidId = await ensureUser(KID, KID_NAME);
   await setRoles(adminId, ['admin']);
   await setRoles(servantId, []);
+  await setRoles(kidId, ['kid']);
 });
 
 test.afterAll(async () => {
   if (adminId) await setRoles(adminId, []);
   if (servantId) await setRoles(servantId, []);
+  if (kidId) await setRoles(kidId, []);
 });
 
 test('an Admin gives a new servant the Coach role, and they can then open Attendance', async ({ page, browser }) => {
@@ -138,6 +145,15 @@ test('an Admin gives a new servant the Coach role, and they can then open Attend
       ),
     )
     .toBe(0);
+});
+
+test('the screen is for servants: no Kid box, and kid accounts are not listed', async ({ page }) => {
+  await signIn(page, ADMIN);
+  await page.goto('/admin/roles');
+
+  await expect(page.getByRole('region', { name: SERVANT_NAME })).toBeVisible();
+  await expect(page.getByRole('region', { name: KID_NAME })).toHaveCount(0);
+  await expect(page.getByRole('checkbox', { name: /^Kid for/ })).toHaveCount(0);
 });
 
 test("an Admin can't untick their own Admin box", async ({ page }) => {

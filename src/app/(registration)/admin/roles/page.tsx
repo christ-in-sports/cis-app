@@ -5,6 +5,10 @@
  * role (ENG-16); this is where an Admin gives them access. RLS is the boundary:
  * only an Admin can read everyone's `user_roles` or write them, so a non-Admin
  * who reached this page anyway would see only themselves and could change nothing.
+ *
+ * Servants only: an account holding the `kid` role is not listed. Kids get that
+ * role automatically when they register, and are not people an Admin assigns
+ * roles to.
  */
 
 import { redirect } from 'next/navigation';
@@ -32,12 +36,14 @@ export default async function RolesPage() {
     rolesByUser.set(grant.user_id, [...(rolesByUser.get(grant.user_id) ?? []), grant.role]);
   }
 
-  const people: PersonRoles[] = (profiles ?? []).map((p) => ({
-    id: p.id,
-    name: p.display_name,
-    email: p.email,
-    roles: rolesByUser.get(p.id) ?? [],
-  }));
+  const people: PersonRoles[] = (profiles ?? [])
+    .filter((p) => !(rolesByUser.get(p.id) ?? []).includes('kid'))
+    .map((p) => ({
+      id: p.id,
+      name: p.display_name,
+      email: p.email,
+      roles: rolesByUser.get(p.id) ?? [],
+    }));
 
   return <RolesClient people={people} currentUserId={userId} />;
 }

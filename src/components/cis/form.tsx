@@ -241,8 +241,8 @@ export function TickRow({
     <div className="flex flex-col gap-1">
       <label
         className={cn(
-          'relative flex min-h-cis-tap-primary items-start gap-cis-3 py-cis-2',
-          disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer active:scale-[.94]',
+          'group relative flex min-h-cis-tap-primary items-start gap-cis-3 py-cis-2',
+          disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
         )}
       >
         <input
@@ -260,6 +260,11 @@ export function TickRow({
           className={cn(
             'flex h-cis-tap-min w-cis-tap-min shrink-0 items-center justify-center rounded-cis-box',
             'border-[3px] bg-cis-paper-light text-cis-lg font-extrabold text-cis-ink-dark',
+            // The press feedback shrinks the drawn box, not the row. Scaling the
+            // whole label shrinks its hit area while a finger is down, and a tap
+            // that lands near an edge then ends outside it and never becomes a
+            // click: the box visibly "moves" and nothing is ticked.
+            !disabled && 'group-active:scale-[.94]',
             // Ink, not the attendance box's `--cis-box-empty`: that tan is ~1.9:1
             // on paper-light, under the 3:1 WCAG asks of a control's boundary,
             // and this box records a legal agreement.
