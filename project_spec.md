@@ -242,6 +242,7 @@ Divisions (`juniors` / `ambassadors`) are an attribute on `Registration` and `Te
 - **Server Actions preferred** over client-side fetch + API route for mutations, unless a stable REST endpoint is genuinely needed (e.g., Stripe webhooks).
 - **No secrets in client code** — Stripe secret key, Claude API key, Supabase service role key stay server-side only.
 - **CSV import (MVP)**: build as a server-side parser + validator that maps each row to a `Kid` plus a `Registration` for the active season (matching returning kids to existing `Kid` records on first name + last name + DOB, case-insensitive and whitespace-trimmed, instead of creating duplicates), reports row-level errors, and requires Admin review before committing to the database.
+- **Account emails are private.** `profiles` (id, email, display name) is readable only by its owner and Admin, never by signed-out visitors, and a user may edit only their own display name (2026-10-20). A screen that needs another person's name gets a narrow view, not a wider policy.
 - **Migrations**: use Supabase CLI migrations, committed to the repo — never make schema changes directly in the Supabase dashboard for anything beyond prototyping.
 
 ### 2.6 Git Workflow

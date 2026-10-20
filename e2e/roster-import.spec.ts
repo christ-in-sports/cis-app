@@ -146,7 +146,7 @@ test('upload, review, and commit a roster', async ({ page }) => {
 
   // The Admin's Registration nav, with Import as the current tab.
   const nav = page.getByRole('navigation', { name: 'Registration' });
-  await expect(nav.getByRole('link')).toHaveText(['Home', 'Roster', 'Import', 'Sports']);
+  await expect(nav.getByRole('link')).toHaveText(['Home', 'Roster', 'Import', 'Roles', 'Sports']);
   await expect(nav.getByRole('link', { name: 'Import' })).toHaveAttribute('aria-current', 'page');
   await page.screenshot({ path: 'test-results/import-1-empty.png', fullPage: true });
 
