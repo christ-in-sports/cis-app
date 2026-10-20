@@ -18,15 +18,16 @@ const labels = (roles: Parameters<typeof registrationNavItems>[0]) =>
 const none = { isParent: false, isAdmin: false };
 
 describe('registrationNavItems', () => {
-  it('gives a parent Register, and no roster or import', () => {
+  it('gives a parent Register, and no roster, import or roles', () => {
     expect(labels({ ...none, isParent: true })).toEqual(['Home', 'Register', 'Sports']);
   });
 
-  it('gives an Admin the roster and the import', () => {
+  it('gives an Admin the roster, the import and role assignment', () => {
     expect(labels({ ...none, isAdmin: true })).toEqual([
       'Home',
       'Roster',
       'Import',
+      'Roles',
       'Sports',
     ]);
   });
@@ -37,6 +38,7 @@ describe('registrationNavItems', () => {
       'Register',
       'Roster',
       'Import',
+      'Roles',
       'Sports',
     ]);
   });
@@ -87,6 +89,6 @@ describe('RegistrationNav', () => {
     const hrefs = within(nav)
       .getAllByRole('link')
       .map((a) => a.getAttribute('href'));
-    expect(hrefs).toEqual(['/', '/register', '/registrations', '/admin/imports', '/sports']);
+    expect(hrefs).toEqual(['/', '/register', '/registrations', '/admin/imports', '/admin/roles', '/sports']);
   });
 });

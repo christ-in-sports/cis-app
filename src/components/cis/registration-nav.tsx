@@ -8,7 +8,7 @@
  * job here and a tab that leads to a screen you may not use is just a dead end:
  *   - a Parent registers their kids;
  *   - staff read the roster;
- *   - an Admin also imports the season's CSV.
+ *   - an Admin also imports the season's CSV and assigns roles.
  * Everyone gets Home (back to the app) and a Sports shortcut. These item sets are
  * a proposal built from the Sports pattern, not an agreed design
  * (`DESIGN_SYSTEM.md` §10).
@@ -21,10 +21,11 @@ const SPORTS: SectionNavItem = { href: '/sports', label: 'Sports', icon: 'sports
 const REGISTER: SectionNavItem = { href: '/register', label: 'Register', icon: 'register' };
 const ROSTER: SectionNavItem = { href: '/registrations', label: 'Roster', icon: 'roster' };
 const IMPORT: SectionNavItem = { href: '/admin/imports', label: 'Import', icon: 'import' };
+const ROLES: SectionNavItem = { href: '/admin/roles', label: 'Roles', icon: 'roles' };
 
 export interface RegistrationNavRoles {
   isParent: boolean;
-  /** Holds the `admin` role: the roster and the CSV import. */
+  /** Holds the `admin` role: the roster, the CSV import and role assignment. */
   isAdmin: boolean;
 }
 
@@ -41,7 +42,7 @@ export function registrationNavItems({
     HOME,
     ...(isParent ? [REGISTER] : []),
     ...(isAdmin ? [ROSTER] : []),
-    ...(isAdmin ? [IMPORT] : []),
+    ...(isAdmin ? [IMPORT, ROLES] : []),
     SPORTS,
   ];
 }

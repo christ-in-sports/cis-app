@@ -224,11 +224,14 @@ export function TickRow({
   checked,
   onChange,
   error,
+  disabled,
   children,
 }: {
   checked: boolean;
   onChange: (checked: boolean) => void;
   error?: string;
+  /** Not changeable right now (still shown, so its state can be read). */
+  disabled?: boolean;
   children: ReactNode;
 }) {
   const id = useId();
@@ -238,14 +241,15 @@ export function TickRow({
     <div className="flex flex-col gap-1">
       <label
         className={cn(
-          'relative flex min-h-cis-tap-primary cursor-pointer items-start gap-cis-3 py-cis-2',
-          'active:scale-[.94]',
+          'relative flex min-h-cis-tap-primary items-start gap-cis-3 py-cis-2',
+          disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer active:scale-[.94]',
         )}
       >
         <input
           id={id}
           type="checkbox"
           checked={checked}
+          disabled={disabled}
           onChange={(e) => onChange(e.target.checked)}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}

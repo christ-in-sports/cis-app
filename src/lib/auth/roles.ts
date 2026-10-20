@@ -9,7 +9,9 @@
 
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 
-export type AppRole = 'admin' | 'program' | 'coach' | 'prayer' | 'parent' | 'kid';
+import type { AppRole } from './app-roles';
+
+export type { AppRole };
 
 export interface RoleCheck {
   supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>;

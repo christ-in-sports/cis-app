@@ -32,6 +32,7 @@ issue holds the detail; this file is the index of "what's now different from the
 - **PRD reference:** user accounts and roles (signup, the six roles)
 - **What changed:** Anyone who is not a parent or a kid signs up with one shared servant code and starts with **no role**. "Servant" is not a role. An Admin then grants the specific roles (Admin, Program Team, Coach, Prayer Team) on an Admin-only screen. The separate staff and coach signup codes are retired, so the code someone was given no longer decides what they can do.
 - **Why:** Granting access by whichever code a person received was easy to get wrong and left no record of who approved what. Servants also register for the season in the app (ENG-17) and their preferred sub-team is only a preference an Admin reads when assigning roles.
+- **Update (role screen):** Only an Admin assigns roles, on `/admin/roles`. An Admin cannot remove their own Admin role; another Admin can. Changes save immediately.
 - **Linear:** [ENG-16](https://linear.app/cis-app/issue/ENG-16), [ENG-17](https://linear.app/cis-app/issue/ENG-17)
 
 ### 2026-10-08 — Sports screens: how the build differs from the mockups, and no score verification
