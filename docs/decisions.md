@@ -130,3 +130,9 @@ issue holds the detail; this file is the index of "what's now different from the
 - **What changed:** Submission writes directly to the registration table and is complete on submit. There is no confirmation notification to the parent, no review alert to Admin, and no Admin-approval-gated confirmation step.
 - **Why:** Per the Director/Admin decision recorded in ENG-4: an approval workflow is not needed for this phase. Logged retroactively on 2026-09-21.
 - **Linear:** [ENG-4](https://linear.app/cis-app/issue/ENG-4/kid-registration-parent-self-service-form)
+
+
+### 2026-10-20 — Program manages attendance setup and team assignments
+- **Decision:** Per the attendance refinement request, Admin and Program may create sessions and teams, assign registered kids to teams, and assign multiple coaches. Program sees attendance but does not mark kids unless also an assigned Coach. Admin retains full roster edits and role grants.
+- **Reason:** Volunteer coordinators need to prepare attendance and follow coach updates without receiving broader kid-edit or account permissions. This expands the previous matrix only for attendance setup and team assignment; it does not expand general roster writes.
+- **Reference:** `project_spec.md` §1.5, §2.4.1; technical implementation in `docs/arch_decisions.md` (2026-10-20).

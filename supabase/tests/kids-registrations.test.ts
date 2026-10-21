@@ -449,18 +449,18 @@ describe('attendance functions after the kid/registration split', () => {
   }
 
   /**
-   * Runs populate_attendance_day as a freshly-granted coach.
+   * Runs populate_attendance_day as a Program Team member.
    *
-   * It is gated on has_role('admin') or has_role('coach'), which read auth.uid() -- so calling it as the
+   * It is gated on explicit Admin, Program and Coach roles, which read auth.uid() -- so calling it as the
    * superuser (where auth.uid() is null) is now rejected, exactly as an
    * anonymous PostgREST request would be.
    */
-  async function populateAsCoach(client: PoolClient, dayId: string): Promise<number> {
-    const coachId = await createProfile(client, {
-      email: `populate-coach-${randomSuffix()}@test.local`,
+  async function populateAsProgram(client: PoolClient, dayId: string): Promise<number> {
+    const programId = await createProfile(client, {
+      email: `populate-program-${randomSuffix()}@test.local`,
     });
-    await grantRole(client, coachId, 'coach');
-    return asUser(client, coachId, async () => {
+    await grantRole(client, programId, 'program');
+    return asUser(client, programId, async () => {
       const r = await client.query<{ populate_attendance_day: number }>(
         'select populate_attendance_day($1)',
         [dayId]
@@ -511,7 +511,7 @@ describe('attendance functions after the kid/registration split', () => {
       await client.query('ROLLBACK TO SAVEPOINT anon_probe');
       await client.query('RESET ROLE');
 
-      expect(message).toMatch(/coach or staff only/i);
+      expect(message).toMatch(/Admin, Program or Coach only/i);
     });
   });
 
@@ -522,13 +522,13 @@ describe('attendance functions after the kid/registration split', () => {
       const dayId = await createDay(client);
 
       // Deliberately calls the function directly as the parent -- not through
-      // populateAsCoach, which would grant the coach role this test is checking
+      // populateAsProgram, which would grant the Program role this test is checking
       // the absence of.
       const attempt = asUser(client, parentId, async () => {
         await client.query('select populate_attendance_day($1)', [dayId]);
       });
 
-      await expect(attempt).rejects.toThrow(/coach or staff only/i);
+      await expect(attempt).rejects.toThrow(/Admin, Program or Coach only/i);
     });
   });
 
@@ -540,7 +540,7 @@ describe('attendance functions after the kid/registration split', () => {
       await createRegistration(client, ambassador, { grade: 9, division: 'ambassadors' });
 
       const dayId = await createDay(client, { session: 'juniors' });
-      await populateAsCoach(client, dayId);
+      await populateAsProgram(client, dayId);
 
       const rostered = await rosteredKids(client, dayId, [junior, ambassador]);
       expect(rostered).toEqual([junior]);
@@ -555,7 +555,7 @@ describe('attendance functions after the kid/registration split', () => {
       await createRegistration(client, outOfRange, { grade: 12, division: 'ambassadors' });
 
       const dayId = await createDay(client, { gradeMin: 4, gradeMax: 6 });
-      await populateAsCoach(client, dayId);
+      await populateAsProgram(client, dayId);
 
       const rostered = await rosteredKids(client, dayId, [inRange, outOfRange]);
       expect(rostered).toEqual([inRange]);
@@ -578,7 +578,7 @@ describe('attendance functions after the kid/registration split', () => {
       );
 
       const dayId = await createDay(client);
-      await populateAsCoach(client, dayId);
+      await populateAsProgram(client, dayId);
 
       const rostered = await rosteredKids(client, dayId, [kidId]);
       expect(rostered).toEqual([]);

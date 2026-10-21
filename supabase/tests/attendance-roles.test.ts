@@ -5,8 +5,8 @@
  * Before that migration these were gated by is_staff() (admin) and is_coach()
  * (admin or coach). They now name the roles directly, and this file pins the
  * behaviour so it cannot drift: Admin everything, Coach read plus marking their
- * own team, and no access at all for Program Team, Prayer Team, Parents and
- * users with no role. Role-based access control is non-negotiable coverage
+ * own team. Program manages setup and reads results; Prayer, Parents and
+ * users with no role have no access. Role-based access control is non-negotiable coverage
  * (AGENTS.md section 7).
  */
 import { randomUUID } from 'crypto';
@@ -25,8 +25,8 @@ afterAll(async () => {
 
 type Actor = 'admin' | 'coach' | 'program' | 'prayer' | 'parent' | 'none';
 
-const ALLOWED_TO_READ: Actor[] = ['admin', 'coach'];
-const DENIED_TO_READ: Actor[] = ['program', 'prayer', 'parent', 'none'];
+const ALLOWED_TO_READ: Actor[] = ['admin', 'program', 'coach'];
+const DENIED_TO_READ: Actor[] = ['prayer', 'parent', 'none'];
 
 interface Fixture {
   actors: Record<Actor, string>;
@@ -208,7 +208,7 @@ describe('writing attendance and season data is Admin only', () => {
     });
   });
 
-  it.each(nonAdmins)('%s cannot assign a coach to a team', async (actor) => {
+  it.each(['coach', 'prayer', 'parent', 'none'] as Actor[])('%s cannot assign a coach to a team', async (actor) => {
     await withTx(pool, async (client) => {
       const f = await seed(client);
       await expect(
@@ -300,7 +300,7 @@ describe('attendance and season functions', () => {
         asUser(client, f.actors[actor], async () => {
           await client.query('select populate_attendance_day($1)', [f.dayId]);
         })
-      ).rejects.toThrow(/coach or staff only/i);
+      ).rejects.toThrow(/Admin, Program or Coach only/i);
     });
   });
 
@@ -351,4 +351,93 @@ describe('attendance and season functions', () => {
       });
     }
   );
+});
+
+
+describe('team attendance workflow', () => {
+  it('Program creates a session and snapshots registrations atomically', async () => {
+    await withTx(pool, async (client) => {
+      const f = await seed(client);
+      await client.query('update seasons set is_current = false where is_current');
+      await client.query('update seasons set is_current = true where id = $1', [f.seasonId]);
+      const dayId = await asUser(client, f.actors.program, async () => {
+        const result = await client.query('select create_attendance_day($1, current_date, $2, $3) as id', [f.seasonId, 'Sunday practice', 'juniors']);
+        return result.rows[0].id;
+      });
+      expect((await client.query('select registration_id from attendance_records where day_id = $1', [dayId])).rows).toEqual([{ registration_id: f.registrationId }]);
+      // Re-populating never overwrites a coach's mark.
+      await asUser(client, f.actors.coach, () => client.query("update attendance_records set status = 'late', note = 'Arrived at warmup' where day_id = $1", [dayId]));
+      await asUser(client, f.actors.program, () => client.query('select populate_attendance_day($1)', [dayId]));
+      expect((await client.query('select status, note, marked_by from attendance_records where day_id = $1', [dayId])).rows[0]).toMatchObject({ status: 'late', note: 'Arrived at warmup', marked_by: f.actors.coach });
+    });
+  });
+
+  it('only assigned coaches can read records or definer summaries', async () => {
+    await withTx(pool, async (client) => {
+      const f = await seed(client);
+      expect(await countAs(client, f.otherCoachId, 'select id from attendance_records where day_id = $1', [f.dayId])).toBe(0);
+      expect(await countAs(client, f.otherCoachId, 'select * from attendance_summary($1)', [f.seasonId])).toBe(0);
+      await client.query('insert into team_coaches(team_id, user_id) values ($1, $2)', [f.teamId, f.otherCoachId]);
+      expect(await countAs(client, f.otherCoachId, 'select id from attendance_records where day_id = $1', [f.dayId])).toBe(1);
+      await client.query("delete from user_roles where user_id = $1 and role = 'coach'", [f.otherCoachId]);
+      expect(await countAs(client, f.otherCoachId, 'select id from attendance_records where day_id = $1', [f.dayId])).toBe(0);
+      expect(await countAs(client, f.otherCoachId, "update attendance_records set status = 'present' where day_id = $1", [f.dayId])).toBe(0);
+    });
+  });
+
+  it('locks are enforced for direct writes, including Admin', async () => {
+    await withTx(pool, async (client) => {
+      const f = await seed(client);
+      await asUser(client, f.actors.program, () => client.query('update attendance_days set locked = true where id = $1', [f.dayId]));
+      for (const actor of ['admin', 'coach'] as Actor[]) {
+        await expect(asUser(client, f.actors[actor], () => client.query("update attendance_records set status = 'present' where day_id = $1", [f.dayId]))).rejects.toThrow(/locked/i);
+      }
+      await expect(asUser(client, f.actors.program, () => client.query('select populate_attendance_day($1)', [f.dayId]))).rejects.toThrow(/locked/i);
+    });
+  });
+
+  it('rejects moving a mark to another day', async () => {
+    await withTx(pool, async (client) => {
+      const f = await seed(client);
+      await expect(asUser(client, f.actors.admin, () => client.query('update attendance_records set day_id = $1 where day_id = $2', [randomUUID(), f.dayId]))).rejects.toThrow(/identity/i);
+    });
+  });
+
+  it('Program assigns teams through the narrow RPC and cannot edit kid registrations', async () => {
+    await withTx(pool, async (client) => {
+      const f = await seed(client);
+      await client.query('update seasons set is_current = false where is_current');
+      await client.query('update seasons set is_current = true where id = $1', [f.seasonId]);
+      await asUser(client, f.actors.program, () => client.query('select assign_attendance_team($1, null)', [[f.registrationId]]));
+      await asUser(client, f.actors.program, () => client.query('select assign_attendance_team($1, $2)', [[f.registrationId], f.teamId]));
+      expect(await countAs(client, f.actors.program, 'update registrations set grade = 6 where id = $1', [f.registrationId])).toBe(0);
+      const other = await client.query("insert into ministry_teams(name, division, season_id) values ('Other division', 'ambassadors', $1) returning id", [f.seasonId]);
+      await expect(asUser(client, f.actors.program, () => client.query('select assign_attendance_team($1, $2)', [[f.registrationId], other.rows[0].id]))).rejects.toThrow(/same current season and division/i);
+      const otherSeason = await client.query("insert into seasons(name) values ($1) returning id", [randomUUID()]);
+      const otherTeam = await client.query("insert into ministry_teams(name, division, season_id) values ('Other season', 'juniors', $1) returning id", [otherSeason.rows[0].id]);
+      await expect(asUser(client, f.actors.program, () => client.query('select assign_attendance_team($1, $2)', [[f.registrationId], otherTeam.rows[0].id]))).rejects.toThrow(/same current season and division/i);
+    });
+  });
+
+  it.each(['coach', 'prayer', 'parent', 'none'] as Actor[])('%s cannot create sessions or assign kids', async (actor) => {
+    await withTx(pool, async (client) => {
+      const f = await seed(client);
+      await expect(asUser(client, f.actors[actor], () => client.query('select create_attendance_day($1, current_date, $2, null)', [f.seasonId, 'Not allowed']))).rejects.toThrow(/Admin or Program only/i);
+      await expect(asUser(client, f.actors[actor], () => client.query('select assign_attendance_team($1, $2)', [[f.registrationId], f.teamId]))).rejects.toThrow(/Admin or Program only/i);
+      expect(await countAs(client, f.actors[actor], 'select * from attendance_coach_options()')).toBe(0);
+    });
+  });
+
+  it('Program can pick coaches without receiving their emails or all profiles', async () => {
+    await withTx(pool, async (client) => {
+      const f = await seed(client);
+      await asUser(client, f.actors.program, async () => {
+        const result = await client.query('select * from attendance_coach_options() where id = $1', [f.actors.coach]);
+        expect(result.rows).toHaveLength(1);
+        expect(Object.keys(result.rows[0]).sort()).toEqual(['display_name', 'id']);
+      });
+      expect(await countAs(client, f.actors.program, 'select id from profiles where id = $1', [f.actors.coach])).toBe(0);
+      await expect(asUser(client, f.actors.program, () => client.query('insert into team_coaches(team_id, user_id) values ($1, $2)', [f.teamId, f.actors.parent]))).rejects.toThrow(/Coach role/i);
+    });
+  });
 });

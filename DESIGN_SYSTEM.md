@@ -305,3 +305,8 @@ differential, independent of sort — the rank number never changes on re-sort.
 ---
 
 *Product/scope decisions that deviate from `prd.docx` are logged in [`docs/decisions.md`](./docs/decisions.md); technical/architecture decisions are logged in [`docs/arch_decisions.md`](./docs/arch_decisions.md).*
+
+
+### Attendance implementation (2026-10-20)
+
+Attendance now composes the shared hardboard shell, cream sheets and CIS form controls. `AttendanceRow` owns named status selection, pending/saved feedback and an optional note. Present uses orange with ink text; other attendance states use neutral ink and explicit labels. Team/division controls and summary tables follow the existing form/table conventions. Tap targets are at least 44px, headings use sentence case, and icons/emoji are not used as substitutes for labels. No new design tokens are introduced.

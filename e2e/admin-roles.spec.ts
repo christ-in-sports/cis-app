@@ -103,7 +103,7 @@ test('an Admin gives a new servant the Coach role, and they can then open Attend
   // Before: a roleless servant is turned away from Attendance.
   const servantPage = await signedInPage(browser, SERVANT);
   await servantPage.goto('/attendance');
-  await expect(servantPage.getByText('No Access')).toBeVisible();
+  await expect(servantPage).toHaveURL('/');
 
   // The Admin finds them under "no role yet" and ticks Coach.
   await signIn(page, ADMIN);
@@ -133,7 +133,7 @@ test('an Admin gives a new servant the Coach role, and they can then open Attend
   // After: the same servant now reaches Attendance.
   await servantPage.goto('/attendance');
   await expect(servantPage.getByText('No Access')).toBeHidden();
-  await expect(servantPage.getByText('Attendance Summary')).toBeVisible();
+  await expect(servantPage.getByRole('link', { name: 'Summary', exact: true })).toBeVisible();
 
   // And the Admin can take it away again.
   await row.locator('label').filter({ hasText: 'Coach' }).click();

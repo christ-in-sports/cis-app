@@ -397,16 +397,16 @@ describe('teams', () => {
     });
   });
 
-  it('keeps team management Admin-only: Program Team can read teams but not create them', async () => {
+  it('allows Admin and Program Team to create season teams', async () => {
     await withTx(pool, async (client) => {
       const program = await userWithRole(client, 'program');
       expect(
         await code(
           asUser(client, program, () =>
-            client.query(`insert into ministry_teams (name, division) values ('Sneaky', 'juniors')`)
+            client.query(`insert into ministry_teams (name, division) values ('Program team', 'juniors')`)
           )
         )
-      ).toBe('42501');
+      ).toBe('ok');
 
       const admin = await userWithRole(client, 'admin');
       await asUser(client, admin, () =>

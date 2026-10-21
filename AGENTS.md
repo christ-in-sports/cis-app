@@ -204,7 +204,18 @@ Every PR that touches the items in the "non-negotiable" list must include or upd
 
 ---
 
-## 8. Docs & Further Reading
+## 8. Attendance conventions
+
+- Attendance UI uses `BoardShell`, `Sheet`, CIS form controls and `AttendanceRow`; mutations go through `src/app/attendance/actions.ts` with Zod input validation.
+- Admin and Program manage sessions, season teams and coach links. Program assigns only `registrations.team_id` through `assign_attendance_team()`; it does not gain general roster write access. Only users holding Coach can be assigned as coaches.
+- Admin marks all kids; Coaches read/mark only their assigned teams. Program reads results but cannot mark unless also an assigned Coach. A team link alone never grants a role.
+- New sessions snapshot active registrations from one current season. Roster refresh adds missing registrations without replacing marks. Team assignments reflect the season roster; historical attendance stays linked to its registration.
+- Locks, immutable attendance identity, season validation and audit stamps are enforced in Postgres. Keep database permission/submission tests in `supabase/tests/attendance-roles.test.ts` current.
+- Attendance views refresh server data every 10 seconds while visible and on window focus; no Realtime publication is required. Team/division/season filters use URL search params.
+
+---
+
+## 9. Docs & Further Reading
 
 | Doc | What's in it |
 |---|---|
@@ -221,4 +232,4 @@ Every PR that touches the items in the "non-negotiable" list must include or upd
 ---
 
 *Last updated: keep this line current — if you edit this file, update the date below.*
-**Last updated:** 2026-10-19
+**Last updated:** 2026-10-20

@@ -58,6 +58,9 @@ The app supports **6 roles**. A person may hold more than one role simultaneousl
 | Update spiritual standings | ✓ | ✗ | ✗ | ✓ | ✗ | ✗ |
 | View full roster | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ |
 | Update full roster | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| Manage attendance sessions, teams & coach assignments | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ |
+| Assign registered kids to season teams | ✓ | ✓ (team only) | ✗ | ✗ | ✗ | ✗ |
+| View kid attendance | ✓ | ✓ | ✓ (own teams) | ✗ | ✗ | ✗ |
 | View own team roster | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ |
 | Update kid attendance | ✓ | ✗ | ✓ | ✗ | ✗ | ✗ |
 | Update coach attendance | ✓ | ✗ | ✓ (self) | ✗ | ✗ | ✗ |
@@ -214,7 +217,8 @@ Divisions (`juniors` / `ambassadors`) are an attribute on `Registration` and `Te
 | `Team` | id, name, division, color?, season_id | has many `Registration`, `Game`; has coaches via `team_coaches`; belongs to `Season`. Lasts the whole season, so it has no sport. |
 | `Season` | id, name, start_date, end_date, is_current | has many `Event`, `Team` |
 | `Event` | id, season_id, title, date, time, location, type | belongs to `Season` |
-| `Attendance_Kid` | id, kid_id, event_id, status, note, logged_by_user_id | belongs to `Kid`, `Event` |
+| `Attendance_Kid` (`attendance_records`) | id, registration_id, day_id, status, note, marked_by, marked_at, method | belongs to `Registration`, `AttendanceDay` |
+| `AttendanceDay` | id, season_id, group_id, date, label?, locked | belongs to `Season`, `AttendanceGroup`; has many attendance records |
 | `Attendance_Coach` | id, coach_user_id, event_id, status, note | belongs to `User`, `Event` |
 | `Verse` | id, reference, text, point_value, week_theme, is_active | has many `SpiritualRecord` |
 | `SpiritualRecord` | id, kid_id, verse_id, points_awarded, logged_by_user_id, date | belongs to `Kid`, `Verse` |
@@ -238,8 +242,18 @@ Divisions (`juniors` / `ambassadors`) are an attribute on `Registration` and `Te
 - **`home_address` and the emergency contact** are visible to Admin, Program Team, the coach of the kid's team, and the kid's linked parent (see the §1.5 matrix). Those are the same readers as the roster row, so the row-level `can_read_kid()` policy is sufficient (resolved 2026-09-22, see §2.8).
 - **Parents write through `register_kid()`, not table policies.** It creates the kid or updates a returning one, then upserts this season's `Registration`, in one transaction. Consent (`consent_given_at`, `consent_by_user_id`) is stamped inside it with `now()` and `auth.uid()`. For a returning kid the parent may edit everything except `first_name`, `last_name`, `dob` and `gender` (the returning-kid matching key, plus gender), and never `skill_tags`. Submitting again in the same season edits the registration and re-stamps consent, until an Admin assigns a `team_id`. A new registration has `source = 'parent'`. Any signed-in user can read only the current `Season`.
 - **Servants write through `submit_servant_registration()`, not table policies.** `user_id`, `season_id` (the current season) and `email` are set by the function; the table grants API roles `SELECT` only, with a policy for the owner and Admin. Submitting again edits the row, and it returns whether the row was new. Not serving clears the session and sub-team answers. Any signed-in user can read the current `Season` (the form needs its name).
-- **`Registration` is unique on (`kid_id`, `season_id`).** `Attendance_Kid` and `SpiritualRecord` still reference `kid_id` for now.
+- **`Registration` is unique on (`kid_id`, `season_id`).** `Attendance_Kid` references the registration through `registration_id`; `SpiritualRecord` still references `kid_id`.
 - **Payments are recorded by an Admin, by hand, until Stripe (v1.0).** Writes go only through `record_payments(registration_ids[], amount_cents, method)` and `delete_payment(id)`, both admin-only, with `received_at` and `recorded_by` stamped by the database. The table has no write policy. Admin and the kid's linked parent can read payments; Program Team and coaches cannot. The fee and the payment methods shown to parents are constants in `src/lib/registration/payment.ts`. The fee is `null` (to be announced) until pricing is confirmed. The parent form never shows payment status, and the CSV import never creates payments.
+
+### 2.4.1 Team attendance implementation
+
+- `/attendance` lists sessions in the current season. Admin and Program create a dated session for both divisions or one division, with its roster populated atomically from active `registrations` joined to `kids`. A session can include kids without a team; Admin can mark them, and coaches cannot until assigned.
+- `/attendance/teams` creates season teams and assigns any number of Coach-role users through `team_coaches`. The coach picker returns IDs and display names through `attendance_coach_options()`; Program gains no access to other profiles or emails. Kid assignment uses `assign_attendance_team()`, a transaction that changes only `team_id`, validates current season and division, and leaves general roster writes Admin-only.
+- `/attendance/[id]` filters by team and searches names. Admin marks any kid; a Coach reads and marks only assigned teams; Program reads all results. Statuses are unmarked, present, absent, late and excused, with an optional note up to 1,000 characters. Individual changes save immediately; bulk present affects only visible, still-unmarked kids. The database stamps the actor/time and rejects writes to locked days or changes to attendance identity.
+- `attendance_records.registration_id` is the per-season registration, not the kid ID. Existing attendance remains linked to that registration; team grouping follows its current assignment. Refreshing a roster adds missing eligible registrations without overwriting marks. Archived seasons remain readable in the summary.
+- `/attendance/summary` uses the RLS-equivalent `attendance_summary()` gate and a real table, with season/team filters and CSV export. Present includes late; percent divides by marked records, including excused. Admin can still roll over a season from this page.
+- Server Actions validate with shared Zod schemas. Visible pages refresh RLS-filtered server data every 10 seconds and on focus, avoiding a dependency on a hosted Realtime publication. `attendance_session_overview()` aggregates within Postgres so the session list does not download a season of record rows or hit the REST row cap.
+- Coverage: unit input/submission tests, DB permission and workflow tests, and an attendance browser flow. Schema changes are in `20261022120000_team_attendance.sql`. See the 2026-10-20 architecture and product decisions.
 
 ### 2.5 Engineering Requirements
 

@@ -146,6 +146,7 @@ export type Database = {
           marked_at: string | null
           marked_by: string | null
           method: string
+          note: string
           registration_id: string
           status: string
         }
@@ -155,6 +156,7 @@ export type Database = {
           marked_at?: string | null
           marked_by?: string | null
           method?: string
+          note?: string
           registration_id: string
           status?: string
         }
@@ -164,6 +166,7 @@ export type Database = {
           marked_at?: string | null
           marked_by?: string | null
           method?: string
+          note?: string
           registration_id?: string
           status?: string
         }
@@ -1036,6 +1039,22 @@ export type Database = {
           wt_key: string
           wt_slot: string
         }[]
+      }
+      assign_attendance_team: {
+        Args: { p_registrations: string[]; p_team: string | null }
+        Returns: number
+      }
+      attendance_coach_options: {
+        Args: never
+        Returns: { id: string; display_name: string }[]
+      }
+      attendance_session_overview: {
+        Args: { p_season: string }
+        Returns: { id: string; date: string; title: string; locked: boolean; total: number; present: number; unmarked: number }[]
+      }
+      create_attendance_day: {
+        Args: { p_season: string; p_date: string; p_label: string; p_division: string | null }
+        Returns: string
       }
       attendance_summary: {
         Args: { p_season?: string }

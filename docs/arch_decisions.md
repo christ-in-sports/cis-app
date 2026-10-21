@@ -161,3 +161,11 @@ heading followed by:
 - **Decision:** `Kid` holds stable identity, contact and medical data. `Registration` (unique on `kid_id` + `season_id`) holds the per-season fields and `team_id`, and `Team` has many `Registration`. `Attendance_Kid`, `SpiritualRecord` and `Payment` keep referencing `kid_id` for now.
 - **Consequences / tradeoffs:** Season history is preserved and standings and rosters are cleanly per season. Roster queries need a join through `Registration`, and CSV import must match returning kids to existing records (on first name + last name + DOB) to avoid duplicates. Whether `Payment` should move to `registration_id` is unresolved (tracked as an open question in `project_spec.md` §2.8).
 - **Reference:** `project_spec.md` §2.4; Linear [ENG-4](https://linear.app/cis-app/issue/ENG-4/kid-registration-parent-self-service-form), [ENG-5](https://linear.app/cis-app/issue/ENG-5/kid-registration-admin-csv-import)
+
+
+### 2026-10-20 — Team attendance uses narrow assignment RPCs and server refresh
+- **Status:** Accepted
+- **Context:** Attendance excluded Program, allowed coaches to read unrelated records through the definer summary, and relied on client checks for locked days. The blueprint mixed seasons in team setup.
+- **Decision:** Add explicit Program setup/read permissions. Keep Program registration writes behind a team-only RPC and expose only Coach IDs/names through a gated picker. Create sessions and their registration snapshots atomically; enforce locks, record identity, season scope and mark audit fields in Postgres. Use Server Actions and shared Zod validation for mutations. Refresh visible server views every 10 seconds and on focus instead of requiring a Realtime publication.
+- **Consequences / tradeoffs:** Updates appear within 10 seconds on another device. Team grouping follows the registration's current team assignment rather than keeping a second historical team snapshot. General roster writes and role grants remain Admin-only. The summary and session aggregates apply the same role/team scope as record RLS.
+- **Reference:** `project_spec.md` §1.5, §2.4.1; `docs/decisions.md` (2026-10-20).
