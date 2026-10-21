@@ -168,7 +168,8 @@ test.beforeAll(async () => {
   );
 
   await ensureUser(PARENT_EMAIL, 'parent');
-  await ensureUser(OUTSIDER_EMAIL, null);
+  // A coach, not roleless: a roleless user is sent to the servant form instead.
+  await ensureUser(OUTSIDER_EMAIL, 'coach');
   await resetParentData();
 });
 

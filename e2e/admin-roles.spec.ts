@@ -100,10 +100,10 @@ test.afterAll(async () => {
 });
 
 test('an Admin gives a new servant the Coach role, and they can then open Attendance', async ({ page, browser }) => {
-  // Before: a roleless servant is turned away from Attendance.
+  // Before: a roleless servant is sent from Attendance to the registration form.
   const servantPage = await signedInPage(browser, SERVANT);
   await servantPage.goto('/attendance');
-  await expect(servantPage.getByText('No Access')).toBeVisible();
+  await expect(servantPage).toHaveURL(/\/servant-registration$/);
 
   // The Admin finds them under "no role yet" and ticks Coach.
   await signIn(page, ADMIN);
@@ -132,7 +132,6 @@ test('an Admin gives a new servant the Coach role, and they can then open Attend
 
   // After: the same servant now reaches Attendance.
   await servantPage.goto('/attendance');
-  await expect(servantPage.getByText('No Access')).toBeHidden();
   await expect(servantPage.getByText('Attendance Summary')).toBeVisible();
 
   // And the Admin can take it away again.

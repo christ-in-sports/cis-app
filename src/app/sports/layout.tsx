@@ -3,6 +3,8 @@ import type { ReactNode } from 'react';
 import { BoardShell } from '@/components/cis/board-shell';
 import { SportsNav } from '@/components/cis/sports-nav';
 
+import { redirectIfRoleless } from '@/lib/auth/servant-gate';
+
 import { getAccess } from './data';
 import { LiveRefresh } from './live';
 
@@ -12,6 +14,7 @@ import { LiveRefresh } from './live';
  * Team only; the Manage pages check the role again, and RLS is the boundary.
  */
 export default async function SportsLayout({ children }: { children: ReactNode }) {
+  await redirectIfRoleless();
   const { hasRole } = await getAccess();
   return (
     <BoardShell>

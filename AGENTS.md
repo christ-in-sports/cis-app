@@ -57,6 +57,7 @@ Stripe (payments, v1.0)    Claude API (AI team generation, v1.0)
 | PWA | Serwist |
 | Payments | Stripe (v1.0) |
 | AI | Anthropic Claude API (v1.0, team generation) |
+| Email | Resend (server-side only) |
 | Hosting | Vercel |
 | Error tracking | Sentry |
 
@@ -221,4 +222,4 @@ Every PR that touches the items in the "non-negotiable" list must include or upd
 ---
 
 *Last updated: keep this line current — if you edit this file, update the date below.*
-**Last updated:** 2026-10-19
+**Last updated:** 2026-10-21
