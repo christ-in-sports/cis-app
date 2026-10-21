@@ -61,6 +61,8 @@ The app supports **6 roles**. A person may hold more than one role simultaneousl
 | Manage attendance sessions, teams & coach assignments | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ |
 | Assign registered kids to season teams | ✓ | ✓ (team only) | ✗ | ✗ | ✗ | ✗ |
 | Archive and restore attendance | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ |
+| Delete attendance days after confirmation | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ |
+| View full-division attendance award standings | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ |
 | View kid attendance | ✓ | ✓ | ✓ (own teams) | ✗ | ✗ | ✗ |
 | View own team roster | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ |
 | Update kid attendance | ✓ | ✗ | ✓ | ✗ | ✗ | ✗ |
@@ -254,10 +256,12 @@ Divisions (`juniors` / `ambassadors`) are an attribute on `Registration` and `Te
 - `/attendance/[id]` filters by team and searches names. Admin marks any kid; assigned Coaches mark their own teams; Program reads results. Statuses are unmarked, present, absent, late and excused, with an optional note up to 1,000 characters. Changes save immediately and bulk present affects only visible, still-unmarked kids. PostgreSQL enforces identity, season consistency and audit stamps.
 - **Archive current attendance** moves current days to `/attendance/archive` by setting `attendance_days.archived_at` and locking the days. It leaves registrations, teams, coaches and all saved marks intact. Archived days remain readable through their original URLs. Admin and Program can restore an individual day, preserving every mark. A database constraint prevents reopening an archived day without restoring it.
 - `/attendance/summary` has Current/Archived attendance and team filters, a real table, and CSV export. It reads saved marks across registration seasons. Present includes late; percent divides by marked records, including excused. Attendance no longer exposes a season-rollover action.
+- Admin and Program may delete a day from its detail page after a confirmation names the date and permanent loss of all its marks/notes. This works for current, locked and archived days. The existing day-to-record foreign-key cascade removes only that day's records; kids, registrations, teams, coach assignments and other days stay intact. The Server Action validates the ID, checks explicit roles, and uses the existing manager RLS policy.
+- `/attendance/awards`, linked from Summary, is Admin/Program only. It lists everyone on the active populated registration roster, including kids without attendance records, with Juniors/Ambassadors and team filters, name search, Current/Archived attendance, sorting by days present/percent/team/name, and CSV export. Division ranks use days present including late, share ties, and skip kids with no marked days; filtering/sorting does not change ranks. Marked/unmarked counts and percentages support staff's final award decision. Archived awards use the same roster; the archived Summary preserves earlier rosters. This composes existing RLS-filtered roster queries and summary aggregates without a new table or RPC.
 - All attendance screens use the same fixed bottom `SectionNav` as Registration: Home, Attendance, Teams (managers), Summary and Archive. Visible pages refresh RLS-filtered server data every 10 seconds and on focus. Aggregate RPCs avoid downloading a whole history of record rows or hitting the REST row cap.
 - Attendance RPCs require authentication and explicit internal role checks; internal trigger functions cannot be called directly by API users. Schema changes are committed migrations. Hosted MCP migration versions and repository filenames are kept aligned. The unrelated servant-registration migration remains pending.
 - The archive and roster-fallback migration is `20261021033706_simplify_attendance_archive.sql`, applied to the hosted `CIS_App` project after local verification.
-- Coverage includes date validation, submission/save feedback, execution grants, role/team visibility, archive/restore preservation, empty-current-season roster fallback, and a mobile browser workflow using the shared bottom navigation.
+- Coverage includes date validation, submission/save feedback, execution grants, role/team visibility, archive/restore preservation, empty-current-season roster fallback, deletion scope/permissions and confirmation cancellation, division ranking/ties/zero attendance, and a mobile browser workflow using the shared bottom navigation.
 
 ### 2.5 Engineering Requirements
 

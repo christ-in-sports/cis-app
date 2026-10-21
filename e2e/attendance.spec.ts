@@ -17,6 +17,7 @@ let seasonId: string;
 let kidId: string;
 let emptySeasonId: string;
 let previousSeason: string | undefined;
+const extraKidIds: string[] = [];
 
 async function db<T>(work: (client: Client) => Promise<T>) {
   if (!['127.0.0.1', 'localhost'].includes(new URL(dbUrl).hostname) || !['127.0.0.1', 'localhost'].includes(new URL(authUrl).hostname)) throw new Error('Attendance E2E must run locally.');
@@ -62,7 +63,9 @@ test.afterAll(async () => {
     }
     if (emptySeasonId) await client.query('delete from seasons where id=$1', [emptySeasonId]);
     if (kidId) await client.query('delete from kids where id = $1', [kidId]);
+    for (const id of extraKidIds) await client.query('delete from kids where id=$1', [id]);
     if (previousSeason) await client.query('update seasons set is_current = true where id = $1', [previousSeason]);
+    await client.query('delete from attendance_groups where created_by=any($1::uuid[])', [ids]);
     for (const id of ids) await client.query('delete from auth.users where id = $1', [id]);
   });
 });
@@ -109,6 +112,36 @@ test('Program sets up a team; both coaches mark it; Program sees results and loc
     const row = page.getByRole('row', { name: new RegExp(`Attendance ${suffix}`) });
     await expect(row).toContainText('100');
     await expect(page.getByText('Start a new season')).toHaveCount(0);
+    // Registrations added after this day still appear in the award roster with zero attendance.
+    await db(async (client) => {
+      for (const [name, division, grade] of [['Zero', 'juniors', 6], ['Ambassador', 'ambassadors', 9]] as const) {
+        const kid = await client.query(`insert into kids(first_name,last_name,dob,gender,home_address,emergency_contact_name,emergency_contact_phone,guardian_name,guardian_phone,guardian_email)
+          values ($1,$2,'2014-03-03','male','Local','EC','555','Guardian','555','guardian@local.test') returning id`, [name, suffix]);
+        extraKidIds.push(kid.rows[0].id);
+        await client.query("insert into registrations(kid_id,season_id,grade,division,tshirt_size) values ($1,$2,$3,$4,'M')", [kid.rows[0].id, seasonId, grade, division]);
+      }
+    });
+    await page.getByRole('link', { name: 'Attendance awards', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Attendance awards' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Summary', exact: true })).toHaveAttribute('aria-current', 'page');
+    await expect(page.getByRole('row', { name: new RegExp(`Zero ${suffix}`) })).toContainText('0');
+    await expect(page.getByRole('row', { name: new RegExp(`Ambassador ${suffix}`) })).toHaveCount(0);
+    await page.getByLabel('Sort by', { exact: true }).selectOption('team');
+    await expect(page).toHaveURL(/sort=team/);
+    await page.getByLabel('Team', { exact: true }).selectOption({ label: `Lions ${suffix}` });
+    await expect(page.getByRole('row', { name: new RegExp(`Zero ${suffix}`) })).toHaveCount(0);
+    await expect(page.getByRole('row', { name: new RegExp(`Attendance ${suffix}`) })).toBeVisible();
+    await expect(page.getByRole('row', { name: new RegExp(`Attendance ${suffix}`) }).getByRole('cell').first()).toHaveText('1');
+    await page.getByLabel('Division', { exact: true }).selectOption('ambassadors');
+    await expect(page.getByLabel('Team', { exact: true })).toHaveValue('all');
+    await expect(page.getByRole('row', { name: new RegExp(`Ambassador ${suffix}`) })).toBeVisible();
+    await page.getByLabel('Division', { exact: true }).selectOption('juniors');
+    await expect(page.getByRole('row', { name: new RegExp(`Zero ${suffix}`) })).toBeVisible();
+    await page.screenshot({ path: test.info().outputPath('attendance-awards.png'), fullPage: true });
+    await second.goto('/attendance/awards');
+    await expect(second).toHaveURL('/');
+    await first.reload();
+    await expect(first.getByRole('button', { name: 'Delete attendance day' })).toHaveCount(0);
     await page.getByRole('link', { name: 'Attendance', exact: true }).click();
     page.once('dialog', (dialog) => dialog.accept());
     await page.getByRole('button', { name: 'Archive current attendance' }).click();
@@ -122,5 +155,18 @@ test('Program sets up a team; both coaches mark it; Program sees results and loc
     await page.getByRole('link', { name: 'Teams', exact: true }).click();
     await expect(page.getByText(`Attendance ${suffix}`, { exact: true })).toBeVisible();
     await page.screenshot({ path: test.info().outputPath('attendance-teams-bottom-nav.png'), fullPage: true });
+    await page.goto(sessionUrl);
+    page.once('dialog', (dialog) => {
+      expect(dialog.message()).toContain('permanently deleted');
+      return dialog.dismiss();
+    });
+    await page.getByRole('button', { name: 'Delete attendance day' }).click();
+    await expect(page.getByRole('combobox', { name: `Attendance for Attendance ${suffix}` })).toHaveValue('late');
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.getByRole('button', { name: 'Delete attendance day' }).click();
+    await expect(page).toHaveURL('/attendance');
+    await expect(page.getByRole('link', { name: /Sun, Nov 1, 2026/ })).toHaveCount(0);
+    await page.getByRole('link', { name: 'Teams', exact: true }).click();
+    await expect(page.getByText(`Attendance ${suffix}`, { exact: true })).toBeVisible();
   } finally { await firstContext.close(); await secondContext.close(); }
 });

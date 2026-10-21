@@ -313,3 +313,5 @@ Attendance now composes the shared hardboard shell, cream sheets and CIS form co
 
 
 Attendance refinement: the top text navigation is replaced by the existing fixed `SectionNav` used in Registration, with Home, Attendance, Teams (managers), Summary and Archive. Date-only day creation and a single archive action replace attendance season setup. Archived days use neutral text and their saved marks, with a Restore day action for managers. Existing tokens, icon weights, active-state colors and safe-area spacing are unchanged.
+
+Attendance deletion uses the existing outlined `DangerButton` and a native confirmation naming the date and irreversible loss of marks/notes. Attendance awards is reached from Summary and keeps Summary active in the bottom bar. It uses existing labeled select/search controls and a real horizontally scrollable table; rank is neutral text, ties share a rank, and no color implies an automatic award winner. CSV follows the visible filters and sort.

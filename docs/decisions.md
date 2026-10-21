@@ -142,3 +142,8 @@ issue holds the detail; this file is the index of "what's now different from the
 - **Decision:** Replace attendance season rollover with a date-only creation form and an Archive current attendance button for Admin and Program. Keep archived days accessible on the website and allow restoring a day. Reuse Registration’s fixed bottom navigation.
 - **Reason:** Starting an empty season hid the registered roster and appeared to wipe data. Attendance should keep kids and teams available while archiving only attendance days and marks. The final request to disregard seasons supersedes the earlier season-picker proposal; registration/sports season relationships remain internal.
 - **Reference:** `project_spec.md` §2.4.1; technical implementation in `docs/arch_decisions.md` (2026-10-20).
+
+### 2026-10-21 — Confirm day deletion and compare attendance by division
+- **Decision:** Per the follow-up request, Admin and Program may permanently delete an attendance day after confirmation. Add an Attendance awards page with Juniors/Ambassadors, team filtering/sorting, and the full active registered roster, including kids with no attendance.
+- **Reason:** Coordinators need to remove mistaken days and compare attendance when selecting division awards. Default rank is days present, including late, with shared ties; percentages and unfinished attendance remain visible for staff to decide the award. No automatic winner policy is introduced.
+- **Reference:** `project_spec.md` §1.5, §2.4.1; technical decision in `docs/arch_decisions.md` (2026-10-21).

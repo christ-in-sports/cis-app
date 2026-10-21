@@ -473,6 +473,29 @@ describe('attendance function execution privileges', () => {
 
 
 describe('simple attendance days and archive', () => {
+  it.each(['admin', 'program'] as Actor[])('%s deletes only the selected day and its marks, including archived days', async (actor) => {
+    await withTx(pool, async (client) => {
+      const f = await seed(client);
+      const other = await client.query('insert into attendance_days(group_id,date,season_id) values ($1,current_date+1,$2) returning id', [f.groupId, f.seasonId]);
+      await client.query('insert into attendance_records(day_id,registration_id) values ($1,$2)', [other.rows[0].id, f.registrationId]);
+      await client.query('update attendance_days set archived_at=now(),locked=true where id=$1', [f.dayId]);
+      expect(await countAs(client, f.actors[actor], 'delete from attendance_days where id=$1 returning id', [f.dayId])).toBe(1);
+      expect((await client.query('select id from attendance_records where day_id=$1', [f.dayId])).rowCount).toBe(0);
+      expect((await client.query('select id from attendance_records where day_id=$1', [other.rows[0].id])).rowCount).toBe(1);
+      expect((await client.query('select team_id from registrations where id=$1', [f.registrationId])).rows[0].team_id).toBe(f.teamId);
+      expect((await client.query('select 1 from kids where id=(select kid_id from registrations where id=$1)', [f.registrationId])).rowCount).toBe(1);
+      expect((await client.query('select 1 from team_coaches where team_id=$1', [f.teamId])).rowCount).toBe(1);
+    });
+  });
+
+  it.each(['coach', 'prayer', 'parent', 'none'] as Actor[])('%s cannot delete attendance days', async (actor) => {
+    await withTx(pool, async (client) => {
+      const f = await seed(client);
+      expect(await countAs(client, f.actors[actor], 'delete from attendance_days where id=$1 returning id', [f.dayId])).toBe(0);
+      expect((await client.query('select id from attendance_records where day_id=$1', [f.dayId])).rowCount).toBe(1);
+    });
+  });
+
   it('keeps the populated roster when an empty season is made current', async () => {
     await withTx(pool, async (client) => {
       const f = await seed(client);

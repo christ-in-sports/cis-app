@@ -3,14 +3,14 @@
 import { useState, useTransition } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { BoardHeader } from '@/components/cis/board-shell';
-import { PrimaryButton, SecondaryButton } from '@/components/cis/button';
+import { DangerButton, PrimaryButton, SecondaryButton } from '@/components/cis/button';
 import { AttendanceRow } from '@/components/cis/attendance-row';
 import { Field, FieldError, SelectInput, TextInput } from '@/components/cis/form';
 import { SheetHeading } from '@/components/cis/sheet';
 import { type AttendanceDay, type AttendanceRecord, type RosterKid, type MinistryTeam, fmtDay } from '@/lib/attendance';
 import { AttendanceSheet } from '../parts';
 import { LiveAttendance } from '../live';
-import { saveMarks, lockAttendance, refreshAttendance, restoreAttendance } from '../actions';
+import { saveMarks, lockAttendance, refreshAttendance, restoreAttendance, deleteAttendance } from '../actions';
 
 export default function TakeClient({ day, groupName, records, kids, teams, myTeamIds, canManage, isAdmin, isCoach }: {
   day: AttendanceDay; groupName: string; records: AttendanceRecord[]; kids: RosterKid[]; teams: MinistryTeam[];
@@ -62,6 +62,15 @@ export default function TakeClient({ day, groupName, records, kids, teams, myTea
         <SecondaryButton disabled={pending} onClick={() => run(() => lockAttendance(day.id, !day.locked), day.locked ? 'Session reopened.' : 'Attendance locked.')}>{day.locked ? 'Reopen attendance' : 'Lock attendance'}</SecondaryButton>
         {!day.locked && <SecondaryButton disabled={pending} onClick={() => run(() => refreshAttendance(day.id), 'Roster refreshed. Existing marks were kept.')}>Add new registrations</SecondaryButton>}
       </div>}
+      {canManage && <DangerButton disabled={pending} onClick={() => {
+        if (!window.confirm(`Delete attendance for ${fmtDay(day.date)}? All marks and notes for this day will be permanently deleted. This cannot be undone.`)) return;
+        setError(''); setMessage('');
+        start(async () => {
+          const result = await deleteAttendance(day.id);
+          if (!result.ok) setError(result.error);
+          else { router.replace(day.archived_at ? '/attendance/archive' : '/attendance'); router.refresh(); }
+        });
+      }}>Delete attendance day</DangerButton>}
       {error && <FieldError>{error}</FieldError>}<p role="status">{pending ? 'Saving…' : message}</p>
     </AttendanceSheet>
     {canManage && teamId === 'all' && <AttendanceSheet>

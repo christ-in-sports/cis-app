@@ -3,14 +3,15 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import Papa from 'papaparse';
-import { SecondaryButton } from '@/components/cis/button';
+import Link from 'next/link';
+import { SecondaryButton, secondaryButtonClasses } from '@/components/cis/button';
 import { BoardHeader } from '@/components/cis/board-shell';
 import { Field, SelectInput, TextInput } from '@/components/cis/form';
 import { type SummaryRow } from '@/lib/attendance';
 import { AttendanceSheet } from '../parts';
 import { LiveAttendance } from '../live';
 
-export default function SummaryClient({ archived, rows }: { archived: boolean; rows: SummaryRow[] }) {
+export default function SummaryClient({ archived, rows, canManage }: { archived: boolean; rows: SummaryRow[]; canManage: boolean }) {
   const router = useRouter();
   const params = useSearchParams();
   const [search, setSearch] = useState('');
@@ -26,6 +27,7 @@ export default function SummaryClient({ archived, rows }: { archived: boolean; r
     <LiveAttendance />
     <BoardHeader title="Attendance summary" />
     <AttendanceSheet>
+      {canManage && <Link className={secondaryButtonClasses} href={`/attendance/awards${archived ? '?view=archive' : ''}`}>Attendance awards</Link>}
       <Field label="Attendance">{(props) => <SelectInput {...props} value={archived ? 'archive' : 'current'} onChange={(e) => change('view', e.target.value)}>
         <option value="current">Current attendance</option><option value="archive">Archived attendance</option>
       </SelectInput>}</Field>

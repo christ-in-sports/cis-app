@@ -113,3 +113,12 @@ export async function restoreAttendance(dayId: string) {
     if (error || !data) throw new Error(error?.message ?? 'Attendance day no longer exists.');
   });
 }
+
+export async function deleteAttendance(dayId: string) {
+  return mutate(async () => {
+    const { supabase } = await access(true);
+    const { data, error } = await supabase.from('attendance_days').delete()
+      .eq('id', z.uuid().parse(dayId)).select('id').single();
+    if (error || !data) throw new Error(error?.message ?? 'Attendance day no longer exists.');
+  });
+}
