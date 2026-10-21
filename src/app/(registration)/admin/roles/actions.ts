@@ -6,7 +6,7 @@
  * Thin, like the other Server Actions: authenticate, validate, write, and turn a
  * Postgres error into a readable one. The Admin check here is UX. The boundary is
  * the `"admin manage roles"` policy on `user_roles`, and the trigger that stops an
- * Admin removing their own admin role (`20261019130000_user_roles_guards.sql`).
+ * Admin removing their own admin role (`20261021025909_user_roles_guards.sql`).
  */
 
 import { checkAdmin } from '@/lib/auth/admin';

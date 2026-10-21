@@ -130,3 +130,25 @@ issue holds the detail; this file is the index of "what's now different from the
 - **What changed:** Submission writes directly to the registration table and is complete on submit. There is no confirmation notification to the parent, no review alert to Admin, and no Admin-approval-gated confirmation step.
 - **Why:** Per the Director/Admin decision recorded in ENG-4: an approval workflow is not needed for this phase. Logged retroactively on 2026-09-21.
 - **Linear:** [ENG-4](https://linear.app/cis-app/issue/ENG-4/kid-registration-parent-self-service-form)
+
+
+### 2026-10-20 — Program manages attendance setup and team assignments
+- **Decision:** Per the attendance refinement request, Admin and Program may create sessions and teams, assign registered kids to teams, and assign multiple coaches. Program sees attendance but does not mark kids unless also an assigned Coach. Admin retains full roster edits and role grants.
+- **Reason:** Volunteer coordinators need to prepare attendance and follow coach updates without receiving broader kid-edit or account permissions. This expands the previous matrix only for attendance setup and team assignment; it does not expand general roster writes.
+- **Reference:** `project_spec.md` §1.5, §2.4.1; technical implementation in `docs/arch_decisions.md` (2026-10-20).
+
+
+### 2026-10-20 — Attendance uses dated days and an independent archive
+- **Decision:** Replace attendance season rollover with a date-only creation form and an Archive current attendance button for Admin and Program. Keep archived days accessible on the website and allow restoring a day. Reuse Registration’s fixed bottom navigation.
+- **Reason:** Starting an empty season hid the registered roster and appeared to wipe data. Attendance should keep kids and teams available while archiving only attendance days and marks. The final request to disregard seasons supersedes the earlier season-picker proposal; registration/sports season relationships remain internal.
+- **Reference:** `project_spec.md` §2.4.1; technical implementation in `docs/arch_decisions.md` (2026-10-20).
+
+### 2026-10-21 — Confirm day deletion and compare attendance by division
+- **Decision:** Per the follow-up request, Admin and Program may permanently delete an attendance day after confirmation. Add an Attendance awards page with Juniors/Ambassadors, team filtering/sorting, and the full active registered roster, including kids with no attendance.
+- **Reason:** Coordinators need to remove mistaken days and compare attendance when selecting division awards. Default rank is days present, including late, with shared ties; percentages and unfinished attendance remain visible for staff to decide the award. No automatic winner policy is introduced.
+- **Reference:** `project_spec.md` §1.5, §2.4.1; technical decision in `docs/arch_decisions.md` (2026-10-21).
+
+### 2026-10-21 — Attendance archive also retires current teams
+- **Decision:** Per the follow-up request, Archive starts fresh team setup as well as archiving attendance. Preserve old teams, kids and coaches for historical views; unassign kids from current teams so coordinators can create new teams. Allow renaming and confirmed deletion of current teams. Archived teams are read-only.
+- **Reason:** Archiving represents starting a new season of attendance and team assignments. This supersedes the earlier rule that archiving left current team assignments unchanged. Keep the workflow to one archive button without a season setup form. Restoring a day restores editing of its original roster, not the retired team setup.
+- **Reference:** `project_spec.md` §2.4.1; technical decision in `docs/arch_decisions.md` (2026-10-21).
