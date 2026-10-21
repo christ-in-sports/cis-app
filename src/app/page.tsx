@@ -12,5 +12,11 @@ export default async function HomePage() {
   // A new servant has no role yet; the registration form is all they can use.
   await redirectIfRoleless();
 
-  return <HomeClient user={user} />;
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('display_name')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  return <HomeClient displayName={profile?.display_name} />;
 }

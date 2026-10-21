@@ -175,3 +175,41 @@ heading followed by:
 - **Decision:** `Kid` holds stable identity, contact and medical data. `Registration` (unique on `kid_id` + `season_id`) holds the per-season fields and `team_id`, and `Team` has many `Registration`. `Attendance_Kid`, `SpiritualRecord` and `Payment` keep referencing `kid_id` for now.
 - **Consequences / tradeoffs:** Season history is preserved and standings and rosters are cleanly per season. Roster queries need a join through `Registration`, and CSV import must match returning kids to existing records (on first name + last name + DOB) to avoid duplicates. Whether `Payment` should move to `registration_id` is unresolved (tracked as an open question in `project_spec.md` §2.8).
 - **Reference:** `project_spec.md` §2.4; Linear [ENG-4](https://linear.app/cis-app/issue/ENG-4/kid-registration-parent-self-service-form), [ENG-5](https://linear.app/cis-app/issue/ENG-5/kid-registration-admin-csv-import)
+
+
+### 2026-10-20 — Team attendance uses narrow assignment RPCs and server refresh
+- **Status:** Accepted
+- **Context:** Attendance excluded Program, allowed coaches to read unrelated records through the definer summary, and relied on client checks for locked days. The blueprint mixed seasons in team setup.
+- **Decision:** Add explicit Program setup/read permissions. Keep Program registration writes behind a team-only RPC and expose only Coach IDs/names through a gated picker. Create sessions and their registration snapshots atomically; enforce locks, record identity, season scope and mark audit fields in Postgres. Use Server Actions and shared Zod validation for mutations. Refresh visible server views every 10 seconds and on focus instead of requiring a Realtime publication.
+- **Consequences / tradeoffs:** Updates appear within 10 seconds on another device. Team grouping follows the registration's current team assignment rather than keeping a second historical team snapshot. General roster writes and role grants remain Admin-only. The summary and session aggregates apply the same role/team scope as record RLS.
+- **Reference:** `project_spec.md` §1.5, §2.4.1; `docs/decisions.md` (2026-10-20).
+
+
+### 2026-10-20 — Preserve MCP migration versions and restrict direct function grants
+- **Status:** Accepted
+- **Context:** The hosted project was missing role/access prerequisites. MCP assigned new timestamps when applying committed migrations. Hosted default privileges also grant function execution directly to API roles, so revoking only `PUBLIC` leaves anonymous execution enabled.
+- **Decision:** Preserve the hosted migration records and rename the corresponding repository files to those recorded versions. Apply a separate migration that revokes attendance RPC execution from both `PUBLIC` and `anon`, retains explicit authenticated RPC grants, and removes direct API execution of internal attendance trigger functions. Keep the unrelated servant-registration migration pending.
+- **Consequences / tradeoffs:** The role/access and attendance migrations now match this project's recorded versions. Other checkouts must pull these filenames before deployment; do not reapply the old filenames. Function body role checks and record RLS remain the authorization boundary. New database tests assert actual execution privileges, including installations with direct default grants.
+- **Reference:** `project_spec.md` §2.4.1; `AGENTS.md` §8.
+
+
+### 2026-10-20 — Archive attendance without rolling over the registration season
+- **Status:** Accepted
+- **Context:** Attendance screens filtered to the current season. Creating an empty season made prior kids, teams and days disappear from those screens even though their rows remained in the database.
+- **Decision:** Store `archived_at` on attendance days and require archived days to stay locked. Current/archive list and summary functions span registration seasons and preserve existing record RLS. Create a day from a date using an internal roster selector that falls back to a populated registration season. Remove season controls and rollover from attendance, retain registration foreign keys, and reuse `SectionNav` from Registration. Restore clears the archive flag and lock without modifying marks.
+- **Consequences / tradeoffs:** Archiving never changes the global current season or team/registration rows. Legacy days remain accessible; current summary counters clear only when days are explicitly archived. Team assignments follow the selected populated roster, so an empty newly created season cannot hide it. There is no duplicate attendance-specific roster or season model.
+- **Reference:** `project_spec.md` §2.4.1; product decision in `docs/decisions.md` (2026-10-20).
+
+### 2026-10-21 — Reuse attendance RLS and aggregates for deletion and award standings
+- **Status:** Accepted
+- **Context:** Coordinators need day deletion and division award comparisons without another attendance setup model.
+- **Decision:** Delete one day with an authenticated manager Server Action and the existing manager day policy / record foreign-key cascade. Build the manager-only awards page from the active populated registration roster plus the existing current/archive aggregate. Fill missing totals with zero. Rank by attended days within the entire division before team/search filters; ties share competition rank and kids without marked days have no rank.
+- **Consequences / tradeoffs:** No schema migration or privileged RPC is needed. Day deletion intentionally removes its saved marks/notes and cannot be undone; native confirmation is required. Kids and teams are unaffected. Awards compare the current registered roster; past rosters remain accessible in the archived Summary. Percent sorting is available but does not redefine the days-present rank or choose award winners.
+- **Reference:** `project_spec.md` §2.4.1; product decision in `docs/decisions.md` (2026-10-21).
+
+### 2026-10-21 — Freeze team membership before attendance rollover
+- **Status:** Accepted
+- **Context:** Retiring teams and clearing registration assignments would otherwise move historical attendance into new teams and remove the original coaches' access. Ministry teams are also referenced by sports data, so hard deletion can destroy context or fail on foreign keys.
+- **Decision:** Add RLS-protected team snapshots for each archived day and separate null-day membership snapshots for retired teams, with a persistent `roster_frozen` flag on days. Archive freezes memberships, locks days, retires active teams and clears live kid assignments atomically. Record RLS and narrow attendance display RPCs resolve frozen/live membership and require explicit roles. Keep current registration/contact RLS unchanged. Restoring a day preserves the frozen roster and its original coach access; a trigger blocks adding registrations. Aggregate summaries show the team from the most recent included day.
+- **Consequences / tradeoffs:** Team rosters survive deletion of their attendance days, and original coaches retain attendance-only access after reassignment. Current team deletion is a narrow soft-delete RPC that clears kid/coach assignments and preserves sports references. Active-only name uniqueness permits reuse after archive/deletion. Team archive views are read-only. Internal registration season selection remains unchanged; no parallel season model is introduced.
+- **Reference:** `project_spec.md` §2.4.1; supersedes the team-preservation part of the 2026-10-20 archive decision and the prior live-team-only attendance access rule.

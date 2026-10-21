@@ -205,7 +205,25 @@ Every PR that touches the items in the "non-negotiable" list must include or upd
 
 ---
 
-## 8. Docs & Further Reading
+## 8. Attendance conventions
+
+- Attendance UI uses `BoardShell`, `Sheet`, CIS form controls and `AttendanceRow`; mutations go through `src/app/attendance/actions.ts` with Zod input validation.
+- Admin and Program create dated attendance days, rename/delete current teams, manage coach links, and archive/restore attendance. Attendance has no season picker or season-rollover action. Program assigns only `registrations.team_id` through `assign_attendance_team()`; it does not gain general roster write access. Only users holding Coach can be assigned as coaches.
+- Admin marks all kids; Coaches read/mark only their assigned teams. Program reads results but cannot mark unless also an assigned Coach. A team link alone never grants a role.
+- Admin and Program can delete a single attendance day, including locked/archived days, only after a confirmation naming the date and permanent loss of its marks/notes. Delete the day through the authenticated Server Action; its existing foreign-key cascade removes only that day's records. Keep kids, registrations, teams and other days.
+- `/attendance/awards` is Admin/Program only, linked from Summary. Include every active kid on the selected populated registration roster, even with zero records. Rank within each division by days attended (present + late), share ties, and leave kids with no marked days unranked. Team/search filters and sorting never recalculate division ranks. Expose marked/unmarked counts and percent so staff can choose awards without an automatic winner rule. Archived awards use the same roster; the archived Summary retains previous rosters.
+- New days snapshot the populated registration roster. `attendance_roster_season()` uses the current registration season when populated and falls back to the latest populated season when the current one is empty. Roster refresh adds missing registrations without replacing marks. Current/archive lists span all registration seasons.
+- Archive atomically freezes day/team membership in `attendance_team_snapshots`, locks/archives current days, retires active teams (`active=false`, `archived_at`), and clears live registration team assignments. Kids, marks and old coach links stay available. Null-day snapshot rows preserve retired team membership independently of attendance days. A restored day keeps `roster_frozen` and its original teams; it cannot add registrations or reactivate teams. Archived team names in aggregate summaries come from the most recent included day.
+- Archived attendance reads/marks use `can_access_attendance_record(day_id, registration_id)`, which resolves the frozen team or live registration team and requires Admin or an assigned Coach. Program only reads. The narrow `attendance_day_roster()` returns attendance display fields for permitted rows without widening kid/contact RLS. Snapshot tables have RLS and no authenticated writes. Keep role-revocation and old/new-coach isolation tests current.
+- `/attendance/teams?view=archive` is a read-only team archive. Current team deletion requires confirmation, clears kid/coach assignments, and soft-deletes the team via `delete_attendance_team()` so existing sports references remain valid. It does not delete kids or attendance. Active-only name uniqueness allows fresh teams to reuse archived/deleted names. Renames validate through `renameTeamInput` and affect current teams only.
+- Hosted Supabase grants function execution directly to API roles by default. Revoke from both `PUBLIC` and `anon` for attendance RPCs, and from `PUBLIC`, `anon` and `authenticated` for internal trigger functions. Keep explicit authenticated grants for application RPCs.
+- When applying committed migrations through MCP, align repository filenames with the versions actually recorded by MCP; preserve hosted migration-history records.
+- Locks, immutable attendance identity, season validation and audit stamps are enforced in Postgres. Keep database permission/submission tests in `supabase/tests/attendance-roles.test.ts` current.
+- Attendance views refresh server data every 10 seconds while visible and on window focus; no Realtime publication is required. Team/division/archive filters use URL search params. Attendance reuses Registration’s fixed `SectionNav` with Home, Attendance, Teams (managers), Summary and Archive.
+
+---
+
+## 9. Docs & Further Reading
 
 | Doc | What's in it |
 |---|---|

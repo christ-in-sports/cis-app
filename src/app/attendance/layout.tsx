@@ -1,13 +1,15 @@
-import type { ReactNode } from 'react';
-
+import { AttendanceNav } from '@/components/cis/attendance-nav';
+import { BoardShell } from '@/components/cis/board-shell';
 import { redirectIfRoleless } from '@/lib/auth/servant-gate';
+import { attendanceAccess } from './data';
 
-/**
- * Attendance has no frame of its own; this layout exists so a servant who has
- * not been given a role yet is sent to the registration form. RLS already
- * returns them nothing here, so this is only to spare them an empty screen.
- */
-export default async function AttendanceLayout({ children }: { children: ReactNode }) {
+export default async function AttendanceLayout({ children }: { children: React.ReactNode }) {
+  // A servant with no role yet goes straight to the registration form, rather
+  // than being turned away to the home page first.
   await redirectIfRoleless();
-  return children;
+  const { canManage } = await attendanceAccess();
+  return <BoardShell>
+    {children}
+    <AttendanceNav canManage={canManage} />
+  </BoardShell>;
 }
