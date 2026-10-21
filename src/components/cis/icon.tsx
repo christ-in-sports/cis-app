@@ -12,6 +12,7 @@
  */
 
 import {
+  Archive,
   ArrowRight,
   Calendar,
   ChartNoAxesColumn,
@@ -64,6 +65,7 @@ function Bracket({ size = 24, strokeWidth = 2.75, className, ...rest }: GlyphPro
 
 const GLYPHS = {
   home: House,
+  archive: Archive,
   standings: ChartNoAxesColumn,
   schedule: Calendar,
   bracket: Bracket,

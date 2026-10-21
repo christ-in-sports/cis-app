@@ -310,3 +310,6 @@ differential, independent of sort — the rank number never changes on re-sort.
 ### Attendance implementation (2026-10-20)
 
 Attendance now composes the shared hardboard shell, cream sheets and CIS form controls. `AttendanceRow` owns named status selection, pending/saved feedback and an optional note. Present uses orange with ink text; other attendance states use neutral ink and explicit labels. Team/division controls and summary tables follow the existing form/table conventions. Tap targets are at least 44px, headings use sentence case, and icons/emoji are not used as substitutes for labels. No new design tokens are introduced.
+
+
+Attendance refinement: the top text navigation is replaced by the existing fixed `SectionNav` used in Registration, with Home, Attendance, Teams (managers), Summary and Archive. Date-only day creation and a single archive action replace attendance season setup. Archived days use neutral text and their saved marks, with a Restore day action for managers. Existing tokens, icon weights, active-state colors and safe-area spacing are unchanged.

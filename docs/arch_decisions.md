@@ -177,3 +177,11 @@ heading followed by:
 - **Decision:** Preserve the hosted migration records and rename the corresponding repository files to those recorded versions. Apply a separate migration that revokes attendance RPC execution from both `PUBLIC` and `anon`, retains explicit authenticated RPC grants, and removes direct API execution of internal attendance trigger functions. Keep the unrelated servant-registration migration pending.
 - **Consequences / tradeoffs:** The role/access and attendance migrations now match this project's recorded versions. Other checkouts must pull these filenames before deployment; do not reapply the old filenames. Function body role checks and record RLS remain the authorization boundary. New database tests assert actual execution privileges, including installations with direct default grants.
 - **Reference:** `project_spec.md` §2.4.1; `AGENTS.md` §8.
+
+
+### 2026-10-20 — Archive attendance without rolling over the registration season
+- **Status:** Accepted
+- **Context:** Attendance screens filtered to the current season. Creating an empty season made prior kids, teams and days disappear from those screens even though their rows remained in the database.
+- **Decision:** Store `archived_at` on attendance days and require archived days to stay locked. Current/archive list and summary functions span registration seasons and preserve existing record RLS. Create a day from a date using an internal roster selector that falls back to a populated registration season. Remove season controls and rollover from attendance, retain registration foreign keys, and reuse `SectionNav` from Registration. Restore clears the archive flag and lock without modifying marks.
+- **Consequences / tradeoffs:** Archiving never changes the global current season or team/registration rows. Legacy days remain accessible; current summary counters clear only when days are explicitly archived. Team assignments follow the selected populated roster, so an empty newly created season cannot hide it. There is no duplicate attendance-specific roster or season model.
+- **Reference:** `project_spec.md` §2.4.1; product decision in `docs/decisions.md` (2026-10-20).

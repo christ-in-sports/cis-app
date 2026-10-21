@@ -136,3 +136,9 @@ issue holds the detail; this file is the index of "what's now different from the
 - **Decision:** Per the attendance refinement request, Admin and Program may create sessions and teams, assign registered kids to teams, and assign multiple coaches. Program sees attendance but does not mark kids unless also an assigned Coach. Admin retains full roster edits and role grants.
 - **Reason:** Volunteer coordinators need to prepare attendance and follow coach updates without receiving broader kid-edit or account permissions. This expands the previous matrix only for attendance setup and team assignment; it does not expand general roster writes.
 - **Reference:** `project_spec.md` §1.5, §2.4.1; technical implementation in `docs/arch_decisions.md` (2026-10-20).
+
+
+### 2026-10-20 — Attendance uses dated days and an independent archive
+- **Decision:** Replace attendance season rollover with a date-only creation form and an Archive current attendance button for Admin and Program. Keep archived days accessible on the website and allow restoring a day. Reuse Registration’s fixed bottom navigation.
+- **Reason:** Starting an empty season hid the registered roster and appeared to wipe data. Attendance should keep kids and teams available while archiving only attendance days and marks. The final request to disregard seasons supersedes the earlier season-picker proposal; registration/sports season relationships remain internal.
+- **Reference:** `project_spec.md` §2.4.1; technical implementation in `docs/arch_decisions.md` (2026-10-20).

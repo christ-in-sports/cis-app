@@ -33,6 +33,7 @@ export interface AttendanceDay {
   label: string | null;
   notes: string | null;
   locked: boolean;
+  archived_at: string | null;
 }
 
 export interface AttendanceRecord {

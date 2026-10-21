@@ -412,10 +412,10 @@ describe('team attendance workflow', () => {
       await asUser(client, f.actors.program, () => client.query('select assign_attendance_team($1, $2)', [[f.registrationId], f.teamId]));
       expect(await countAs(client, f.actors.program, 'update registrations set grade = 6 where id = $1', [f.registrationId])).toBe(0);
       const other = await client.query("insert into ministry_teams(name, division, season_id) values ('Other division', 'ambassadors', $1) returning id", [f.seasonId]);
-      await expect(asUser(client, f.actors.program, () => client.query('select assign_attendance_team($1, $2)', [[f.registrationId], other.rows[0].id]))).rejects.toThrow(/same current season and division/i);
+      await expect(asUser(client, f.actors.program, () => client.query('select assign_attendance_team($1, $2)', [[f.registrationId], other.rows[0].id]))).rejects.toThrow(/same roster and division/i);
       const otherSeason = await client.query("insert into seasons(name) values ($1) returning id", [randomUUID()]);
       const otherTeam = await client.query("insert into ministry_teams(name, division, season_id) values ('Other season', 'juniors', $1) returning id", [otherSeason.rows[0].id]);
-      await expect(asUser(client, f.actors.program, () => client.query('select assign_attendance_team($1, $2)', [[f.registrationId], otherTeam.rows[0].id]))).rejects.toThrow(/same current season and division/i);
+      await expect(asUser(client, f.actors.program, () => client.query('select assign_attendance_team($1, $2)', [[f.registrationId], otherTeam.rows[0].id]))).rejects.toThrow(/same roster and division/i);
     });
   });
 
@@ -448,7 +448,8 @@ describe('attendance function execution privileges', () => {
     'attendance_coach_options()', 'assign_attendance_team(uuid[],uuid)',
     'create_attendance_day(uuid,date,text,text)', 'attendance_session_overview(uuid)',
     'can_mark(uuid)', 'attendance_summary(uuid)', 'populate_attendance_day(uuid)',
-    'start_new_season(text)',
+    'start_new_season(text)', 'attendance_roster_season()', 'create_attendance_date(date)',
+    'archive_current_attendance()', 'attendance_days_overview(boolean)', 'attendance_archive_summary(boolean)',
   ];
   it.each(rpcSignatures)('%s requires authentication', async (signature) => {
     const result = await pool.query(
@@ -468,4 +469,62 @@ describe('attendance function execution privileges', () => {
       expect(result.rows[0]).toEqual({ anonymous: false, signed_in: false });
     }
   );
+});
+
+
+describe('simple attendance days and archive', () => {
+  it('keeps the populated roster when an empty season is made current', async () => {
+    await withTx(pool, async (client) => {
+      const f = await seed(client);
+      await client.query('update seasons set is_current = false where is_current');
+      const empty = await client.query("insert into seasons(name, is_current) values ($1,true) returning id", [randomUUID()]);
+      await asUser(client, f.actors.program, async () => {
+        expect((await client.query('select attendance_roster_season() as id')).rows[0].id).toBe(f.seasonId);
+        const created = await client.query('select create_attendance_date(current_date + 1) as id');
+        expect((await client.query('select registration_id from attendance_records where day_id = $1', [created.rows[0].id])).rows).toEqual([{ registration_id: f.registrationId }]);
+        await client.query('select assign_attendance_team($1,null)', [[f.registrationId]]);
+        await client.query('select assign_attendance_team($1,$2)', [[f.registrationId], f.teamId]);
+      });
+      expect((await client.query('select id from seasons where is_current')).rows[0].id).toBe(empty.rows[0].id);
+    });
+  });
+
+  it('archives marks without changing rosters, keeps them readable, and allows restoring a day', async () => {
+    await withTx(pool, async (client) => {
+      const f = await seed(client);
+      await asUser(client, f.actors.coach, () => client.query("update attendance_records set status='present',note='Saved attendance note' where day_id=$1", [f.dayId]));
+      await asUser(client, f.actors.program, () => client.query('select archive_current_attendance()'));
+      expect((await client.query('select locked,archived_at is not null as archived from attendance_days where id=$1', [f.dayId])).rows[0]).toEqual({ locked: true, archived: true });
+      expect((await client.query('select team_id from registrations where id=$1', [f.registrationId])).rows[0].team_id).toBe(f.teamId);
+      expect((await client.query('select 1 from team_coaches where team_id=$1', [f.teamId])).rowCount).toBe(1);
+      expect(await countAs(client, f.actors.program, 'select * from attendance_days_overview(false) where id=$1', [f.dayId])).toBe(0);
+      expect(await countAs(client, f.actors.program, 'select * from attendance_days_overview(true) where id=$1', [f.dayId])).toBe(1);
+      expect(await countAs(client, f.actors.coach, 'select * from attendance_archive_summary(true) where registration_id=$1', [f.registrationId])).toBe(1);
+      expect(await countAs(client, f.otherCoachId, 'select * from attendance_archive_summary(true) where registration_id=$1', [f.registrationId])).toBe(0);
+      expect(await countAs(client, f.actors.program, 'select * from attendance_archive_summary(false) where registration_id=$1', [f.registrationId])).toBe(0);
+      await expect(asUser(client, f.actors.admin, () => client.query('update attendance_days set locked=false where id=$1', [f.dayId]))).rejects.toThrow(/archived_attendance_locked/i);
+      await expect(asUser(client, f.actors.coach, () => client.query("update attendance_records set status='absent' where day_id=$1", [f.dayId]))).rejects.toThrow(/locked/i);
+      await asUser(client, f.actors.program, () => client.query('update attendance_days set archived_at=null,locked=false where id=$1', [f.dayId]));
+      expect((await client.query('select status,note from attendance_records where day_id=$1', [f.dayId])).rows[0]).toEqual({ status: 'present', note: 'Saved attendance note' });
+      expect(await countAs(client, f.actors.program, 'select * from attendance_archive_summary(false) where registration_id=$1', [f.registrationId])).toBe(1);
+    });
+  });
+
+  it.each(['coach', 'prayer', 'parent', 'none'] as Actor[])('%s cannot archive or create attendance days', async (actor) => {
+    await withTx(pool, async (client) => {
+      const f = await seed(client);
+      await expect(asUser(client, f.actors[actor], () => client.query('select archive_current_attendance()'))).rejects.toThrow(/Admin or Program only/i);
+      await expect(asUser(client, f.actors[actor], () => client.query('select create_attendance_date(current_date)'))).rejects.toThrow(/Admin or Program only/i);
+      expect(await countAs(client, f.actors[actor], 'update attendance_days set archived_at=null,locked=false where id=$1', [f.dayId])).toBe(0);
+      expect((await client.query('select archived_at from attendance_days where id=$1', [f.dayId])).rows[0].archived_at).toBeNull();
+    });
+  });
+
+  it('includes days from older seasons without deleting or moving them', async () => {
+    await withTx(pool, async (client) => {
+      const f = await seed(client);
+      expect(await countAs(client, f.actors.program, 'select * from attendance_days_overview(false) where id=$1', [f.dayId])).toBe(1);
+      expect((await client.query('select season_id from attendance_days where id=$1', [f.dayId])).rows[0].season_id).toBe(f.seasonId);
+    });
+  });
 });

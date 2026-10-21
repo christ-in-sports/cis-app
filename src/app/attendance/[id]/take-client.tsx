@@ -10,7 +10,7 @@ import { SheetHeading } from '@/components/cis/sheet';
 import { type AttendanceDay, type AttendanceRecord, type RosterKid, type MinistryTeam, fmtDay } from '@/lib/attendance';
 import { AttendanceSheet } from '../parts';
 import { LiveAttendance } from '../live';
-import { saveMarks, lockAttendance, refreshAttendance } from '../actions';
+import { saveMarks, lockAttendance, refreshAttendance, restoreAttendance } from '../actions';
 
 export default function TakeClient({ day, groupName, records, kids, teams, myTeamIds, canManage, isAdmin, isCoach }: {
   day: AttendanceDay; groupName: string; records: AttendanceRecord[]; kids: RosterKid[]; teams: MinistryTeam[];
@@ -44,10 +44,10 @@ export default function TakeClient({ day, groupName, records, kids, teams, myTea
   };
   return <>
     <LiveAttendance />
-    <BoardHeader title={day.label || groupName} kicker={fmtDay(day.date)} />
+    <BoardHeader title={fmtDay(day.date)} kicker={day.archived_at ? 'Archived attendance' : day.label || groupName} />
     <AttendanceSheet>
-      <SheetHeading>{day.locked ? 'Attendance locked' : 'Attendance open'}</SheetHeading>
-      <p>{day.locked ? 'An Admin or Program Team member can reopen this session.' : 'Changes save as you go. Results refresh every 10 seconds.'}</p>
+      <SheetHeading>{day.archived_at ? 'Archived attendance' : day.locked ? 'Attendance locked' : 'Attendance open'}</SheetHeading>
+      <p>{day.archived_at ? 'Saved marks are kept here. Restore this day to make changes.' : day.locked ? 'An Admin or Program Team member can reopen this day.' : 'Changes save as you go. Results refresh every 10 seconds.'}</p>
       <Field label="Team">{(props) => <SelectInput {...props} value={teamId} onChange={(e) => {
         const next = new URLSearchParams(params.toString()); next.set('team', e.target.value); router.replace(`${pathname}?${next}`);
       }}>
@@ -57,7 +57,8 @@ export default function TakeClient({ day, groupName, records, kids, teams, myTea
       </SelectInput>}</Field>
       <Field label="Search this roster">{(props) => <TextInput {...props} type="search" value={search} onChange={(e) => setSearch(e.target.value)} />}</Field>
       <p role="status" className="font-bold">{present} / {visible.length} present · {unmarked.length} unmarked</p>
-      {canManage && <div className="flex flex-wrap gap-3">
+      {canManage && day.archived_at && <SecondaryButton disabled={pending} onClick={() => run(() => restoreAttendance(day.id), 'Attendance day restored.')}>Restore day</SecondaryButton>}
+      {canManage && !day.archived_at && <div className="flex flex-wrap gap-3">
         <SecondaryButton disabled={pending} onClick={() => run(() => lockAttendance(day.id, !day.locked), day.locked ? 'Session reopened.' : 'Attendance locked.')}>{day.locked ? 'Reopen attendance' : 'Lock attendance'}</SecondaryButton>
         {!day.locked && <SecondaryButton disabled={pending} onClick={() => run(() => refreshAttendance(day.id), 'Roster refreshed. Existing marks were kept.')}>Add new registrations</SecondaryButton>}
       </div>}

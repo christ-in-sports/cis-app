@@ -12,8 +12,8 @@ import { assignCoach, assignKids, createTeam } from '../actions';
 type Coach = { id: string; display_name: string };
 type Link = { team_id: string; user_id: string };
 
-export default function TeamsClient({ seasonId, teams, kids, coaches, links }: {
-  seasonId: string; teams: MinistryTeam[]; kids: RosterKid[]; coaches: Coach[]; links: Link[];
+export default function TeamsClient({ teams, kids, coaches, links }: {
+  teams: MinistryTeam[]; kids: RosterKid[]; coaches: Coach[]; links: Link[];
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -39,7 +39,7 @@ export default function TeamsClient({ seasonId, teams, kids, coaches, links }: {
   };
   return <>
     <AttendanceSheet>
-      <p>Create season teams, assign registered kids, and choose any number of coaches for each team. Only users with the Coach role appear here; an Admin grants roles.</p>
+      <p>Create teams, assign registered kids, and choose any number of coaches for each team. Only users with the Coach role appear here; an Admin grants roles.</p>
       <Field label="Division">{(props) => <SelectInput {...props} value={division} onChange={(e) => {
         setSelected([]); setTarget(''); setSearch('');
         const next = new URLSearchParams(params.toString()); next.set('division', e.target.value);
@@ -51,7 +51,7 @@ export default function TeamsClient({ seasonId, teams, kids, coaches, links }: {
         event.preventDefault();
         const form = event.currentTarget;
         const name = new FormData(form).get('name');
-        run(() => createTeam({ seasonId, name, division }), 'Team created.');
+        run(() => createTeam({ name, division }), 'Team created.');
       }}>
         <Field label="New team name">{(props) => <TextInput {...props} name="name" required maxLength={80} placeholder="Lions" />}</Field>
         <PrimaryButton type="submit" disabled={pending}>Create team</PrimaryButton>
@@ -77,7 +77,7 @@ export default function TeamsClient({ seasonId, teams, kids, coaches, links }: {
     </AttendanceSheet>
     <AttendanceSheet>
       <SheetHeading>Assign registered kids</SheetHeading>
-      <p className="text-cis-sm text-cis-ink-muted">{kids.filter((k) => k.division === division && !k.team_id).length} kids without a team in this division. Assignments apply to all sessions in this season.</p>
+      <p className="text-cis-sm text-cis-ink-muted">{kids.filter((k) => k.division === division && !k.team_id).length} kids without a team in this division. Assignments apply to attendance days using this roster.</p>
       <Field label="Search kids">{(props) => <TextInput {...props} type="search" value={search} onChange={(e) => setSearch(e.target.value)} />}</Field>
       <fieldset disabled={pending} className="space-y-2">
         <legend className="sr-only">Select kids to assign</legend>

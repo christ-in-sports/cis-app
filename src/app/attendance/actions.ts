@@ -28,9 +28,7 @@ export async function createSession(input: unknown) {
   return mutate(async () => {
     const { supabase } = await access(true);
     const v = sessionInput.parse(input);
-    const { data, error } = await supabase.rpc('create_attendance_day', {
-      p_season: v.seasonId, p_date: v.date, p_label: v.title, p_division: v.division,
-    });
+    const { data, error } = await supabase.rpc('create_attendance_date', { p_date: v.date });
     if (error) throw new Error(error.message);
     return data as string;
   });
@@ -71,7 +69,9 @@ export async function createTeam(input: unknown) {
   return mutate(async () => {
     const { supabase } = await access(true);
     const v = teamInput.parse(input);
-    const { error } = await supabase.from('ministry_teams').insert({ name: v.name, division: v.division, season_id: v.seasonId });
+    const { data: seasonId, error: rosterError } = await supabase.rpc('attendance_roster_season');
+    if (rosterError || !seasonId) throw new Error('Add registrations before creating a team.');
+    const { error } = await supabase.from('ministry_teams').insert({ name: v.name, division: v.division, season_id: seasonId });
     if (error) throw new Error(error.message);
   });
 }
@@ -97,12 +97,19 @@ export async function assignCoach(teamId: string, coachId: string, assigned: boo
   });
 }
 
-export async function startSeason(name: string) {
+export async function archiveAttendance() {
   return mutate(async () => {
-    const { supabase, roles } = await access(true);
-    if (!roles.has('admin')) throw new Error('Only an Admin can start a season.');
-    const { data, error } = await supabase.rpc('start_new_season', { p_name: z.string().trim().min(1).max(100).parse(name) });
+    const { supabase } = await access(true);
+    const { error } = await supabase.rpc('archive_current_attendance');
     if (error) throw new Error(error.message);
-    return data as string;
+  });
+}
+
+export async function restoreAttendance(dayId: string) {
+  return mutate(async () => {
+    const { supabase } = await access(true);
+    const { data, error } = await supabase.from('attendance_days').update({ archived_at: null, locked: false })
+      .eq('id', z.uuid().parse(dayId)).select('id').single();
+    if (error || !data) throw new Error(error?.message ?? 'Attendance day no longer exists.');
   });
 }

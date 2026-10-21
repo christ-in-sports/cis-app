@@ -4,6 +4,7 @@ import { Client } from 'pg';
 import { randomUUID } from 'crypto';
 
 test.use({ viewport: { width: 390, height: 844 } });
+test.setTimeout(60_000);
 
 const dbUrl = process.env.SUPABASE_DB_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
 const authUrl = process.env.SUPABASE_AUTH_URL ?? 'http://127.0.0.1:54321';
@@ -14,6 +15,7 @@ const people = ['program', 'coach', 'second'] as const;
 const ids: string[] = [];
 let seasonId: string;
 let kidId: string;
+let emptySeasonId: string;
 let previousSeason: string | undefined;
 
 async function db<T>(work: (client: Client) => Promise<T>) {
@@ -47,6 +49,8 @@ test.beforeAll(async () => {
     kidId = (await client.query(`insert into kids(first_name, last_name, dob, gender, home_address, emergency_contact_name, emergency_contact_phone, guardian_name, guardian_phone, guardian_email)
       values ('Attendance', $1, '2014-03-03', 'male', 'Local', 'EC', '555', 'Guardian', '555', 'guardian@local.test') returning id`, [suffix])).rows[0].id;
     await client.query("insert into registrations(kid_id, season_id, grade, division, tshirt_size) values ($1, $2, 6, 'juniors', 'M')", [kidId, seasonId]);
+    await client.query('update seasons set is_current=false where id=$1', [seasonId]);
+    emptySeasonId = (await client.query('insert into seasons(name,is_current) values ($1,true) returning id', [`Empty attendance ${suffix}`])).rows[0].id;
   });
 });
 
@@ -56,6 +60,7 @@ test.afterAll(async () => {
       await client.query('delete from attendance_groups where id in (select group_id from attendance_days where season_id = $1)', [seasonId]);
       await client.query('delete from seasons where id = $1', [seasonId]);
     }
+    if (emptySeasonId) await client.query('delete from seasons where id=$1', [emptySeasonId]);
     if (kidId) await client.query('delete from kids where id = $1', [kidId]);
     if (previousSeason) await client.query('update seasons set is_current = true where id = $1', [previousSeason]);
     for (const id of ids) await client.query('delete from auth.users where id = $1', [id]);
@@ -77,11 +82,12 @@ test('Program sets up a team; both coaches mark it; Program sees results and loc
   await page.getByLabel('Assign 1 selected kids to').selectOption({ label: `Lions ${suffix}` });
   await page.getByRole('button', { name: 'Save assignments' }).click();
   await expect(page.getByText('Team assignments saved.')).toBeVisible();
-  await page.getByRole('link', { name: 'Sessions', exact: true }).click();
-  await page.getByRole('button', { name: 'Create session' }).click();
-  await page.getByLabel('Session title').fill(`Practice ${suffix}`);
-  await page.getByRole('button', { name: 'Create attendance', exact: true }).click();
-  await expect(page.getByRole('heading', { name: `Practice ${suffix}` })).toBeVisible();
+  await page.getByRole('link', { name: 'Attendance', exact: true }).click();
+  await page.getByRole('button', { name: 'Create attendance day' }).click();
+  await expect(page.getByLabel('Season', { exact: true })).toHaveCount(0);
+  await page.getByLabel('Date', { exact: true }).fill('2026-11-01');
+  await page.getByRole('button', { name: 'Create day', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Attendance open' })).toBeVisible();
   const sessionUrl = page.url();
   await expect(page.getByRole('combobox', { name: `Attendance for Attendance ${suffix}` })).toBeDisabled();
   const firstContext = await browser.newContext(); const first = await firstContext.newPage();
@@ -102,5 +108,19 @@ test('Program sets up a team; both coaches mark it; Program sees results and loc
     await page.getByRole('link', { name: 'Summary', exact: true }).click();
     const row = page.getByRole('row', { name: new RegExp(`Attendance ${suffix}`) });
     await expect(row).toContainText('100');
+    await expect(page.getByText('Start a new season')).toHaveCount(0);
+    await page.getByRole('link', { name: 'Attendance', exact: true }).click();
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.getByRole('button', { name: 'Archive current attendance' }).click();
+    await expect(page).toHaveURL('/attendance/archive');
+    await expect(page.getByRole('link', { name: 'Archive', exact: true })).toHaveAttribute('aria-current', 'page');
+    await page.getByRole('link', { name: /Sun, Nov 1, 2026/ }).click();
+    await expect(page.getByRole('combobox', { name: `Attendance for Attendance ${suffix}` })).toHaveValue('late');
+    await expect(page.getByRole('combobox', { name: `Attendance for Attendance ${suffix}` })).toBeDisabled();
+    await page.getByRole('button', { name: 'Restore day' }).click();
+    await expect(page.getByRole('heading', { name: 'Attendance open' })).toBeVisible();
+    await page.getByRole('link', { name: 'Teams', exact: true }).click();
+    await expect(page.getByText(`Attendance ${suffix}`, { exact: true })).toBeVisible();
+    await page.screenshot({ path: test.info().outputPath('attendance-teams-bottom-nav.png'), fullPage: true });
   } finally { await firstContext.close(); await secondContext.close(); }
 });

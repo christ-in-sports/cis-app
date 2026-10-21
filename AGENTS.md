@@ -207,13 +207,13 @@ Every PR that touches the items in the "non-negotiable" list must include or upd
 ## 8. Attendance conventions
 
 - Attendance UI uses `BoardShell`, `Sheet`, CIS form controls and `AttendanceRow`; mutations go through `src/app/attendance/actions.ts` with Zod input validation.
-- Admin and Program manage sessions, season teams and coach links. Program assigns only `registrations.team_id` through `assign_attendance_team()`; it does not gain general roster write access. Only users holding Coach can be assigned as coaches.
+- Admin and Program create dated attendance days, manage teams and coach links, and archive/restore attendance. Attendance has no season picker or season-rollover action. Program assigns only `registrations.team_id` through `assign_attendance_team()`; it does not gain general roster write access. Only users holding Coach can be assigned as coaches.
 - Admin marks all kids; Coaches read/mark only their assigned teams. Program reads results but cannot mark unless also an assigned Coach. A team link alone never grants a role.
-- New sessions snapshot active registrations from one current season. Roster refresh adds missing registrations without replacing marks. Team assignments reflect the season roster; historical attendance stays linked to its registration.
+- New days snapshot the populated registration roster. `attendance_roster_season()` uses the current registration season when populated and falls back to the latest populated season when the current one is empty. Roster refresh adds missing registrations without replacing marks. Team assignments reflect the season roster; historical attendance stays linked to its registration. Archive sets `archived_at` and locks days; it never changes seasons, registrations, teams or marks. Current/archive lists span all registration seasons.
 - Hosted Supabase grants function execution directly to API roles by default. Revoke from both `PUBLIC` and `anon` for attendance RPCs, and from `PUBLIC`, `anon` and `authenticated` for internal trigger functions. Keep explicit authenticated grants for application RPCs.
 - When applying committed migrations through MCP, align repository filenames with the versions actually recorded by MCP; preserve hosted migration-history records.
 - Locks, immutable attendance identity, season validation and audit stamps are enforced in Postgres. Keep database permission/submission tests in `supabase/tests/attendance-roles.test.ts` current.
-- Attendance views refresh server data every 10 seconds while visible and on window focus; no Realtime publication is required. Team/division/season filters use URL search params.
+- Attendance views refresh server data every 10 seconds while visible and on window focus; no Realtime publication is required. Team/division/archive filters use URL search params. Attendance reuses Registration’s fixed `SectionNav` with Home, Attendance, Teams (managers), Summary and Archive.
 
 ---
 

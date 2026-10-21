@@ -36,6 +36,7 @@ export type Database = {
     Tables: {
       attendance_days: {
         Row: {
+          archived_at: string | null
           created_at: string | null
           created_by: string | null
           date: string
@@ -47,6 +48,7 @@ export type Database = {
           season_id: string | null
         }
         Insert: {
+          archived_at?: string | null
           created_at?: string | null
           created_by?: string | null
           date: string
@@ -58,6 +60,7 @@ export type Database = {
           season_id?: string | null
         }
         Update: {
+          archived_at?: string | null
           created_at?: string | null
           created_by?: string | null
           date?: string
@@ -1043,6 +1046,17 @@ export type Database = {
       assign_attendance_team: {
         Args: { p_registrations: string[]; p_team: string | null }
         Returns: number
+      }
+      attendance_roster_season: { Args: never; Returns: string }
+      create_attendance_date: { Args: { p_date: string }; Returns: string }
+      archive_current_attendance: { Args: never; Returns: number }
+      attendance_days_overview: {
+        Args: { p_archived?: boolean }
+        Returns: { id: string; date: string; title: string; locked: boolean; total: number; present: number; unmarked: number }[]
+      }
+      attendance_archive_summary: {
+        Args: { p_archived?: boolean }
+        Returns: Database['public']['Functions']['attendance_summary']['Returns']
       }
       attendance_coach_options: {
         Args: never
