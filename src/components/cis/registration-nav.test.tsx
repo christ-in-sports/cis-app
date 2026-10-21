@@ -22,10 +22,11 @@ describe('registrationNavItems', () => {
     expect(labels({ ...none, isParent: true })).toEqual(['Home', 'Register', 'Sports']);
   });
 
-  it('gives an Admin the roster, the import and role assignment', () => {
+  it('gives an Admin the roster, servants, the import and role assignment', () => {
     expect(labels({ ...none, isAdmin: true })).toEqual([
       'Home',
       'Roster',
+      'Servants',
       'Import',
       'Roles',
       'Sports',
@@ -37,6 +38,7 @@ describe('registrationNavItems', () => {
       'Home',
       'Register',
       'Roster',
+      'Servants',
       'Import',
       'Roles',
       'Sports',
@@ -89,6 +91,6 @@ describe('RegistrationNav', () => {
     const hrefs = within(nav)
       .getAllByRole('link')
       .map((a) => a.getAttribute('href'));
-    expect(hrefs).toEqual(['/', '/register', '/registrations', '/admin/imports', '/admin/roles', '/sports']);
+    expect(hrefs).toEqual(['/', '/register', '/registrations', '/servants', '/admin/imports', '/admin/roles', '/sports']);
   });
 });
