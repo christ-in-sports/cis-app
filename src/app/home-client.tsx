@@ -6,11 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { createClient } from '@/lib/supabase/client';
 
-interface User {
-  id: string;
-  email?: string;
-}
-
 const FEATURES = [
   {
     title: 'Sports',
@@ -42,7 +37,7 @@ const FEATURES = [
   },
 ];
 
-export default function HomeClient({ user }: { user: User }) {
+export default function HomeClient({ displayName }: { displayName?: string | null }) {
   const router = useRouter();
   const supabase = createClient();
 
@@ -61,7 +56,7 @@ export default function HomeClient({ user }: { user: User }) {
             <div>
               <h1 className="text-2xl font-bold">Christ in Sports Portal</h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Welcome back, {user.email?.split('@')[0] || 'User'}
+                Welcome back, {displayName?.trim() || 'User'}
               </p>
             </div>
             <Button variant="ghost" size="sm" onClick={handleLogout}>

@@ -8,5 +8,11 @@ export default async function HomePage() {
 
   if (!user) redirect('/login');
 
-  return <HomeClient user={user} />;
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('display_name')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  return <HomeClient displayName={profile?.display_name} />;
 }
