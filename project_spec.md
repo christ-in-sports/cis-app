@@ -253,7 +253,8 @@ Divisions (`juniors` / `ambassadors`) are an attribute on `Registration` and `Te
 - `attendance_records.registration_id` is the per-season registration, not the kid ID. Existing attendance remains linked to that registration; team grouping follows its current assignment. Refreshing a roster adds missing eligible registrations without overwriting marks. Archived seasons remain readable in the summary.
 - `/attendance/summary` uses the RLS-equivalent `attendance_summary()` gate and a real table, with season/team filters and CSV export. Present includes late; percent divides by marked records, including excused. Admin can still roll over a season from this page.
 - Server Actions validate with shared Zod schemas. Visible pages refresh RLS-filtered server data every 10 seconds and on focus, avoiding a dependency on a hosted Realtime publication. `attendance_session_overview()` aggregates within Postgres so the session list does not download a season of record rows or hit the REST row cap.
-- Coverage: unit input/submission tests, DB permission and workflow tests, and an attendance browser flow. Schema changes are in `20261022120000_team_attendance.sql`. See the 2026-10-20 architecture and product decisions.
+- Hosted attendance deployment: the missing role cleanup, role guards and profile-access prerequisites were applied with the attendance migration to `CIS_App` (`lbvfrplrujisypndgtin`). Migration filenames match the versions assigned by MCP. `20261021030156_restrict_attendance_function_execution.sql` removes inherited/direct anonymous execution grants from attendance RPCs and direct API execution of trigger functions. The unrelated servant-registration migration remains pending.
+- Coverage: unit input/submission tests, DB permission and workflow tests, and an attendance browser flow. Schema changes are in `20261021030024_team_attendance.sql`. See the 2026-10-20 architecture and product decisions.
 
 ### 2.5 Engineering Requirements
 

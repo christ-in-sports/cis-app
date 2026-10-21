@@ -1,6 +1,6 @@
 /**
  * Access to public.profiles after the lockdown
- * (supabase/migrations/20261020120000_profiles_access.sql, ENG-16).
+ * (supabase/migrations/20261021030016_profiles_access.sql, ENG-16).
  *
  * Profiles hold every account's email, and the anon key is public, so signed-out
  * visitors must read nothing, a signed-in user only themselves, and an Admin

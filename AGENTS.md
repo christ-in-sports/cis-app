@@ -210,6 +210,8 @@ Every PR that touches the items in the "non-negotiable" list must include or upd
 - Admin and Program manage sessions, season teams and coach links. Program assigns only `registrations.team_id` through `assign_attendance_team()`; it does not gain general roster write access. Only users holding Coach can be assigned as coaches.
 - Admin marks all kids; Coaches read/mark only their assigned teams. Program reads results but cannot mark unless also an assigned Coach. A team link alone never grants a role.
 - New sessions snapshot active registrations from one current season. Roster refresh adds missing registrations without replacing marks. Team assignments reflect the season roster; historical attendance stays linked to its registration.
+- Hosted Supabase grants function execution directly to API roles by default. Revoke from both `PUBLIC` and `anon` for attendance RPCs, and from `PUBLIC`, `anon` and `authenticated` for internal trigger functions. Keep explicit authenticated grants for application RPCs.
+- When applying committed migrations through MCP, align repository filenames with the versions actually recorded by MCP; preserve hosted migration-history records.
 - Locks, immutable attendance identity, season validation and audit stamps are enforced in Postgres. Keep database permission/submission tests in `supabase/tests/attendance-roles.test.ts` current.
 - Attendance views refresh server data every 10 seconds while visible and on window focus; no Realtime publication is required. Team/division/season filters use URL search params.
 

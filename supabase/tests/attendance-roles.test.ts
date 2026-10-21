@@ -1,6 +1,6 @@
 /**
  * RLS and function-gate tests for the attendance and season objects rewritten in
- * the roles cleanup (supabase/migrations/20261019120000_roles_cleanup.sql, ENG-16).
+ * the roles cleanup (supabase/migrations/20261021025854_roles_cleanup.sql, ENG-16).
  *
  * Before that migration these were gated by is_staff() (admin) and is_coach()
  * (admin or coach). They now name the roles directly, and this file pins the
@@ -440,4 +440,32 @@ describe('team attendance workflow', () => {
       await expect(asUser(client, f.actors.program, () => client.query('insert into team_coaches(team_id, user_id) values ($1, $2)', [f.teamId, f.actors.parent]))).rejects.toThrow(/Coach role/i);
     });
   });
+});
+
+
+describe('attendance function execution privileges', () => {
+  const rpcSignatures = [
+    'attendance_coach_options()', 'assign_attendance_team(uuid[],uuid)',
+    'create_attendance_day(uuid,date,text,text)', 'attendance_session_overview(uuid)',
+    'can_mark(uuid)', 'attendance_summary(uuid)', 'populate_attendance_day(uuid)',
+    'start_new_season(text)',
+  ];
+  it.each(rpcSignatures)('%s requires authentication', async (signature) => {
+    const result = await pool.query(
+      `select has_function_privilege('anon', $1, 'EXECUTE') as anonymous,
+              has_function_privilege('authenticated', $1, 'EXECUTE') as signed_in`,
+      [`public.${signature}`]
+    );
+    expect(result.rows[0]).toEqual({ anonymous: false, signed_in: true });
+  });
+  it.each(['guard_attendance_mark()', 'guard_attendance_scope()', 'guard_attendance_coach()', 'guard_attendance_day_identity()'])(
+    '%s cannot be called directly by API users', async (signature) => {
+      const result = await pool.query(
+        `select has_function_privilege('anon', $1, 'EXECUTE') as anonymous,
+                has_function_privilege('authenticated', $1, 'EXECUTE') as signed_in`,
+        [`public.${signature}`]
+      );
+      expect(result.rows[0]).toEqual({ anonymous: false, signed_in: false });
+    }
+  );
 });

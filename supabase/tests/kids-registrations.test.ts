@@ -511,7 +511,7 @@ describe('attendance functions after the kid/registration split', () => {
       await client.query('ROLLBACK TO SAVEPOINT anon_probe');
       await client.query('RESET ROLE');
 
-      expect(message).toMatch(/Admin, Program or Coach only/i);
+      expect(message).toMatch(/permission denied for function populate_attendance_day/i);
     });
   });
 

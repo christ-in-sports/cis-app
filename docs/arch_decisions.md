@@ -169,3 +169,11 @@ heading followed by:
 - **Decision:** Add explicit Program setup/read permissions. Keep Program registration writes behind a team-only RPC and expose only Coach IDs/names through a gated picker. Create sessions and their registration snapshots atomically; enforce locks, record identity, season scope and mark audit fields in Postgres. Use Server Actions and shared Zod validation for mutations. Refresh visible server views every 10 seconds and on focus instead of requiring a Realtime publication.
 - **Consequences / tradeoffs:** Updates appear within 10 seconds on another device. Team grouping follows the registration's current team assignment rather than keeping a second historical team snapshot. General roster writes and role grants remain Admin-only. The summary and session aggregates apply the same role/team scope as record RLS.
 - **Reference:** `project_spec.md` §1.5, §2.4.1; `docs/decisions.md` (2026-10-20).
+
+
+### 2026-10-20 — Preserve MCP migration versions and restrict direct function grants
+- **Status:** Accepted
+- **Context:** The hosted project was missing role/access prerequisites. MCP assigned new timestamps when applying committed migrations. Hosted default privileges also grant function execution directly to API roles, so revoking only `PUBLIC` leaves anonymous execution enabled.
+- **Decision:** Preserve the hosted migration records and rename the corresponding repository files to those recorded versions. Apply a separate migration that revokes attendance RPC execution from both `PUBLIC` and `anon`, retains explicit authenticated RPC grants, and removes direct API execution of internal attendance trigger functions. Keep the unrelated servant-registration migration pending.
+- **Consequences / tradeoffs:** The role/access and attendance migrations now match this project's recorded versions. Other checkouts must pull these filenames before deployment; do not reapply the old filenames. Function body role checks and record RLS remain the authorization boundary. New database tests assert actual execution privileges, including installations with direct default grants.
+- **Reference:** `project_spec.md` §2.4.1; `AGENTS.md` §8.
