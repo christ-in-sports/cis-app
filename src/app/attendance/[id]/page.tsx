@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
-import { attendanceAccess, rosterRows } from '../data';
-import { embeddedOne } from '@/lib/attendance';
+import { attendanceAccess } from '../data';
+import { embeddedOne, type AttendanceRecord, type RosterKid } from '@/lib/attendance';
 import TakeClient from './take-client';
 
 export default async function TakePage({ params }: { params: Promise<{ id: string }> }) {
@@ -10,17 +10,14 @@ export default async function TakePage({ params }: { params: Promise<{ id: strin
   if (error) throw new Error('Could not load attendance.');
   if (!day) notFound();
   const [records, teams, links] = await Promise.all([
-    supabase.from('attendance_records').select('id, day_id, registration_id, status, method, marked_at, note').eq('day_id', id),
+    supabase.rpc('attendance_day_roster', { p_day: id }),
     supabase.from('ministry_teams').select('id, name, division, active').eq('season_id', day.season_id).order('name'),
     supabase.from('team_coaches').select('team_id').eq('user_id', userId!),
   ]);
   if ([records, teams, links].some((r) => r.error)) throw new Error('Could not load this session’s roster.');
-  const ids = (records.data ?? []).map((r) => r.registration_id);
-  const { data: rows, error: rosterError } = ids.length
-    ? await supabase.from('registrations').select('id, kid_id, grade, division, team_id, kids!inner(first_name, last_name)').in('id', ids)
-    : { data: [], error: null };
-  if (rosterError) throw new Error('Could not load registered kids.');
+  const rows = (records.data ?? []) as (AttendanceRecord & Omit<RosterKid, 'id'>)[];
   return <TakeClient day={day} groupName={embeddedOne(day.attendance_groups)?.name ?? 'Attendance session'}
-    records={records.data ?? []} kids={rosterRows(rows ?? [])} teams={teams.data ?? []}
+    records={rows.map(({ id, day_id, registration_id, status, method, marked_at, note }) => ({ id, day_id, registration_id, status, method, marked_at, note }))}
+    kids={rows.map(({ registration_id, kid_id, first_name, last_name, grade, division, team_id }) => ({ id: registration_id, kid_id, first_name, last_name, grade, division, team_id }))} teams={teams.data ?? []}
     myTeamIds={(links.data ?? []).map((link) => link.team_id)} canManage={canManage} isAdmin={isAdmin} isCoach={roles.has('coach')} />;
 }

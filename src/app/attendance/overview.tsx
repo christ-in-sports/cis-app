@@ -6,6 +6,7 @@ import { AttendanceSheet } from './parts';
 import { LiveAttendance } from './live';
 import { fmtDay } from '@/lib/attendance';
 import AttendanceClient from './attendance-client';
+import { secondaryButtonClasses } from '@/components/cis/button';
 
 type Day = { id: string; date: string; title: string; locked: boolean; total: number; present: number; unmarked: number };
 
@@ -13,12 +14,17 @@ export async function AttendanceOverview({ archived }: { archived: boolean }) {
   const { supabase, canManage } = await attendanceAccess();
   const { data: days, error } = await supabase.rpc('attendance_days_overview', { p_archived: archived });
   if (error) throw new Error('Could not load attendance days.');
+  const { data: activeTeams, error: teamError } = !archived && canManage
+    ? await supabase.from('ministry_teams').select('id').eq('active', true).limit(1)
+    : { data: [], error: null };
+  if (teamError) throw new Error('Could not load current teams.');
   return <>
     <LiveAttendance />
     <BoardHeader title={archived ? 'Attendance archive' : 'Attendance'} />
     <AttendanceSheet>
       <p className="text-cis-base text-cis-ink-muted">{archived ? 'Past attendance is saved here. Open a day to view its marks.' : 'Choose a day to take attendance. Changes save as you go.'}</p>
-      {!archived && canManage && <AttendanceClient hasDays={!!days?.length} />}
+      {!archived && canManage && <AttendanceClient hasDays={!!days?.length || !!activeTeams?.length} />}
+      {archived && canManage && <Link className={secondaryButtonClasses} href="/attendance/teams?view=archive">View archived teams</Link>}
     </AttendanceSheet>
     <AttendanceSheet>
       <SheetHeading>{archived ? 'Archived days' : 'Attendance days'}</SheetHeading>

@@ -14,5 +14,5 @@ export default async function AwardsPage({ searchParams }: { searchParams: Promi
     supabase.rpc('attendance_archive_summary', { p_archived: archived }),
   ]);
   if ([registrations, teams, summary].some((result) => result.error)) throw new Error('Could not load attendance awards.');
-  return <AwardsClient archived={archived} rows={awardsRoster(rosterRows(registrations.data ?? []), teams.data ?? [], summary.data ?? [])} />;
+  return <AwardsClient archived={archived} rows={awardsRoster(rosterRows(registrations.data ?? []), teams.data ?? [], summary.data ?? [], archived)} />;
 }

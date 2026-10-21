@@ -13,6 +13,7 @@ export interface MinistryTeam {
   name: string;
   division: Division;
   active: boolean;
+  archived_at?: string | null;
 }
 
 export interface AttendanceGroup {
@@ -34,6 +35,7 @@ export interface AttendanceDay {
   notes: string | null;
   locked: boolean;
   archived_at: string | null;
+  roster_frozen: boolean;
 }
 
 export interface AttendanceRecord {

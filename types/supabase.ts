@@ -34,8 +34,19 @@ export type Database = {
   }
   public: {
     Tables: {
+      attendance_team_snapshots: {
+        Row: { id: string; day_id: string | null; registration_id: string; team_id: string | null }
+        Insert: { id?: string; day_id?: string | null; registration_id: string; team_id?: string | null }
+        Update: { id?: string; day_id?: string | null; registration_id?: string; team_id?: string | null }
+        Relationships: [
+          { foreignKeyName: "attendance_team_snapshots_day_id_fkey"; columns: ["day_id"]; isOneToOne: false; referencedRelation: "attendance_days"; referencedColumns: ["id"] },
+          { foreignKeyName: "attendance_team_snapshots_registration_id_fkey"; columns: ["registration_id"]; isOneToOne: false; referencedRelation: "registrations"; referencedColumns: ["id"] },
+          { foreignKeyName: "attendance_team_snapshots_team_id_fkey"; columns: ["team_id"]; isOneToOne: false; referencedRelation: "ministry_teams"; referencedColumns: ["id"] },
+        ]
+      }
       attendance_days: {
         Row: {
+          roster_frozen: boolean
           archived_at: string | null
           created_at: string | null
           created_by: string | null
@@ -48,6 +59,7 @@ export type Database = {
           season_id: string | null
         }
         Insert: {
+          roster_frozen?: boolean
           archived_at?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -60,6 +72,7 @@ export type Database = {
           season_id?: string | null
         }
         Update: {
+          roster_frozen?: boolean
           archived_at?: string | null
           created_at?: string | null
           created_by?: string | null
@@ -563,6 +576,8 @@ export type Database = {
       }
       ministry_teams: {
         Row: {
+          archived_at: string | null
+          deleted_at: string | null
           active: boolean
           color: string | null
           created_at: string | null
@@ -572,6 +587,8 @@ export type Database = {
           season_id: string
         }
         Insert: {
+          archived_at?: string | null
+          deleted_at?: string | null
           active?: boolean
           color?: string | null
           created_at?: string | null
@@ -581,6 +598,8 @@ export type Database = {
           season_id: string
         }
         Update: {
+          archived_at?: string | null
+          deleted_at?: string | null
           active?: boolean
           color?: string | null
           created_at?: string | null
@@ -1050,6 +1069,16 @@ export type Database = {
       attendance_roster_season: { Args: never; Returns: string }
       create_attendance_date: { Args: { p_date: string }; Returns: string }
       archive_current_attendance: { Args: never; Returns: number }
+      can_access_attendance_record: { Args: { p_day: string; p_registration: string }; Returns: boolean }
+      delete_attendance_team: { Args: { p_team: string }; Returns: undefined }
+      attendance_day_roster: {
+        Args: { p_day: string }
+        Returns: { id: string; day_id: string; registration_id: string; status: string; method: string; marked_at: string | null; note: string; kid_id: string; first_name: string; last_name: string; grade: number; division: string; team_id: string | null }[]
+      }
+      archived_attendance_team_roster: {
+        Args: never
+        Returns: { id: string; kid_id: string; first_name: string; last_name: string; grade: number; division: string; team_id: string }[]
+      }
       attendance_days_overview: {
         Args: { p_archived?: boolean }
         Returns: { id: string; date: string; title: string; locked: boolean; total: number; present: number; unmarked: number }[]

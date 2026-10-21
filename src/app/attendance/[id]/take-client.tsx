@@ -47,7 +47,7 @@ export default function TakeClient({ day, groupName, records, kids, teams, myTea
     <BoardHeader title={fmtDay(day.date)} kicker={day.archived_at ? 'Archived attendance' : day.label || groupName} />
     <AttendanceSheet>
       <SheetHeading>{day.archived_at ? 'Archived attendance' : day.locked ? 'Attendance locked' : 'Attendance open'}</SheetHeading>
-      <p>{day.archived_at ? 'Saved marks are kept here. Restore this day to make changes.' : day.locked ? 'An Admin or Program Team member can reopen this day.' : 'Changes save as you go. Results refresh every 10 seconds.'}</p>
+      <p>{day.archived_at ? 'Saved marks and the original teams are kept here. Restoring this day keeps its original roster.' : day.locked ? 'An Admin or Program Team member can reopen this day.' : 'Changes save as you go. Results refresh every 10 seconds.'}</p>
       <Field label="Team">{(props) => <SelectInput {...props} value={teamId} onChange={(e) => {
         const next = new URLSearchParams(params.toString()); next.set('team', e.target.value); router.replace(`${pathname}?${next}`);
       }}>
@@ -60,7 +60,7 @@ export default function TakeClient({ day, groupName, records, kids, teams, myTea
       {canManage && day.archived_at && <SecondaryButton disabled={pending} onClick={() => run(() => restoreAttendance(day.id), 'Attendance day restored.')}>Restore day</SecondaryButton>}
       {canManage && !day.archived_at && <div className="flex flex-wrap gap-3">
         <SecondaryButton disabled={pending} onClick={() => run(() => lockAttendance(day.id, !day.locked), day.locked ? 'Session reopened.' : 'Attendance locked.')}>{day.locked ? 'Reopen attendance' : 'Lock attendance'}</SecondaryButton>
-        {!day.locked && <SecondaryButton disabled={pending} onClick={() => run(() => refreshAttendance(day.id), 'Roster refreshed. Existing marks were kept.')}>Add new registrations</SecondaryButton>}
+        {!day.locked && !day.roster_frozen && <SecondaryButton disabled={pending} onClick={() => run(() => refreshAttendance(day.id), 'Roster refreshed. Existing marks were kept.')}>Add new registrations</SecondaryButton>}
       </div>}
       {canManage && <DangerButton disabled={pending} onClick={() => {
         if (!window.confirm(`Delete attendance for ${fmtDay(day.date)}? All marks and notes for this day will be permanently deleted. This cannot be undone.`)) return;

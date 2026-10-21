@@ -147,3 +147,8 @@ issue holds the detail; this file is the index of "what's now different from the
 - **Decision:** Per the follow-up request, Admin and Program may permanently delete an attendance day after confirmation. Add an Attendance awards page with Juniors/Ambassadors, team filtering/sorting, and the full active registered roster, including kids with no attendance.
 - **Reason:** Coordinators need to remove mistaken days and compare attendance when selecting division awards. Default rank is days present, including late, with shared ties; percentages and unfinished attendance remain visible for staff to decide the award. No automatic winner policy is introduced.
 - **Reference:** `project_spec.md` §1.5, §2.4.1; technical decision in `docs/arch_decisions.md` (2026-10-21).
+
+### 2026-10-21 — Attendance archive also retires current teams
+- **Decision:** Per the follow-up request, Archive starts fresh team setup as well as archiving attendance. Preserve old teams, kids and coaches for historical views; unassign kids from current teams so coordinators can create new teams. Allow renaming and confirmed deletion of current teams. Archived teams are read-only.
+- **Reason:** Archiving represents starting a new season of attendance and team assignments. This supersedes the earlier rule that archiving left current team assignments unchanged. Keep the workflow to one archive button without a season setup form. Restoring a day restores editing of its original roster, not the retired team setup.
+- **Reference:** `project_spec.md` §2.4.1; technical decision in `docs/arch_decisions.md` (2026-10-21).

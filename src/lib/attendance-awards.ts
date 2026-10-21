@@ -1,15 +1,16 @@
 import type { MinistryTeam, RosterKid, SummaryRow } from './attendance';
 
 /** Include the whole registered roster, even kids with no attendance records. */
-export function awardsRoster(kids: RosterKid[], teams: MinistryTeam[], summary: SummaryRow[]): SummaryRow[] {
+export function awardsRoster(kids: RosterKid[], teams: MinistryTeam[], summary: SummaryRow[], archived = false): SummaryRow[] {
   const totals = new Map(summary.map((row) => [row.registration_id, row]));
   const names = new Map(teams.map((team) => [team.id, team.name]));
   return kids.map((kid) => ({
     eligible: 0, present: 0, late: 0, absent: 0, excused: 0, unmarked: 0, attended: 0, pct: 0,
     ...totals.get(kid.id),
     registration_id: kid.id, first_name: kid.first_name, last_name: kid.last_name,
-    grade: kid.grade, division: kid.division, team_id: kid.team_id,
-    team_name: kid.team_id ? names.get(kid.team_id) ?? 'Team' : null,
+    grade: kid.grade, division: kid.division,
+    team_id: archived && totals.has(kid.id) ? totals.get(kid.id)!.team_id : kid.team_id,
+    team_name: archived && totals.has(kid.id) ? totals.get(kid.id)!.team_name : kid.team_id ? names.get(kid.team_id) ?? 'Team' : null,
   }));
 }
 

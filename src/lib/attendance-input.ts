@@ -13,4 +13,5 @@ export const teamInput = z.object({
   name: z.string().trim().min(1).max(80),
   division: z.enum(['juniors', 'ambassadors']),
 });
+export const renameTeamInput = z.object({ teamId: z.uuid(), name: teamInput.shape.name });
 export const assignmentInput = z.object({ ids: z.array(z.uuid()).min(1).max(500), teamId: z.uuid().nullable() });

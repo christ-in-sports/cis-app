@@ -16,7 +16,7 @@ export default function AttendanceClient({ hasDays }: { hasDays: boolean }) {
     <div className="flex flex-wrap gap-3">
       <PrimaryButton disabled={pending} onClick={() => setOpen(!open)} aria-expanded={open}>{open ? 'Cancel' : 'Create attendance day'}</PrimaryButton>
       {hasDays && <SecondaryButton disabled={pending} onClick={() => {
-        if (!window.confirm('Archive the current attendance days? All marks stay available in Archive. Kids and teams are kept.')) return;
+        if (!window.confirm('Archive current attendance and teams? Saved marks, team rosters and coach assignments stay available in Archive. Kids will be unassigned so you can create new teams.')) return;
         setError('');
         start(async () => {
           const result = await archiveAttendance();

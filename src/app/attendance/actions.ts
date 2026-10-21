@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { getMyRoles } from '@/lib/auth/roles';
-import { assignmentInput, markInput, sessionInput, teamInput } from '@/lib/attendance-input';
+import { assignmentInput, markInput, renameTeamInput, sessionInput, teamInput } from '@/lib/attendance-input';
 
 async function access(manager: boolean) {
   const auth = await getMyRoles();
@@ -72,6 +72,26 @@ export async function createTeam(input: unknown) {
     const { data: seasonId, error: rosterError } = await supabase.rpc('attendance_roster_season');
     if (rosterError || !seasonId) throw new Error('Add registrations before creating a team.');
     const { error } = await supabase.from('ministry_teams').insert({ name: v.name, division: v.division, season_id: seasonId });
+    if (error?.code === '23505') throw new Error('A current team with that name already exists in this division.');
+    if (error) throw new Error(error.message);
+  });
+}
+
+export async function renameTeam(input: unknown) {
+  return mutate(async () => {
+    const { supabase } = await access(true);
+    const v = renameTeamInput.parse(input);
+    const { error } = await supabase.from('ministry_teams').update({ name: v.name })
+      .eq('id', v.teamId).eq('active', true).is('archived_at', null).is('deleted_at', null).select('id').single();
+    if (error?.code === '23505') throw new Error('A current team with that name already exists in this division.');
+    if (error) throw new Error(error.message);
+  });
+}
+
+export async function deleteTeam(teamId: string) {
+  return mutate(async () => {
+    const { supabase } = await access(true);
+    const { error } = await supabase.rpc('delete_attendance_team', { p_team: z.uuid().parse(teamId) });
     if (error) throw new Error(error.message);
   });
 }

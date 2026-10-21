@@ -4,7 +4,7 @@ import { Client } from 'pg';
 import { randomUUID } from 'crypto';
 
 test.use({ viewport: { width: 390, height: 844 } });
-test.setTimeout(60_000);
+test.setTimeout(90_000);
 
 const dbUrl = process.env.SUPABASE_DB_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
 const authUrl = process.env.SUPABASE_AUTH_URL ?? 'http://127.0.0.1:54321';
@@ -59,6 +59,7 @@ test.afterAll(async () => {
   await db(async (client) => {
     if (seasonId) {
       await client.query('delete from attendance_groups where id in (select group_id from attendance_days where season_id = $1)', [seasonId]);
+      await client.query('delete from attendance_team_snapshots where registration_id in (select id from registrations where season_id=$1)', [seasonId]);
       await client.query('delete from seasons where id = $1', [seasonId]);
     }
     if (emptySeasonId) await client.query('delete from seasons where id=$1', [emptySeasonId]);
@@ -76,13 +77,17 @@ test('Program sets up a team; both coaches mark it; Program sees results and loc
   await page.getByLabel('New team name').fill(`Lions ${suffix}`);
   await page.getByRole('button', { name: 'Create team', exact: true }).click();
   await expect(page.getByRole('heading', { name: `Lions ${suffix}` })).toBeVisible();
+  await page.getByText('Edit team', { exact: true }).click();
+  await page.getByLabel(`Team name for Lions ${suffix}`, { exact: true }).fill(`Tigers ${suffix}`);
+  await page.getByRole('button', { name: 'Save team name' }).click();
+  await expect(page.getByRole('heading', { name: `Tigers ${suffix}` })).toBeVisible();
   await page.getByText('Assign coaches', { exact: true }).click();
   await page.getByText(`Attendance coach ${suffix}`, { exact: true }).click();
   await expect(page.getByRole('checkbox', { name: `Attendance coach ${suffix}` })).toBeChecked();
   await page.getByText(`Attendance second ${suffix}`, { exact: true }).click();
   await expect(page.getByRole('checkbox', { name: `Attendance second ${suffix}` })).toBeChecked();
   await page.locator('label').filter({ hasText: `Attendance ${suffix}` }).click();
-  await page.getByLabel('Assign 1 selected kids to').selectOption({ label: `Lions ${suffix}` });
+  await page.getByLabel('Assign 1 selected kids to').selectOption({ label: `Tigers ${suffix}` });
   await page.getByRole('button', { name: 'Save assignments' }).click();
   await expect(page.getByText('Team assignments saved.')).toBeVisible();
   await page.getByRole('link', { name: 'Attendance', exact: true }).click();
@@ -128,7 +133,7 @@ test('Program sets up a team; both coaches mark it; Program sees results and loc
     await expect(page.getByRole('row', { name: new RegExp(`Ambassador ${suffix}`) })).toHaveCount(0);
     await page.getByLabel('Sort by', { exact: true }).selectOption('team');
     await expect(page).toHaveURL(/sort=team/);
-    await page.getByLabel('Team', { exact: true }).selectOption({ label: `Lions ${suffix}` });
+    await page.getByLabel('Team', { exact: true }).selectOption({ label: `Tigers ${suffix}` });
     await expect(page.getByRole('row', { name: new RegExp(`Zero ${suffix}`) })).toHaveCount(0);
     await expect(page.getByRole('row', { name: new RegExp(`Attendance ${suffix}`) })).toBeVisible();
     await expect(page.getByRole('row', { name: new RegExp(`Attendance ${suffix}`) }).getByRole('cell').first()).toHaveText('1');
@@ -147,13 +152,43 @@ test('Program sets up a team; both coaches mark it; Program sees results and loc
     await page.getByRole('button', { name: 'Archive current attendance' }).click();
     await expect(page).toHaveURL('/attendance/archive');
     await expect(page.getByRole('link', { name: 'Archive', exact: true })).toHaveAttribute('aria-current', 'page');
-    await page.getByRole('link', { name: /Sun, Nov 1, 2026/ }).click();
+    await page.getByRole('link', { name: 'View archived teams' }).click();
+    await expect(page.getByRole('heading', { name: 'Archived teams' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: `Tigers ${suffix}` })).toBeVisible();
+    await page.getByText('View roster', { exact: true }).click();
+    await expect(page.getByText(`Attendance ${suffix} · Grade 6`, { exact: true })).toBeVisible();
+    await expect(page.getByText('Edit team', { exact: true })).toHaveCount(0);
+    await page.getByLabel('Teams', { exact: true }).selectOption('current');
+    await expect(page.getByRole('heading', { name: `Tigers ${suffix}` })).toHaveCount(0);
+    await page.getByLabel('New team name').fill(`Tigers ${suffix}`);
+    await page.getByRole('button', { name: 'Create team', exact: true }).click();
+    await expect(page.getByRole('heading', { name: `Tigers ${suffix}` })).toBeVisible();
+    await page.locator('label').filter({ hasText: `Attendance ${suffix}` }).click();
+    await page.getByLabel('Assign 1 selected kids to').selectOption({ label: `Tigers ${suffix}` });
+    await page.getByRole('button', { name: 'Save assignments' }).click();
+    await expect(page.getByText('Team assignments saved.')).toBeVisible();
+    await first.goto(sessionUrl);
+    await expect(first.getByRole('combobox', { name: `Attendance for Attendance ${suffix}` })).toHaveValue('late');
+    await expect(first.getByRole('combobox', { name: `Attendance for Attendance ${suffix}` })).toBeDisabled();
+    await page.goto(sessionUrl);
     await expect(page.getByRole('combobox', { name: `Attendance for Attendance ${suffix}` })).toHaveValue('late');
     await expect(page.getByRole('combobox', { name: `Attendance for Attendance ${suffix}` })).toBeDisabled();
     await page.getByRole('button', { name: 'Restore day' }).click();
     await expect(page.getByRole('heading', { name: 'Attendance open' })).toBeVisible();
     await page.getByRole('link', { name: 'Teams', exact: true }).click();
     await expect(page.getByText(`Attendance ${suffix}`, { exact: true })).toBeVisible();
+    await page.getByText('Edit team', { exact: true }).click();
+    page.once('dialog', (dialog) => dialog.dismiss());
+    await page.getByRole('button', { name: 'Delete team', exact: true }).click();
+    await expect(page.getByRole('heading', { name: `Tigers ${suffix}` })).toBeVisible();
+    page.once('dialog', (dialog) => dialog.accept());
+    await page.getByRole('button', { name: 'Delete team', exact: true }).click();
+    await expect(page.getByRole('heading', { name: `Tigers ${suffix}` })).toHaveCount(0);
+    await expect(page.getByText(`Attendance ${suffix}`, { exact: true })).toBeVisible();
+    await page.getByLabel('Teams', { exact: true }).selectOption('archive');
+    await expect(page.getByRole('heading', { name: `Tigers ${suffix}` })).toBeVisible();
+    await page.getByText('View roster', { exact: true }).click();
+    await expect(page.getByText(`Attendance ${suffix} · Grade 6`, { exact: true })).toBeVisible();
     await page.screenshot({ path: test.info().outputPath('attendance-teams-bottom-nav.png'), fullPage: true });
     await page.goto(sessionUrl);
     page.once('dialog', (dialog) => {

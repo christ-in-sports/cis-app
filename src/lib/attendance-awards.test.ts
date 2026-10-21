@@ -15,6 +15,11 @@ it('includes kids with no records, preserves totals and uses the current team', 
   expect(result[1]).toMatchObject({ registration_id: 'b', attended: 0, eligible: 0, pct: 0, team_name: 'Lions' });
 });
 
+it('preserves the historical team for archived award standings after current assignments change', () => {
+  const kids = [{ id: 'a', kid_id: 'kid-a', first_name: 'A', last_name: 'Kid', grade: 6, division: 'juniors' as const, team_id: 'new' }];
+  expect(awardsRoster(kids, [], [row('a', { team_id: 'old', team_name: 'Old team' })], true)[0]).toMatchObject({ team_id: 'old', team_name: 'Old team' });
+});
+
 it('ranks each division independently with shared ties and competition gaps', () => {
   const ranks = attendanceRanks([row('a', { attended: 3 }), row('b', { attended: 3 }), row('c'), row('d', { division: 'ambassadors', attended: 1 }), row('empty', { eligible: 0 }), row('unmarked', { unmarked: 4 })]);
   expect([...ranks.entries()]).toEqual([['a', 1], ['b', 1], ['c', 3], ['d', 1]]);
