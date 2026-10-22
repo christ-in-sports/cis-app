@@ -225,6 +225,52 @@ describe('kids / registrations -- read scoping follows the permission matrix', (
     });
   });
 
+  it('a coach whose Coach role was revoked no longer reads their old team', async () => {
+    await withTx(pool, async (client) => {
+      const coachId = await createProfile(client, { email: 'coach-revoked@test.local' });
+      await grantRole(client, coachId, 'coach');
+      const teamId = await createTeamWithCoach(client, coachId);
+      const kid = await createKid(client, { lastName: 'Revoked' });
+      await createRegistration(client, kid, { teamId });
+
+      const count = (table: string) =>
+        asUser(client, coachId, async () => {
+          const r = await client.query(`select 1 from ${table}`);
+          return r.rowCount;
+        });
+      expect(await count('kids')).toBe(1);
+      expect(await count('registrations')).toBe(1);
+
+      await client.query("delete from user_roles where user_id = $1 and role = 'coach'", [coachId]);
+      expect(await count('kids')).toBe(0);
+      expect(await count('registrations')).toBe(0);
+    });
+  });
+
+  it('a team link alone grants nothing to a user who never held Coach', async () => {
+    await withTx(pool, async (client) => {
+      const userId = await createProfile(client, { email: 'link-only@test.local' });
+      const t = await client.query<{ id: string }>(
+        `insert into ministry_teams (name, division) values ('Link Only','juniors') returning id`
+      );
+      // The guard trigger normally refuses this row; bypass it to model a stale link.
+      await client.query('alter table team_coaches disable trigger team_coach_role_guard');
+      await client.query('insert into team_coaches (team_id, user_id) values ($1,$2)', [
+        t.rows[0].id,
+        userId,
+      ]);
+      await client.query('alter table team_coaches enable trigger team_coach_role_guard');
+      const kid = await createKid(client, { lastName: 'LinkOnly' });
+      await createRegistration(client, kid, { teamId: t.rows[0].id });
+
+      const rows = await asUser(client, userId, async () => {
+        const r = await client.query('select 1 from kids');
+        return r.rowCount;
+      });
+      expect(rows).toBe(0);
+    });
+  });
+
   it('a parent sees only their own kids', async () => {
     await withTx(pool, async (client) => {
       const parentId = await createProfile(client, { email: 'parent-scope@test.local' });
