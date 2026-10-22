@@ -253,13 +253,14 @@ describe('kids / registrations -- read scoping follows the permission matrix', (
       const t = await client.query<{ id: string }>(
         `insert into ministry_teams (name, division) values ('Link Only','juniors') returning id`
       );
-      // The guard trigger normally refuses this row; bypass it to model a stale link.
-      await client.query('alter table team_coaches disable trigger team_coach_role_guard');
+      // The guard trigger normally refuses this row; skip triggers for this transaction
+      // (no table lock, unlike ALTER TABLE, which deadlocks with parallel suites).
+      await client.query("set local session_replication_role = 'replica'");
       await client.query('insert into team_coaches (team_id, user_id) values ($1,$2)', [
         t.rows[0].id,
         userId,
       ]);
-      await client.query('alter table team_coaches enable trigger team_coach_role_guard');
+      await client.query("set local session_replication_role = 'origin'");
       const kid = await createKid(client, { lastName: 'LinkOnly' });
       await createRegistration(client, kid, { teamId: t.rows[0].id });
 
