@@ -17,8 +17,9 @@ export default async function TakePage({ params }: { params: Promise<{ id: strin
   ]);
   if ([records, teams, links].some((r) => r.error)) throw new Error('Could not load this session’s roster.');
   const rows = (records.data ?? []) as (AttendanceRecord & Omit<RosterKid, 'id'>)[];
-  // Under the caller's RLS: a kid they cannot read (an archived day they no longer coach) has no photo.
-  const photos = await loadKidPhotos(supabase, rows.map((r) => r.kid_id));
+  // Archived days show no photos (docs/decisions.md, 2026-10-22), even to Admin and Program who could read them.
+  // Otherwise this is under the caller's RLS, so a kid they cannot read has no photo.
+  const photos = day.archived_at ? new Map() : await loadKidPhotos(supabase, rows.map((r) => r.kid_id));
   return <TakeClient day={day} groupName={embeddedOne(day.attendance_groups)?.name ?? 'Attendance session'}
     records={rows.map(({ id, day_id, registration_id, status, method, marked_at, note }) => ({ id, day_id, registration_id, status, method, marked_at, note }))}
     kids={rows.map(({ registration_id, kid_id, first_name, last_name, grade, division, team_id }) => ({ id: registration_id, kid_id, first_name, last_name, grade, division, team_id, photo: photos.get(kid_id) ?? null }))} teams={teams.data ?? []}
