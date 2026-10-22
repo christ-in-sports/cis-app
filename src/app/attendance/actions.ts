@@ -1,5 +1,6 @@
 'use server';
 
+import { attendanceQrInput } from '@/lib/attendance-qr';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { getMyRoles } from '@/lib/auth/roles';
@@ -141,4 +142,33 @@ export async function deleteAttendance(dayId: string) {
       .eq('id', z.uuid().parse(dayId)).select('id').single();
     if (error || !data) throw new Error(error?.message ?? 'Attendance day no longer exists.');
   });
+}
+
+/** Resolve against the authenticated day roster; never trust a client record ID. */
+export async function scanAttendance(input: unknown) {
+  try {
+    const { supabase, roles } = await access(false);
+    if (!roles.has('admin') && !roles.has('coach')) throw new Error('Only Admin and assigned coaches can scan attendance.');
+    const { dayId, code: kidId } = attendanceQrInput.parse(input);
+    const { data: day, error: dayError } = await supabase.from('attendance_days')
+      .select('locked, archived_at').eq('id', dayId).maybeSingle();
+    if (dayError || !day) throw new Error('Could not load this attendance day.');
+    if (day.locked || day.archived_at) throw new Error('This attendance day is locked or archived.');
+    const { data: roster, error } = await supabase.rpc('attendance_day_roster', { p_day: dayId });
+    if (error) throw new Error('Could not load this attendance roster.');
+    const row = (roster as { id: string; kid_id: string; first_name: string; last_name: string; status: string }[] | null)
+      ?.find((row) => row.kid_id === kidId);
+    if (!row) throw new Error('This code is not on your accessible roster for this day.');
+    const name = `${row.first_name} ${row.last_name}`;
+    if (row.status === 'present' || row.status === 'late') return { ok: true as const, message: `${name} is already ${row.status}.` };
+    // RLS checks the current team assignment again on update. Preserve notes and late marks.
+    const { data: saved, error: saveError } = await supabase.from('attendance_records')
+      .update({ status: 'present' }).eq('day_id', dayId).eq('id', row.id)
+      .in('status', ['unmarked', 'absent', 'excused']).select('id');
+    if (saveError || !saved?.length) throw new Error('Nothing saved. Refresh and scan again; the day or your team assignment may have changed.');
+    revalidatePath('/attendance', 'layout');
+    return { ok: true as const, message: `${name} — Present, saved.` };
+  } catch (error) {
+    return { ok: false as const, error: error instanceof z.ZodError ? 'This is not a valid CIS attendance QR code.' : error instanceof Error ? error.message : 'Could not save. Scan again.' };
+  }
 }

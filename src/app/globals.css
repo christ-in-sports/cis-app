@@ -107,3 +107,29 @@ html, body {
   -webkit-overflow-scrolling: touch;
   overflow-y: auto;
 }
+/* Only the QR-card route changes its layout for printing. Keep white quiet zones. */
+@media print {
+  body:has(.attendance-codes-print) { background: white !important; }
+  body:has(.attendance-codes-print) * { visibility: hidden; }
+  body:has(.attendance-codes-print) .attendance-codes-print,
+  body:has(.attendance-codes-print) .attendance-codes-print * { visibility: visible; }
+  .attendance-codes-print {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8mm;
+    padding: 8mm;
+    color: black;
+    background: white;
+  }
+  .attendance-qr-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    border: 1px dashed black;
+    border-radius: 0;
+    background: white;
+    padding: 4mm;
+  }
+}

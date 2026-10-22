@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+import { AttendanceQrScanner } from './qr-scanner';
 import { useState, useTransition } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { BoardHeader } from '@/components/cis/board-shell';
@@ -73,6 +75,7 @@ export default function TakeClient({ day, groupName, records, kids, teams, myTea
       }}>Delete attendance day</DangerButton>}
       {error && <FieldError>{error}</FieldError>}<p role="status">{pending ? 'Saving…' : message}</p>
     </AttendanceSheet>
+    {!day.locked && !day.archived_at && (isAdmin || isCoach) && <AttendanceQrScanner dayId={day.id} />}
     {canManage && teamId === 'all' && <AttendanceSheet>
       <SheetHeading>Team progress</SheetHeading>
       <ul>{[...availableTeams, { id: 'none', name: 'No team assigned' }].map((team) => {
@@ -83,12 +86,14 @@ export default function TakeClient({ day, groupName, records, kids, teams, myTea
     </AttendanceSheet>}
     <AttendanceSheet>
       <SheetHeading>Team roster</SheetHeading>
+      <Link href={`/attendance/${day.id}/codes`} className="inline-flex min-h-11 items-center font-bold underline">View and print QR cards</Link>
       {!visible.length && <p>{!canManage && !myTeamIds.length ? 'You have no assigned teams. Ask Admin or Program Team to assign you.' : 'No kids match this list. Check team assignments or add new registrations.'}</p>}
       {!day.locked && markable.length > 0 && <PrimaryButton disabled={pending} onClick={() => {
         if (window.confirm(`Mark the ${markable.length} visible, unmarked kids present?`)) run(() => saveMarks({ dayId: day.id, ids: markable.map(({ record }) => record.id), status: 'present', onlyUnmarked: true }), 'Unmarked kids saved as present.');
       }}>Mark {markable.length} unmarked present</PrimaryButton>}
       <ul>{visible.map(({ record, kid }) => <AttendanceRow key={`${record.id}:${record.note}`} record={record} kid={kid}
         teamName={teams.find((team) => team.id === kid.team_id)?.name ?? 'No team'} disabled={pending || day.locked || !canMark(kid)}
+        qrHref={`/attendance/${day.id}/codes?kid=${kid.kid_id}`}
         save={async (status, note) => {
           const result = await saveMarks({ dayId: day.id, ids: [record.id], status, note });
           if (result.ok) router.refresh();

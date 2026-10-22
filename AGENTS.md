@@ -219,6 +219,7 @@ Every PR that touches the items in the "non-negotiable" list must include or upd
 - Hosted Supabase grants function execution directly to API roles by default. Revoke from both `PUBLIC` and `anon` for attendance RPCs, and from `PUBLIC`, `anon` and `authenticated` for internal trigger functions. Keep explicit authenticated grants for application RPCs.
 - When applying committed migrations through MCP, align repository filenames with the versions actually recorded by MCP; preserve hosted migration-history records.
 - Locks, immutable attendance identity, season validation and audit stamps are enforced in Postgres. Keep database permission/submission tests in `supabase/tests/attendance-roles.test.ts` current.
+- QR cards use `attendanceQrValue(kid_id)` and `/attendance/[id]/codes` (optional `?kid=`). `scanAttendance()` resolves only through the authenticated day roster and existing RLS; never add anonymous kid lookup or trust client record IDs. Scanning is Admin/assigned Coach only on open, non-archived days; preserve present/late marks and notes. Camera decoding stays local, starts on a tap, and stops on hide/navigation.
 - Attendance views refresh server data every 10 seconds while visible and on window focus; no Realtime publication is required. Team/division/archive filters use URL search params. Attendance reuses Registration’s fixed `SectionNav` with Home, Attendance, Teams (managers), Summary and Archive.
 
 ---
