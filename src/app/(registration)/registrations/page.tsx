@@ -2,6 +2,7 @@ import { getMyRoles } from '@/lib/auth/roles';
 import { redirect } from 'next/navigation';
 import { embeddedOne } from '@/lib/attendance';
 import { type PaymentMethod } from '@/lib/registration/payment';
+import { signedPhotoUrls, toKidPhoto } from '@/lib/photo/signed-urls';
 import RegistrationsClient, { type RosterEntry } from './registrations-client';
 
 export default async function RegistrationsPage() {
@@ -28,7 +29,7 @@ export default async function RegistrationsPage() {
            kids!inner(
              id, first_name, last_name, dob, gender, allergies, home_address,
              email, phone, emergency_contact_name, emergency_contact_phone,
-             guardian_name, guardian_phone, guardian_email
+             guardian_name, guardian_phone, guardian_email, photo_path
            )`
         )
         .eq('season_id', season.id)
@@ -38,9 +39,12 @@ export default async function RegistrationsPage() {
   // `payments` comes back empty for anyone but an Admin: its RLS policy only
   // admits Admin and the kid's linked parent (ENG-9), so there is no need to
   // gate the embed here as well.
+  const photoUrls = await signedPhotoUrls(supabase, (rows ?? []).map((r) => embeddedOne(r.kids)?.photo_path));
+
   const entries: RosterEntry[] = (rows ?? []).flatMap((r) => {
-    const kid = embeddedOne(r.kids);
-    if (!kid) return [];
+    const row = embeddedOne(r.kids);
+    if (!row) return [];
+    const { photo_path, ...kid } = row;
     return [{
       registration_id: r.id,
       grade: r.grade,
@@ -56,7 +60,7 @@ export default async function RegistrationsPage() {
         method: p.method as PaymentMethod,
         received_at: p.received_at,
       })),
-      kid,
+      kid: { ...kid, photo: toKidPhoto(photo_path, photoUrls) },
     }];
   });
 

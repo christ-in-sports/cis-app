@@ -1,3 +1,5 @@
+import type { KidPhoto } from '@/lib/photo/types';
+
 /**
  * Juniors / Ambassadors. Named `division` to match `registrations.division` and
  * project_spec.md §2.4. Note that `attendance_groups` still spells the same
@@ -61,6 +63,8 @@ export interface RosterKid {
   grade: number;
   division: Division;
   team_id: string | null;
+  /** The kid's photo, for the readers allowed to see it. Absent on archived days and where the loader does not sign photos. */
+  photo?: KidPhoto | null;
 }
 
 export interface Season {

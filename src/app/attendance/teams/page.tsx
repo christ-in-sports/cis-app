@@ -1,6 +1,7 @@
 import { attendanceAccess, rosterRows } from '../data';
 import { BoardHeader } from '@/components/cis/board-shell';
 import { AttendanceSheet } from '../parts';
+import { loadKidPhotos } from '@/lib/photo/signed-urls';
 import TeamsClient from './teams-client';
 import type { MinistryTeam, RosterKid } from '@/lib/attendance';
 
@@ -25,7 +26,9 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
     }
     const { data, error } = await supabase.from('registrations').select('id, kid_id, grade, division, team_id, kids!inner(first_name, last_name)').eq('season_id', seasonId).eq('active', true);
     if (error) throw new Error('Could not load registered kids.');
-    return rosterRows(data ?? []);
+    const kids = rosterRows(data ?? []);
+    const photos = await loadKidPhotos(supabase, kids.map((k) => k.kid_id));
+    return kids.map((k) => ({ ...k, photo: photos.get(k.kid_id) ?? null }));
   };
   const [teams, registrations, coaches, links] = await Promise.all([
     loadTeams(),
