@@ -118,7 +118,7 @@ describe('replaceKidPhoto -- replacing', () => {
     expect(revalidatePath).not.toHaveBeenCalled();
   });
 
-  it('still succeeds when the old file cannot be deleted, leaving it for the daily cleanup', async () => {
+  it('still succeeds when the old file cannot be deleted, leaving it behind', async () => {
     rpc.mockResolvedValue({ data: OLD_PATH, error: null });
     remove.mockResolvedValue({ data: null, error: { message: 'denied' } });
 

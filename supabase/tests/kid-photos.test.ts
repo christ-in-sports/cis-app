@@ -169,22 +169,20 @@ async function pgError(
   throw new Error('expected the statement to be rejected, but it succeeded');
 }
 
-/** Runs `fn` as a database role that is not a signed-in user (`anon`, `service_role`). */
-async function asDbRole<T>(client: PoolClient, role: 'anon' | 'service_role', fn: () => Promise<T>): Promise<T> {
-  await client.query('SAVEPOINT as_db_role');
+/** Runs `fn` as the `anon` database role, with no signed-in user. */
+async function asAnon<T>(client: PoolClient, fn: () => Promise<T>): Promise<T> {
+  await client.query('SAVEPOINT as_anon');
   try {
-    await client.query(`SET LOCAL ROLE ${role}`);
+    await client.query('SET LOCAL ROLE anon');
     const result = await fn();
-    await client.query('RELEASE SAVEPOINT as_db_role');
+    await client.query('RELEASE SAVEPOINT as_anon');
     await client.query('RESET ROLE');
     return result;
   } catch (err) {
-    await client.query('ROLLBACK TO SAVEPOINT as_db_role');
+    await client.query('ROLLBACK TO SAVEPOINT as_anon');
     throw err;
   }
 }
-
-const asAnon = <T>(client: PoolClient, fn: () => Promise<T>) => asDbRole(client, 'anon', fn);
 
 const READS: Actor[] = ['admin', 'program', 'coach', 'parent'];
 const DENIED: Actor[] = ['prayer', 'none'];
@@ -758,107 +756,6 @@ describe('kid_photo_attached', () => {
       });
 
       expect(seen).toBe(true);
-    });
-  });
-});
-
-describe('kid_photo_orphans -- what the daily cleanup deletes', () => {
-  const putOld = async (client: PoolClient, name: string, ownerId: string, age = '2 days') => {
-    await client.query(
-      `insert into storage.objects (bucket_id, name, owner_id, created_at)
-       values ('kid-photos', $1, $2, now() - $3::interval)`,
-      [name, ownerId, age]
-    );
-    return name;
-  };
-
-  const orphans = (client: PoolClient, ...args: unknown[]) =>
-    asDbRole(client, 'service_role', async () => {
-      const r = await client.query<{ name: string }>(
-        args.length ? 'select name from kid_photo_orphans($1::interval)' : 'select name from kid_photo_orphans()',
-        args
-      );
-      return r.rows.map((row) => row.name);
-    });
-
-  it('lists an old upload that no kid uses', async () => {
-    await withTx(pool, async (client) => {
-      const f = await seed(client);
-      const abandoned = await putOld(client, newName(), f.actors.parent);
-
-      expect(await orphans(client)).toContain(abandoned);
-    });
-  });
-
-  it('lists a photo that was replaced', async () => {
-    await withTx(pool, async (client) => {
-      const f = await seed(client);
-      const first = await putOld(client, newName(), f.actors.admin);
-      const second = await putObject(client, newName(), f.actors.parent);
-      await attachDirect(client, f.kidId, first);
-      await setPhoto(client, f.actors.parent, f.kidId, second);
-
-      const found = await orphans(client);
-
-      expect(found).toContain(first);
-      expect(found).not.toContain(second);
-    });
-  });
-
-  it('never lists a photo a kid uses, however old', async () => {
-    await withTx(pool, async (client) => {
-      const f = await seed(client);
-      const inUse = await putOld(client, newName(), f.actors.parent, '400 days');
-      await attachDirect(client, f.kidId, inUse);
-
-      expect(await orphans(client)).not.toContain(inUse);
-    });
-  });
-
-  it('leaves a recent upload alone, in case its form is still open', async () => {
-    await withTx(pool, async (client) => {
-      const f = await seed(client);
-      const recent = await putOld(client, newName(), f.actors.parent, '1 hour');
-
-      expect(await orphans(client)).not.toContain(recent);
-      expect(await orphans(client, '30 minutes')).toContain(recent);
-    });
-  });
-
-  it('only looks in the kid-photos bucket', async () => {
-    await withTx(pool, async (client) => {
-      const f = await seed(client);
-      await client.query(`insert into storage.buckets (id, name, public) values ('other-bucket','other-bucket', false)`);
-      const name = newName();
-      await client.query(
-        `insert into storage.objects (bucket_id, name, owner_id, created_at)
-         values ('other-bucket', $1, $2, now() - interval '2 days')`,
-        [name, f.actors.parent]
-      );
-
-      expect(await orphans(client)).not.toContain(name);
-    });
-  });
-
-  it.each(['admin', 'parent', 'program'] as Actor[])('is not callable by a signed-in %s', async (actor) => {
-    await withTx(pool, async (client) => {
-      const f = await seed(client);
-
-      const err = await pgError(client, () =>
-        asUser(client, f.actors[actor], () => client.query('select name from kid_photo_orphans()'))
-      );
-
-      expect(err.code).toBe('42501');
-    });
-  });
-
-  it('is not callable without signing in', async () => {
-    await withTx(pool, async (client) => {
-      const err = await pgError(client, () =>
-        asAnon(client, () => client.query('select name from kid_photo_orphans()'))
-      );
-
-      expect(err.code).toBe('42501');
     });
   });
 });

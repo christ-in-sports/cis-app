@@ -14,7 +14,8 @@
  * A photo can be replaced but never removed, so there is no "remove" action.
  * The order matters: the new path is saved first and the old file deleted
  * after, so a failure leaves a kid with a photo, never a kid pointing at
- * nothing. If the delete fails the old file is left for the daily cleanup.
+ * nothing. If the delete fails the old file is left behind, unreferenced and
+ * readable only by its uploader and Admin, until someone deletes it by hand.
  */
 
 import { revalidatePath } from 'next/cache';
@@ -69,7 +70,7 @@ export async function replaceKidPhoto(input: unknown): Promise<ReplaceKidPhotoRe
   if (replacedPath) {
     // The storage policy lets the uploader or an Admin delete an object once no
     // kid uses it. Anyone else (a parent replacing a photo an Admin uploaded)
-    // is quietly refused, and the daily cleanup removes it instead.
+    // is quietly refused, and the old file stays until someone deletes it by hand.
     const { error: removeError } = await supabase.storage.from(KID_PHOTO_BUCKET).remove([replacedPath]);
     if (removeError) console.error('Removing a replaced kid photo failed');
   }

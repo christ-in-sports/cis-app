@@ -6,8 +6,9 @@
  * policy is what decides: only an Admin or a Parent may upload, under a random
  * `<uuid>.webp|jpg` name, recorded as theirs. The upload is not attached to a
  * kid yet; the caller passes the returned path to `registerKid` (a new kid) or
- * `replaceKidPhoto`, and an upload nobody attaches is removed by the daily
- * cleanup (`/api/cron/kid-photos`).
+ * `replaceKidPhoto`. An upload nobody attaches (an abandoned form) stays in the
+ * bucket, unreadable to anyone but its uploader and Admin, until it is deleted
+ * by hand.
  */
 
 import { createClient } from '@/lib/supabase/client';
