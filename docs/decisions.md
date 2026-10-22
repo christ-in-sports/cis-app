@@ -34,7 +34,8 @@ issue holds the detail; this file is the index of "what's now different from the
 - **Admin-only visibility:** only the servant and an Admin can read a registration. Program Team, Coaches, Prayer Team and Parents cannot, because it holds DOB, home address and emergency contacts.
 - **Sub-teams are preference only:** they are something an Admin reads when assigning roles. Choosing "Coaches" never grants the Coach role, and "Fellowship Team" is a form choice, not an app role.
 - **Why:** Servants were already being counted on a form outside the app. Moving it in lets an Admin see every servant's answers next to the role screen. Past Google Form responses are not imported.
-- **Linear:** ENG-17, ENG-18 (schema, RPC and RLS). The form and the Admin list are later sub-issues.
+- **Update (the form, ENG-19):** A signed-in user with no role is sent to the form from the home page and the Sports, Attendance and Registration areas, and users with roles reach it from a home-page tile. It prefills from the servant's last registration (dates missing are not carried over). The first submission of a season emails a confirmation without DOB or address; if the email fails the registration is still saved. The Admin list is the next sub-issue.
+- **Linear:** ENG-17, ENG-18 (schema, RPC and RLS), ENG-19 (the form).
 
 ### 2026-10-19 — One signup code; roles are granted by an Admin after signup
 - **PRD reference:** user accounts and roles (signup, the six roles)

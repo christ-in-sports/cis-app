@@ -29,6 +29,13 @@ const FEATURES = [
     ready: false,
   },
   {
+    title: 'Servant Registration',
+    description: 'Register for the season and update your details',
+    emoji: '🙋',
+    href: '/servant-registration',
+    ready: true,
+  },
+  {
     title: 'Registration',
     description: 'View and edit registration',
     emoji: '✍🏻',

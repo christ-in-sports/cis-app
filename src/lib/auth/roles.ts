@@ -50,6 +50,28 @@ export async function checkAnyRole(roles: readonly AppRole[]): Promise<RoleCheck
   return { supabase, userId: user.id, hasRole: (data?.length ?? 0) > 0 };
 }
 
+/**
+ * Resolves the caller's identity and whether they hold any role at all. A user
+ * with no `user_roles` rows is "roleless": a servant who has signed up and is
+ * waiting for an Admin to assign roles. Like the rest of this file it is for UX
+ * (who gets sent to the servant form); RLS already returns nothing to them.
+ */
+export async function hasAnyRole(): Promise<RoleCheck> {
+  const supabase = await createServerSupabaseClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { supabase, userId: null, hasRole: false };
+  }
+
+  const { data } = await supabase.from('user_roles').select('role').eq('user_id', user.id).limit(1);
+
+  return { supabase, userId: user.id, hasRole: (data?.length ?? 0) > 0 };
+}
+
 export interface MyRoles {
   supabase: Awaited<ReturnType<typeof createServerSupabaseClient>>;
   userId: string | null;

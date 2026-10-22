@@ -11,11 +11,17 @@
 
 import { RegistrationNav } from '@/components/cis/registration-nav';
 import { getMyRoles } from '@/lib/auth/roles';
+import { SERVANT_REGISTRATION_PATH } from '@/lib/auth/servant-gate';
+import { redirect } from 'next/navigation';
 
 export async function ViewerNav() {
   const { userId, roles } = await getMyRoles();
 
   if (!userId) return <RegistrationNav isParent={false} isAdmin={false} />;
+
+  // A new servant has no role yet and sees nothing here; send them to the form.
+  // This runs where the roles are already read, so it adds no query.
+  if (roles.size === 0) redirect(SERVANT_REGISTRATION_PATH);
 
   return <RegistrationNav isAdmin={roles.has('admin')} isParent={roles.has('parent')} />;
 }

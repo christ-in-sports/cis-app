@@ -57,6 +57,7 @@ Stripe (payments, v1.0)    Claude API (AI team generation, v1.0)
 | PWA | Serwist |
 | Payments | Stripe (v1.0) |
 | AI | Anthropic Claude API (v1.0, team generation) |
+| Email | Resend (server-side only) |
 | Hosting | Vercel |
 | Error tracking | Sentry |
 

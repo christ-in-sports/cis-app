@@ -36,6 +36,20 @@ heading followed by:
 
 ## Decisions
 
+### 2026-10-21 — Resend for transactional email; sending never blocks a save
+- **Status:** Accepted
+- **Context:** The servant registration confirmation (ENG-19) is the app's first outbound email. Supabase Auth's built-in mailer only sends auth messages, and it is rate-limited, so it cannot send this one.
+- **Decision:** Resend, through its `resend` SDK, called only from server code (`src/lib/email/send-servant-confirmation.ts`, marked `server-only`). It reads `RESEND_API_KEY` and `EMAIL_FROM`. With no key it does nothing, which is how local dev and e2e tests run without sending anything. The message text is built by a separate pure function so it can be tested, and it leaves out DOB, home address and emergency contacts. The Server Action sends only when `submit_servant_registration()` reports the row is new, and a failure is caught, logged by error name only, and shown to the servant as a soft notice: the registration is already saved.
+- **Consequences / tradeoffs:** A person who edits their registration later gets no second email, by design. A delivery failure is not retried. A human must add both env vars in Vercel and verify the sending domain in Resend before the first real send. Later emails (for example parent receipts) can reuse the same module pattern.
+- **Reference:** `project_spec.md` §2.2; Linear [ENG-19](https://linear.app/cis-app/issue/ENG-19)
+
+### 2026-10-21 — Roleless users are redirected to the servant form by layouts, not by middleware
+- **Status:** Accepted
+- **Context:** A new servant has no role until an Admin assigns one, and the only thing they can use is the registration form. Middleware only has the Supabase session and would need an extra database query on every request to know whether a user holds a role.
+- **Decision:** `redirectIfRoleless()` (`src/lib/auth/servant-gate.ts`) runs in the home page and in the Sports, Attendance and Registration layouts, where the roles are already being read. The form route itself is open to any signed-in user.
+- **Consequences / tradeoffs:** This is UX only: RLS already returns nothing to a roleless user. A new role-gated area has to call the helper in its layout. In the Registration layout it runs inside the streamed nav, so the redirect happens after the first paint. There is no Spiritual layout yet, so that area is not covered until it exists.
+- **Reference:** Linear [ENG-19](https://linear.app/cis-app/issue/ENG-19)
+
 ### 2026-10-21 — Servant registration: its own table, written only through a SECURITY DEFINER function
 - **Status:** Accepted
 - **Context:** Servants register each season (see `decisions.md`, 2026-10-21). The record holds DOB, home address and emergency contacts, and the person filling it in usually has no role yet, so no role-based policy can describe them.

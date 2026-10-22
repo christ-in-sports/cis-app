@@ -25,7 +25,13 @@
  *    behaviour come from the browser rather than being rebuilt.
  */
 
-import { useId, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes } from 'react';
+import {
+  useId,
+  type InputHTMLAttributes,
+  type ReactNode,
+  type SelectHTMLAttributes,
+  type TextareaHTMLAttributes,
+} from 'react';
 import { Icon } from '@/components/cis/icon';
 import { cn } from '@/lib/utils';
 
@@ -126,6 +132,10 @@ export function Field({
 
 export function TextInput({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return <input className={cn(controlBase, 'h-12', className)} {...props} />;
+}
+
+export function TextArea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return <textarea className={cn(controlBase, 'min-h-28 py-2 leading-[1.4]', className)} {...props} />;
 }
 
 export function SelectInput({ className, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
