@@ -154,3 +154,8 @@ issue holds the detail; this file is the index of "what's now different from the
 - **Decision:** Per the follow-up request, Archive starts fresh team setup as well as archiving attendance. Preserve old teams, kids and coaches for historical views; unassign kids from current teams so coordinators can create new teams. Allow renaming and confirmed deletion of current teams. Archived teams are read-only.
 - **Reason:** Archiving represents starting a new season of attendance and team assignments. This supersedes the earlier rule that archiving left current team assignments unchanged. Keep the workflow to one archive button without a season setup form. Restoring a day restores editing of its original roster, not the retired team setup.
 - **Reference:** `project_spec.md` §2.4.1; technical decision in `docs/arch_decisions.md` (2026-10-21).
+
+
+### 2026-10-21 — QR cards for attendance check-in
+- **Decision:** Per the feature request, give every kid on an attendance roster a reusable QR card. Offer individual and bulk printer-friendly cards from that day’s roster. An authorized volunteer selects the attendance day and scans cards to automatically mark kids present. Keep manual attendance as a fallback.
+- **Behavior:** Scans keep existing present/late marks; absent, excused and unmarked records become present. Locked/archived days cannot be scanned. Cards contain a random identifier only; printed cards display the kid’s name and division. Coaches remain limited to assigned teams, and Program’s read/setup role does not gain attendance-marking permission.

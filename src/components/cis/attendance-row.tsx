@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { Field, FieldError, SelectInput, TextInput } from './form';
 import { PrimaryButton } from './button';
@@ -11,8 +12,9 @@ export const ATTENDANCE_LABELS: Record<AttStatus, string> = {
 
 /** A row saves one mark at a time and shows success only after the server saves.
  * Draft notes stay local while refreshed marks from other coaches arrive. */
-export function AttendanceRow({ record, kid, teamName, disabled, save }: {
+export function AttendanceRow({ record, kid, teamName, disabled, save, qrHref }: {
   record: AttendanceRecord; kid: RosterKid; teamName: string; disabled: boolean;
+  qrHref?: string;
   save: (status: AttStatus, note?: string) => Promise<{ ok: true } | { ok: false; error: string }>;
 }) {
   const [pending, start] = useTransition();
@@ -37,6 +39,7 @@ export function AttendanceRow({ record, kid, teamName, disabled, save }: {
       onChange={(e) => mark(e.target.value as AttStatus)}>
       {Object.entries(ATTENDANCE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
     </SelectInput>}</Field>
+    {qrHref && <Link href={qrHref} className="inline-flex min-h-11 items-center font-bold underline">View and print QR card</Link>}
     <details><summary className="min-h-11 cursor-pointer py-2 font-bold">Attendance note{record.note ? ' (saved)' : ''}</summary>
       <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); mark(record.status, note); }}>
         <Field label="Note" optional hint="Only Admin, Program and this team’s coaches can read this note.">{(props) => <TextInput {...props} value={note} maxLength={1000} disabled={disabled || pending} onChange={(e) => setNote(e.target.value)} />}</Field>

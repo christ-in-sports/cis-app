@@ -25,6 +25,7 @@ import {
   Minus,
   Pencil,
   Plus,
+  QrCode,
   ShieldCheck,
   SlidersHorizontal,
   Trash2,
@@ -67,6 +68,7 @@ function Bracket({ size = 24, strokeWidth = 2.75, className, ...rest }: GlyphPro
 const GLYPHS = {
   home: House,
   archive: Archive,
+  qr: QrCode,
   standings: ChartNoAxesColumn,
   schedule: Calendar,
   bracket: Bracket,
