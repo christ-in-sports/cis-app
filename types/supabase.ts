@@ -521,6 +521,8 @@ export type Database = {
           last_name: string
           parent_user_id: string | null
           phone: string | null
+          photo_path: string | null
+          photo_updated_at: string | null
           skill_tags: string[]
           updated_at: string
         }
@@ -541,6 +543,8 @@ export type Database = {
           last_name: string
           parent_user_id?: string | null
           phone?: string | null
+          photo_path?: string | null
+          photo_updated_at?: string | null
           skill_tags?: string[]
           updated_at?: string
         }
@@ -561,6 +565,8 @@ export type Database = {
           last_name?: string
           parent_user_id?: string | null
           phone?: string | null
+          photo_path?: string | null
+          photo_updated_at?: string | null
           skill_tags?: string[]
           updated_at?: string
         }
@@ -1145,6 +1151,7 @@ export type Database = {
         Returns: boolean
       }
       import_commit: { Args: { p_batch_id: string }; Returns: Json }
+      kid_photo_attached: { Args: { p_path: string }; Returns: boolean }
       link_my_kids: { Args: never; Returns: number }
       parse_session_choice: {
         Args: { p_choice: string; p_grade: string }
@@ -1189,6 +1196,7 @@ export type Database = {
       }
       reset_sport_block: { Args: { p_block_id: string }; Returns: undefined }
       set_game_schedule: { Args: { p_items: Json }; Returns: number }
+      set_kid_photo: { Args: { p_kid: string; p_path: string }; Returns: string }
       set_registrations_consent: {
         Args: { p_received: boolean; p_registration_ids: string[] }
         Returns: {
