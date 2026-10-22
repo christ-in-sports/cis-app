@@ -320,3 +320,5 @@ Team rollover refinement (2026-10-21): Archive confirmation explicitly includes 
 
 
 QR attendance (2026-10-21): open days show a Scan attendance sheet with explicit Start/Stop camera controls, camera preview, and announced save/error feedback. Each roster row links to an individual QR card; the roster also links to bulk cards. Card pages use black QR modules on white with a four-module quiet zone. Print removes navigation/actions and arranges cards in two columns with dashed cutting guides and no card splits. Existing form/button/sheet tokens are reused; no new colors or radii are introduced.
+
+QR card page spacing: the print action occupies its own row. Secondary navigation sits below a neutral rule, stacks with separate tap targets on narrow screens, and wraps with explicit gaps on wider screens. Instruction text uses relaxed line spacing.

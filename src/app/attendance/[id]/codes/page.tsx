@@ -29,10 +29,14 @@ export default async function AttendanceCodesPage({ params, searchParams }: {
   return <>
     <div className="print:hidden"><BoardHeader title="Attendance QR cards" />
       <AttendanceSheet>
-        <p>Print and cut out a card for each kid. Cards work across attendance days; a signed-in Admin or assigned Coach must scan them in the app.</p>
-        <PrintCodesButton />
-        <Link href={`/attendance/${id}`} className="inline-flex min-h-11 items-center font-bold underline">Back to attendance</Link>
-        {kid && <Link href={`/attendance/${id}/codes`} className="inline-flex min-h-11 items-center font-bold underline">All QR cards</Link>}
+        <p className="leading-relaxed">Print and cut out a card for each kid. Cards work across attendance days; a signed-in Admin or assigned Coach must scan them in the app.</p>
+        <div className="flex flex-col items-start gap-5">
+          <PrintCodesButton />
+          <nav aria-label="QR card navigation" className="flex w-full flex-col gap-2 border-t border-cis-rule pt-4 sm:flex-row sm:flex-wrap sm:gap-x-6">
+            <Link href={`/attendance/${id}`} className="inline-flex min-h-11 items-center font-bold underline">Back to attendance</Link>
+            {kid && <Link href={`/attendance/${id}/codes`} className="inline-flex min-h-11 items-center font-bold underline">All QR cards</Link>}
+          </nav>
+        </div>
       </AttendanceSheet>
     </div>
     <div className="attendance-codes-print grid gap-4 px-4 text-cis-ink">
