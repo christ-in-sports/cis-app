@@ -28,6 +28,12 @@ issue holds the detail; this file is the index of "what's now different from the
 
 ## Decisions
 
+### 2026-10-22 — Every kid has a photo, so servants can identify them
+- **PRD reference:** §3.5 US-PA-01 (registration captures a photo), §6 Core Data Model (`Kid`), §5.2 Role-Feature Permission Matrix; reverses the 2026-09-23 entry below
+- **What changed:** Photos are back, at the Director's request. Every kid saved through the app must have one: the parent form requires a photo for a new kid and for a returning kid who has none yet, and any Admin manual add must require one too. CSV-imported kids (the fallback path) are the only exception and are shown to the Admin as "Missing photo" until a parent or Admin adds one. Only the kid's linked parent and Admin can upload. A photo can be replaced but never removed, and the old one is deleted, so each kid has one current photo. Photos are visible to exactly the servants who can see the kid's roster row (Admin, Program Team, the coach of the kid's current team) plus the linked parent. Prayer Team, Kids and archived attendance show none. Consent has no effect on whether a photo can be uploaded. The Google Form's photo question stays ignored by the CSV import.
+- **Why:** Coaches and other servants need to put a face to a name, and with ~300 kids they can't do that from a list of names. Since 2026-09-23, registration has moved to the parent form, with the CSV import only as a fallback, so photos can come straight from parents and the Google Drive blocker no longer applies.
+- **Linear:** [ENG-21](https://linear.app/cis-app/issue/ENG-21) (ENG-22 schema, ENG-23 Server Actions, ENG-24 UI)
+
 ### 2026-10-21 — Servants register for the season in the app (replaces the Google Form)
 - **PRD reference:** not in the PRD. The PRD has no servant-side registration; the "CIS Servants Commitment" Google Form did this.
 - **What changed:** Each season a servant submits one registration: whether they are serving, which sessions (Juniors, Ambassadors, or both) and, per session, which sub-teams they prefer (Admin, Coaches, Fellowship, Prayer, Program, or Other), plus contact and emergency details, DOB and home address. It is editable at any time, with no approval step and no open or close window.
@@ -82,6 +88,7 @@ issue holds the detail; this file is the index of "what's now different from the
 - **PRD reference:** §3.5 US-PA-01 (registration captures a photo), §6 Core Data Model (`Kid`)
 - **What changed:** Registration no longer captures or stores a photo of the kid, by either path. The parent form does not ask for one, and the CSV importer ignores the Google Form's photo question rather than copying the file across.
 - **Why:** Decided on 2026-09-23 for simplicity. The Drive access needed to read photos from the Google Form was never resolved (`project_spec.md` §2.8) and was the last blocker on ENG-5; the feature was not worth carrying a half-built pipeline and a bucket of minors' images for. May return in a future version.
+- **Update (2026-10-22):** Reversed. Photos are required again; see the 2026-10-22 entry above.
 - **Linear:** [ENG-4](https://linear.app/cis-app/issue/ENG-4/kid-registration-parent-self-service-form), [ENG-5](https://linear.app/cis-app/issue/ENG-5/kid-registration-admin-csv-import)
 
 ### 2026-09-22 — Imported consent is surfaced for review, never recorded as consent
