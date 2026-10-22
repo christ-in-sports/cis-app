@@ -56,9 +56,9 @@ export function SectionNav({ label, items }: { label: string; items: readonly Se
   return (
     <nav
       aria-label={label}
-      className="fixed inset-x-0 bottom-0 z-10 bg-cis-board pb-[env(safe-area-inset-bottom)] text-cis-ink-on-dark"
+      className="fixed inset-x-0 bottom-0 z-10 overflow-x-auto bg-cis-board pb-[env(safe-area-inset-bottom)] text-cis-ink-on-dark"
     >
-      <ul className="mx-auto flex w-full max-w-[560px] items-center justify-between px-[14px] pb-6 pt-1.5">
+      <ul className="mx-auto flex w-full min-w-max max-w-[560px] items-center justify-between px-[14px] pb-6 pt-1.5">
         {items.map((item) => {
           const on = isNavItemOn(item, pathname);
           return (
