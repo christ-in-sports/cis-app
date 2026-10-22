@@ -71,6 +71,8 @@ The app supports **6 roles**. A person may hold more than one role simultaneousl
 | View verses & psalms | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Register kids | ✓ | ✗ | ✗ | ✗ | ✓ | ✓ (self) |
 | View kid home address & emergency contact | ✓ | ✓ | ✓ (own team) | ✗ | ✓ (own kids) | ✗ |
+| View kid photo | ✓ | ✓ | ✓ (own team) | ✗ | ✓ (own kids) | ✗ |
+| Upload or replace kid photo | ✓ | ✗ | ✗ | ✗ | ✓ (own kids) | ✗ |
 | Process payments | ✓ | ✗ | ✗ | ✗ | ✓ | ✗ |
 | AI team generation | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
 | View equipment list | ✓ | ✓ | ✗ | ✓ | ✗ | ✗ |
@@ -154,7 +156,7 @@ Full spec: `DESIGN_SYSTEM.md` (companion to this file). Key rules that affect ho
 | Push Notifications | **Web Push API + Supabase Edge Functions** | Triggered server-side on relevant events |
 | Payments | **Stripe** | v1.0 — full payment + installment plans |
 | AI | **Anthropic Claude API** | v1.0 — team generation |
-| File Storage | **Supabase Storage** | Documents. *(Kid photos were dropped on 2026-09-23 — see `docs/decisions.md`.)* |
+| File Storage | **Supabase Storage** | Kid photos (private `kid-photos` bucket, signed URLs; ENG-21) and documents. |
 | Error Tracking | **Sentry** | |
 | Email | **Resend** | Transactional email, server-side only. Needs `RESEND_API_KEY` and `EMAIL_FROM`; without the key nothing is sent. |
 | Hosting | **Vercel** | Preview deploy per PR, auto-deploy `main` to prod |
@@ -215,7 +217,7 @@ Divisions (`juniors` / `ambassadors`) are an attribute on `Registration` and `Te
 |---|---|---|
 | `User` | id, name, email, phone, created_at | has many `Kid` (as parent), belongs to `Team` (as coach), has many roles via `UserRole` |
 | `UserRole` | user_id, role, granted_at, granted_by | belongs to `User` |
-| `Kid` | id, first_name, last_name, email?, phone?, gender, dob, allergies, home_address, emergency_contact_name, emergency_contact_phone, guardian_name, guardian_phone, guardian_email, skill_tags[], parent_user_id? | has many `Registration`, belongs to `User` (parent) |
+| `Kid` | id, first_name, last_name, email?, phone?, gender, dob, allergies, home_address, emergency_contact_name, emergency_contact_phone, guardian_name, guardian_phone, guardian_email, skill_tags[], parent_user_id?, photo_path?, photo_updated_at? | has many `Registration`, belongs to `User` (parent) |
 | `Registration` | id, kid_id, season_id, grade, division, tshirt_size, top_sports[]?, consent_given_at?, consent_by_user_id?, team_id?, created_at | belongs to `Kid`, `Season`, `Team` |
 | `ServantRegistration` | id, user_id, season_id, full_name, evaluation_status, is_serving, sessions[], juniors_subteams[], ambassadors_subteams[], juniors_other?, ambassadors_other?, notes?, dates_missing?, email, phone, emergency_contact_name, emergency_contact_phone, gender, dob, home_address | belongs to `User`, `Season`; unique on (`user_id`, `season_id`) |
 | `Team` | id, name, division, color?, season_id | has many `Registration`, `Game`; has coaches via `team_coaches`; belongs to `Season`. Lasts the whole season, so it has no sport. |
@@ -243,7 +245,7 @@ Divisions (`juniors` / `ambassadors`) are an attribute on `Registration` and `Te
 - **`tshirt_size`** is one of `YS`, `YM`, `YL`, `XS`, `S`, `M`, `L`, `XL`, `XXL`.
 - **`gender`** is an enum: `male` or `female`.
 - **`consent_given_at`** replaces a yes/no flag. `null` means no consent, and a registration is not complete until it is set. It is set server-side, together with `consent_by_user_id`. CSV-imported registrations may leave it null for now; the parent registration form always sets it.
-- **No photo is stored.** Registration captured one until 2026-09-23, when it was dropped for simplicity and the Drive dependency it carried was removed with it (`docs/decisions.md`, `docs/arch_decisions.md`). The Google Form may still ask for a photo; the importer reports that column as unrecognised and ignores it.
+- **Every kid saved through the app has a photo** (ENG-21, being built; `docs/decisions.md` and `docs/arch_decisions.md`, 2026-10-22). `photo_path` (unique, nullable) holds an object path in the private `kid-photos` bucket, never a URL, and is null only for CSV-imported kids until a parent or Admin adds one. The browser uploads a resized ~512 px WebP first (iPhone HEIC/HEIF files are accepted and converted in the browser; HEIC is never stored), under a random `<uuid>.webp` name. `register_kid()` (required for a new kid or a returning kid without one) or `set_kid_photo()` (replace only: Admin or the linked parent) then attaches it, after checking the caller uploaded it and no other kid uses it. Everything runs with the user's own session, never the service role. Storage policies let Admin and Parent upload, let readers of the kid's row (`can_read_kid()`) read the photo, and let Admin or the uploader delete an object no kid references. Replacing a photo deletes the old file through the Storage API, and a daily server-side job removes unreferenced objects older than 24 hours. Pages read photos through bulk signed URLs valid for one hour; archived attendance shows none. The importer still ignores the Google Form's photo column.
 - **`home_address` and the emergency contact** are visible to Admin, Program Team, the coach of the kid's team, and the kid's linked parent (see the §1.5 matrix). Those are the same readers as the roster row, so the row-level `can_read_kid()` policy is sufficient (resolved 2026-09-22, see §2.8).
 - **Parents write through `register_kid()`, not table policies.** It creates the kid or updates a returning one, then upserts this season's `Registration`, in one transaction. Consent (`consent_given_at`, `consent_by_user_id`) is stamped inside it with `now()` and `auth.uid()`. For a returning kid the parent may edit everything except `first_name`, `last_name`, `dob` and `gender` (the returning-kid matching key, plus gender), and never `skill_tags`. Submitting again in the same season edits the registration and re-stamps consent, until an Admin assigns a `team_id`. A new registration has `source = 'parent'`. Any signed-in user can read only the current `Season`.
 - **Servants write through `submit_servant_registration()`, not table policies.** `user_id`, `season_id` (the current season) and `email` are set by the function; the table grants API roles `SELECT` only, with a policy for the owner and Admin. Submitting again edits the row, and it returns whether the row was new; the first submission of a season sends a confirmation email (no DOB or address in it). A signed-in user with no role is redirected to `/servant-registration` from the home page and the Sports, Attendance and Registration areas. Not serving clears the session and sub-team answers. Any signed-in user can read the current `Season` (the form needs its name).
