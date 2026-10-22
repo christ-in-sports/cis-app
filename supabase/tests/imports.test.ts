@@ -616,3 +616,42 @@ describe('import_commit -- nothing is written before commit', () => {
     });
   });
 });
+
+// Kid photos (ENG-21): the import cannot carry photos, and must not lose one
+// that a parent or Admin already added when the same kid is re-imported.
+describe('import_commit -- kid photos', () => {
+  it('keeps the photo of a returning kid', async () => {
+    await withCleanTx(async (client) => {
+      const adminId = await makeAdmin(client, 'ret-photo-admin@test.local');
+      const kidId = await createKid(client);
+      const photo = '4f3c1d52-9c7e-4d52-8a35-0b1f2f6c7a11.webp';
+      await client.query(
+        'update kids set photo_path = $1, photo_updated_at = now() where id = $2',
+        [photo, kidId]
+      );
+
+      const batchId = await stageBatch(client, {
+        uploadedBy: adminId,
+        rows: [{ rowNumber: 2, parsed: parsedPayload() }],
+      });
+      await commitAs(client, adminId, batchId);
+
+      const r = await client.query('select photo_path from kids where id = $1', [kidId]);
+      expect(r.rows[0].photo_path).toBe(photo);
+    });
+  });
+
+  it('leaves a newly imported kid without a photo', async () => {
+    await withCleanTx(async (client) => {
+      const adminId = await makeAdmin(client, 'new-photo-admin@test.local');
+      const batchId = await stageBatch(client, {
+        uploadedBy: adminId,
+        rows: [{ rowNumber: 2, parsed: parsedPayload({ first: 'Marina' }) }],
+      });
+      await commitAs(client, adminId, batchId);
+
+      const r = await client.query('select photo_path, photo_updated_at from kids');
+      expect(r.rows[0]).toEqual({ photo_path: null, photo_updated_at: null });
+    });
+  });
+});
