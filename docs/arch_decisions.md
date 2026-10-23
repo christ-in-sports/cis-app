@@ -236,3 +236,9 @@ heading followed by:
 - **Lifecycle:** Camera starts only after a tap, uses no microphone, and stops on navigation, Stop camera, hidden document, day closure after refresh, or startup cancellation. Frames stay in the browser and are not stored.
 
 QR navigation refinement: `/attendance/codes` uses the existing authenticated, newest-first attendance overview to open the latest populated current roster. Within a day, the bottom QR tab preserves that day’s roster. Empty current rosters show a link back to attendance; no permissions or database policies change.
+
+### 2026-10-22 — `coaches_kid()` requires the Coach role as well as the team link
+- **Status:** Accepted
+- **Context:** `coaches_kid()` checked only `team_coaches`, so a user whose Coach role was revoked kept reading their old team's `kids` and `registrations` rows (home address, emergency contact, allergies) through `can_read_kid()`, contradicting "a team link alone never grants a role" (AGENTS.md section 4, attendance conventions).
+- **Decision:** Recreate `coaches_kid()` as `has_role('coach') AND <team link>`. Audited every other team-link policy/function: `can_mark()`, `can_access_attendance_record()` and the attendance snapshot policies already check `has_role('coach')`; nothing else changes.
+- **Consequences / tradeoffs:** Narrows existing access: stale `team_coaches` rows of non-Coaches now grant nothing. Anything built on `can_read_kid()` inherits the fix. Tests in `supabase/tests/kids-registrations.test.ts`.
