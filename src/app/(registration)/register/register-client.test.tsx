@@ -290,7 +290,7 @@ describe('a returning kid', () => {
       fireEvent.click(screen.getByText('Mina Guirguis'));
 
       expect(screen.getByText(/Add one so coaches can recognise them/)).toBeInTheDocument();
-      expect(screen.getByText('MG')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Add a photo' })).toBeInTheDocument();
 
       await choosePhoto();
 

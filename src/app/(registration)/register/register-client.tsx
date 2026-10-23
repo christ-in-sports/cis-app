@@ -330,7 +330,7 @@ export default function RegisterClient({
   function focusFirstInvalid() {
     requestAnimationFrame(() => {
       const first = formRef.current?.querySelector<HTMLElement>(
-        '[aria-invalid="true"], fieldset[data-invalid="true"] input',
+        '[aria-invalid="true"], button[data-invalid="true"], fieldset[data-invalid="true"] input',
       );
       first?.focus();
     });
@@ -477,34 +477,26 @@ export default function RegisterClient({
           <SectionBreak />
           {/* The one thing a parent can still change: their photo. It attaches
               at once, since there is no registration left to submit it with. */}
-          <div className="flex items-start gap-cis-3">
-            <KidAvatar
-              size="lg"
-              firstName={kid.first_name}
-              lastName={kid.last_name}
-              photo={photoOf(kid)}
-            />
-            <div className="flex min-w-0 flex-1 flex-col gap-cis-2">
-              <p className="m-0 text-cis-base leading-[1.45]">
-                {photoOf(kid)
-                  ? 'You can still replace their photo.'
-                  : 'They have no photo yet. Add one so coaches can recognise them.'}
-              </p>
-              <PhotoPicker
-                label={photoOf(kid) ? 'Replace photo' : 'Add a photo'}
-                onUploaded={async (uploaded) => {
-                  const result = await replaceKidPhoto({ kid_id: kid.id, photo_path: uploaded.path });
-                  // This screen shows the server's link, not the file on this device.
-                  URL.revokeObjectURL(uploaded.previewUrl);
-                  if (!result.ok) {
-                    throw new PhotoError('save-failed', result.error ?? 'Could not save the photo.');
-                  }
-                  setReplaced((r) => ({ ...r, [kid.id]: result.photo ?? null }));
-                  router.refresh();
-                }}
-              />
-            </div>
-          </div>
+          <p className="m-0 text-cis-base leading-[1.45]">
+            {photoOf(kid)
+              ? 'You can still replace their photo.'
+              : 'They have no photo yet. Add one so coaches can recognise them.'}
+          </p>
+          <PhotoPicker
+            firstName={kid.first_name}
+            lastName={kid.last_name}
+            photo={photoOf(kid)}
+            onUploaded={async (uploaded) => {
+              const result = await replaceKidPhoto({ kid_id: kid.id, photo_path: uploaded.path });
+              // This screen shows the server's link, not the file on this device.
+              URL.revokeObjectURL(uploaded.previewUrl);
+              if (!result.ok) {
+                throw new PhotoError('save-failed', result.error ?? 'Could not save the photo.');
+              }
+              setReplaced((r) => ({ ...r, [kid.id]: result.photo ?? null }));
+              router.refresh();
+            }}
+          />
           <SecondaryButton block onClick={() => setStep({ name: 'pick' })}>
             Back
           </SecondaryButton>

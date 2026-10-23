@@ -908,22 +908,17 @@ export default function RegistrationsClient({
                         <td colSpan={canSelect ? 4 : 3} className="pb-cis-4">
                           <SheetRule className="mb-cis-3 h-[2px] rounded-none" />
 
-                          <div className="mb-cis-3 flex items-start gap-cis-3">
-                            <KidAvatar
-                              size="lg"
-                              firstName={r.kid.first_name}
-                              lastName={r.kid.last_name}
-                              photo={r.kid.photo}
-                            />
-                            <div className="flex min-w-0 flex-1 flex-col gap-cis-2 text-cis-sm">
-                              <span className="font-bold">
-                                {r.kid.photo ? 'Photo on file' : 'No photo yet'}
-                              </span>
-                              {/* Only an Admin or the kid's parent may change a photo
-                                  (the role matrix, `project_spec.md` 1.5). */}
-                              {isAdmin && (
+                          <div className="mb-cis-3 flex flex-col gap-cis-2 text-cis-sm">
+                            <span className="font-bold">
+                              {r.kid.photo ? 'Photo on file' : 'No photo yet'}
+                            </span>
+                            {/* Only an Admin or the kid's parent may change a photo
+                                (the role matrix, `project_spec.md` 1.5). */}
+                            {isAdmin ? (
                                 <PhotoPicker
-                                  label={r.kid.photo ? 'Replace photo' : 'Add a photo'}
+                                  firstName={r.kid.first_name}
+                                  lastName={r.kid.last_name}
+                                  photo={r.kid.photo ?? null}
                                   onUploaded={async (uploaded) => {
                                     const result = await replaceKidPhoto({
                                       kid_id: r.kid.id,
@@ -944,8 +939,14 @@ export default function RegistrationsClient({
                                     toast({ title: 'Photo saved' });
                                   }}
                                 />
-                              )}
-                            </div>
+                            ) : (
+                              <KidAvatar
+                                size="lg"
+                                firstName={r.kid.first_name}
+                                lastName={r.kid.last_name}
+                                photo={r.kid.photo}
+                              />
+                            )}
                           </div>
 
                           <div className="mb-cis-3 flex flex-wrap items-center gap-cis-2 text-cis-sm">
