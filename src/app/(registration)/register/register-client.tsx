@@ -15,6 +15,12 @@
  * Validation runs here with the same `parentRegistrationSchema` the Server
  * Action uses, so errors appear without a round trip. The action re-validates
  * and the database re-checks, so this is a convenience, not a boundary.
+ *
+ * Every kid needs a photo (ENG-21). It is uploaded as soon as it is chosen, so
+ * the form has a path to send with the registration, and attached by
+ * `register_kid()` in the same transaction as the kid. A kid who is already on a
+ * team cannot be re-registered, but can still have their photo added or
+ * replaced, which attaches at once through `replaceKidPhoto`.
  */
 
 import { useRef, useState, useTransition } from 'react';
@@ -30,6 +36,8 @@ import {
   TickRow,
 } from '@/components/cis/form';
 import { BoardHeader } from '@/components/cis/board-shell';
+import { KidAvatar } from '@/components/cis/kid-avatar';
+import { PhotoField, PhotoPicker, type UploadedPhoto } from '@/components/cis/photo-field';
 import { RegistrationColumn } from '@/components/cis/registration-frame';
 import { PrimaryButton, SecondaryButton, secondaryButtonClasses } from '@/components/cis/button';
 import { Sheet, SheetHeading, SheetRule } from '@/components/cis/sheet';
@@ -39,6 +47,8 @@ import {
   defaultDivision,
   type Division,
 } from '@/lib/attendance';
+import { PhotoError } from '@/lib/photo/prepare';
+import type { KidPhoto } from '@/lib/photo/types';
 import type { ParentKid } from '@/lib/registration/parent';
 import { WAIVER_TITLE, WAIVER_URL } from '@/lib/registration/waiver';
 import { PAYMENT_METHODS, REGISTRATION_FEE_CENTS, formatCents } from '@/lib/registration/payment';
@@ -49,6 +59,7 @@ import {
   type Gender,
   type TshirtSize,
 } from '@/lib/validation/kid';
+import { replaceKidPhoto } from '../kid-photo-actions';
 import { registerKid } from './actions';
 
 // ------------------------------------------------------------------ form state
@@ -150,7 +161,7 @@ function parseSports(text: string): string[] | null {
 }
 
 /** The shape `parentRegistrationSchema` expects, from what is on screen. */
-function buildInput(form: FormState, kidId: string | null) {
+function buildInput(form: FormState, kidId: string | null, photo: UploadedPhoto | null) {
   const kid = {
     email: form.email,
     phone: form.phone,
@@ -170,7 +181,14 @@ function buildInput(form: FormState, kidId: string | null) {
   };
 
   if (kidId) {
-    return { mode: 'returning', kid_id: kidId, kid, registration, consent: form.consent };
+    return {
+      mode: 'returning',
+      kid_id: kidId,
+      kid,
+      registration,
+      photo_path: photo?.path,
+      consent: form.consent,
+    };
   }
   return {
     mode: 'new',
@@ -182,6 +200,7 @@ function buildInput(form: FormState, kidId: string | null) {
       gender: form.gender || undefined,
     },
     registration,
+    photo_path: photo?.path,
     consent: form.consent,
   };
 }
@@ -204,18 +223,20 @@ function formatDob(dob: string): string {
  * CSV-imported one arrives without it -- so those say so rather than reading as
  * done, which is what tells the parent there is still something to do.
  */
-function registrationStatus(kid: ParentKid): string {
+function registrationStatus(kid: ParentKid, hasPhoto: boolean): string {
   const reg = kid.registration;
-  if (!reg) return 'Not registered this season';
-  if (reg.on_team) return `Grade ${reg.grade} · On a team`;
-  if (!reg.consent_given_at) return `Grade ${reg.grade} · Waiver needed`;
-  return `Grade ${reg.grade} · Registered`;
+  // A kid with no photo is not finished, whatever else is in order.
+  const photo = hasPhoto ? '' : ' · Photo needed';
+  if (!reg) return `Not registered this season${photo}`;
+  if (reg.on_team) return `Grade ${reg.grade} · On a team${photo}`;
+  if (!reg.consent_given_at) return `Grade ${reg.grade} · Waiver needed${photo}`;
+  return `Grade ${reg.grade} · Registered${photo}`;
 }
 
 /** The row's action: finish an incomplete registration, or review a complete one. */
-function rowAction(kid: ParentKid): string {
+function rowAction(kid: ParentKid, hasPhoto: boolean): string {
   if (!kid.registration) return 'Register';
-  return kid.registration.consent_given_at ? 'Review' : 'Finish';
+  return kid.registration.consent_given_at && hasPhoto ? 'Review' : 'Finish';
 }
 
 // --------------------------------------------------------------------- screens
@@ -253,6 +274,12 @@ export default function RegisterClient({
   const [formError, setFormError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
+  // The photo uploaded in this form, waiting for the registration to attach it.
+  const [photo, setPhoto] = useState<UploadedPhoto | null>(null);
+  // Photos changed on the "on a team" screen. The kids come from the server and
+  // a refresh brings the new one, but not before this screen is shown again.
+  const [replaced, setReplaced] = useState<Record<string, KidPhoto | null>>({});
+  const photoOf = (k: ParentKid): KidPhoto | null => (k.id in replaced ? replaced[k.id] : k.photo);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((f) => ({ ...f, [key]: value }));
@@ -287,6 +314,7 @@ export default function RegisterClient({
   function openForm(kidId: string | null) {
     const kid = kidId ? kids.find((k) => k.id === kidId) : undefined;
     setForm(kid ? returningKidForm(kid) : newKidForm(kids[0]));
+    setPhoto(null);
     setErrors({});
     setFormError(null);
     setStep({ name: 'form', kidId });
@@ -302,7 +330,7 @@ export default function RegisterClient({
   function focusFirstInvalid() {
     requestAnimationFrame(() => {
       const first = formRef.current?.querySelector<HTMLElement>(
-        '[aria-invalid="true"], fieldset[data-invalid="true"] input',
+        '[aria-invalid="true"], button[data-invalid="true"], fieldset[data-invalid="true"] input',
       );
       first?.focus();
     });
@@ -311,12 +339,21 @@ export default function RegisterClient({
   function submit(kidId: string | null) {
     setFormError(null);
 
-    const parsed = parentRegistrationSchema.safeParse(buildInput(form, kidId));
-    if (!parsed.success) {
+    const parsed = parentRegistrationSchema.safeParse(buildInput(form, kidId, photo));
+
+    // A returning kid may leave the photo alone only if they already have one.
+    // The schema cannot know that, so it is checked here and again by the database.
+    const returningKid = kidId ? kids.find((k) => k.id === kidId) : undefined;
+    const needsPhoto = photo === null && (returningKid ? photoOf(returningKid) === null : true);
+
+    if (!parsed.success || needsPhoto) {
       const found: Record<string, string[]> = {};
-      for (const issue of parsed.error.issues) {
-        (found[issue.path.join('.')] ??= []).push(issue.message);
+      if (!parsed.success) {
+        for (const issue of parsed.error.issues) {
+          (found[issue.path.join('.')] ??= []).push(issue.message);
+        }
       }
+      if (needsPhoto) found['photo_path'] = ['Add a photo of your kid'];
       // Untouched selects reach the schema as `undefined`, which its enum and
       // number messages do not describe well -- say what to do instead.
       if (form.grade === '' && found['registration.grade']) {
@@ -390,14 +427,22 @@ export default function RegisterClient({
                   onClick={() => openForm(kid.id)}
                   className="flex min-h-cis-tap-primary w-full items-center justify-between gap-cis-3 py-cis-2 text-left active:scale-[.94] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-cis-orange"
                 >
-                  <span className="flex flex-col">
-                    <span className="text-cis-md font-bold leading-[1.2]">{kidName(kid)}</span>
-                    <span className="text-cis-sm font-semibold text-cis-ink-muted">
-                      {registrationStatus(kid)}
+                  <span className="flex min-w-0 items-center gap-cis-3">
+                    <KidAvatar
+                      size="sm"
+                      firstName={kid.first_name}
+                      lastName={kid.last_name}
+                      photo={photoOf(kid)}
+                    />
+                    <span className="flex min-w-0 flex-col">
+                      <span className="text-cis-md font-bold leading-[1.2]">{kidName(kid)}</span>
+                      <span className="text-cis-sm font-semibold text-cis-ink-muted">
+                        {registrationStatus(kid, photoOf(kid) !== null)}
+                      </span>
                     </span>
                   </span>
                   <span className="text-cis-base font-bold text-cis-orange-text">
-                    {rowAction(kid)}
+                    {rowAction(kid, photoOf(kid) !== null)}
                   </span>
                 </button>
               </li>
@@ -429,6 +474,29 @@ export default function RegisterClient({
             Their registration can no longer be changed here. Contact an Admin if something needs
             correcting.
           </p>
+          <SectionBreak />
+          {/* The one thing a parent can still change: their photo. It attaches
+              at once, since there is no registration left to submit it with. */}
+          <p className="m-0 text-cis-base leading-[1.45]">
+            {photoOf(kid)
+              ? 'You can still replace their photo.'
+              : 'They have no photo yet. Add one so coaches can recognise them.'}
+          </p>
+          <PhotoPicker
+            firstName={kid.first_name}
+            lastName={kid.last_name}
+            photo={photoOf(kid)}
+            onUploaded={async (uploaded) => {
+              const result = await replaceKidPhoto({ kid_id: kid.id, photo_path: uploaded.path });
+              // This screen shows the server's link, not the file on this device.
+              URL.revokeObjectURL(uploaded.previewUrl);
+              if (!result.ok) {
+                throw new PhotoError('save-failed', result.error ?? 'Could not save the photo.');
+              }
+              setReplaced((r) => ({ ...r, [kid.id]: result.photo ?? null }));
+              router.refresh();
+            }}
+          />
           <SecondaryButton block onClick={() => setStep({ name: 'pick' })}>
             Back
           </SecondaryButton>
@@ -463,6 +531,24 @@ export default function RegisterClient({
         <Sheet className="flex flex-col gap-cis-3 px-cis-5 pb-cis-6 pt-cis-6">
           <SheetHeading>{returning ? `About ${kid.first_name}` : 'About your kid'}</SheetHeading>
           <SheetRule />
+
+          <PhotoField
+            hint="A clear photo of their face, so coaches can recognise them. Only you and the servants who work with your kid can see it."
+            firstName={returning ? kid.first_name : form.first_name}
+            lastName={returning ? kid.last_name : form.last_name}
+            current={returning ? photoOf(kid) : null}
+            value={photo}
+            error={err('photo_path')}
+            disabled={pending}
+            onChange={(uploaded) => {
+              setPhoto(uploaded);
+              setErrors((e) => {
+                const rest = { ...e };
+                delete rest['photo_path'];
+                return rest;
+              });
+            }}
+          />
 
           {returning ? (
             // Locked: these are how a returning kid is matched across seasons,

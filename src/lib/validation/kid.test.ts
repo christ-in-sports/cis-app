@@ -202,7 +202,8 @@ describe('registrationSchema t-shirt size', () => {
 });
 
 describe('parentRegistrationSchema', () => {
-  const newKid = { mode: 'new', kid: validKid, registration: validRegistration, consent: true };
+  const photo_path = '4f3c1d52-9c7e-4d52-8a35-0b1f2f6c7a11.webp';
+  const newKid = { mode: 'new', kid: validKid, registration: validRegistration, photo_path, consent: true };
 
   const editable = {
     home_address: '2 Oak Ave, Hayward CA',
@@ -226,6 +227,38 @@ describe('parentRegistrationSchema', () => {
 
   it('accepts a returning kid without the locked fields', () => {
     expect(parentRegistrationSchema.safeParse(returning).success).toBe(true);
+  });
+
+  describe('the photo', () => {
+    it('is required for a new kid, with an error the form can show beside the photo', () => {
+      const { photo_path: _omit, ...withoutPhoto } = newKid;
+      void _omit;
+
+      const result = parentRegistrationSchema.safeParse(withoutPhoto);
+
+      expect(result.success).toBe(false);
+      expect(pathsOf(result)).toContain('photo_path');
+      expect(result.error?.issues.find((i) => i.path.join('.') === 'photo_path')?.message).toBe(
+        'Add a photo of your kid'
+      );
+    });
+
+    it.each([null, '', 'photo.webp', 'folder/4f3c1d52-9c7e-4d52-8a35-0b1f2f6c7a11.webp', '4f3c1d52-9c7e-4d52-8a35-0b1f2f6c7a11.png'])(
+      'rejects %p for a new kid',
+      (bad) => {
+        expect(parentRegistrationSchema.safeParse({ ...newKid, photo_path: bad }).success).toBe(false);
+      }
+    );
+
+    it('is optional for a returning kid, who may already have one on file', () => {
+      expect(parentRegistrationSchema.safeParse({ ...returning, photo_path: undefined }).success).toBe(true);
+      expect(parentRegistrationSchema.safeParse({ ...returning, photo_path: null }).success).toBe(true);
+    });
+
+    it('is checked when a returning kid sends one', () => {
+      expect(parentRegistrationSchema.safeParse({ ...returning, photo_path }).success).toBe(true);
+      expect(parentRegistrationSchema.safeParse({ ...returning, photo_path: 'x.webp' }).success).toBe(false);
+    });
   });
 
   it('requires the waiver to be agreed', () => {

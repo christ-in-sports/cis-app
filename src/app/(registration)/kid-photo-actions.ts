@@ -21,11 +21,19 @@
 import { revalidatePath } from 'next/cache';
 
 import { checkAnyRole } from '@/lib/auth/roles';
-import { KID_PHOTO_BUCKET, replaceKidPhotoSchema } from '@/lib/validation/photo';
+import { removeReplacedPhoto } from '@/lib/photo/replaced';
+import { signedPhotoUrls, toKidPhoto } from '@/lib/photo/signed-urls';
+import type { KidPhoto } from '@/lib/photo/types';
+import { replaceKidPhotoSchema } from '@/lib/validation/photo';
 
 export interface ReplaceKidPhotoResult {
   ok: boolean;
   error?: string;
+  /**
+   * The kid's new photo with a fresh link, so a screen can show it at once. The
+   * roster keeps its rows in state, which a server refresh does not replace.
+   */
+  photo?: KidPhoto | null;
 }
 
 const FORBIDDEN = '42501';
@@ -67,17 +75,12 @@ export async function replaceKidPhoto(input: unknown): Promise<ReplaceKidPhotoRe
     return { ok: false, error: 'Could not save the photo.' };
   }
 
-  if (replacedPath) {
-    // The storage policy lets the uploader or an Admin delete an object once no
-    // kid uses it. Anyone else (a parent replacing a photo an Admin uploaded)
-    // is quietly refused, and the old file stays until someone deletes it by hand.
-    const { error: removeError } = await supabase.storage.from(KID_PHOTO_BUCKET).remove([replacedPath]);
-    if (removeError) console.error('Removing a replaced kid photo failed');
-  }
+  await removeReplacedPhoto(supabase, replacedPath);
 
   revalidatePath('/register');
   revalidatePath('/registrations');
   revalidatePath('/attendance', 'layout');
 
-  return { ok: true };
+  const urls = await signedPhotoUrls(supabase, [parsed.data.photo_path]);
+  return { ok: true, photo: toKidPhoto(parsed.data.photo_path, urls) };
 }

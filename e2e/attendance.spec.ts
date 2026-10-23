@@ -2,6 +2,7 @@
 import { test, expect, type Page } from '@playwright/test';
 import { Client } from 'pg';
 import { randomUUID } from 'crypto';
+import { readFileSync } from 'fs';
 
 test.use({ viewport: { width: 390, height: 844 } });
 test.setTimeout(90_000);
@@ -18,6 +19,7 @@ let kidId: string;
 let emptySeasonId: string;
 let previousSeason: string | undefined;
 const extraKidIds: string[] = [];
+let photoName: string | undefined;
 
 async function db<T>(work: (client: Client) => Promise<T>) {
   if (!['127.0.0.1', 'localhost'].includes(new URL(dbUrl).hostname) || !['127.0.0.1', 'localhost'].includes(new URL(authUrl).hostname)) throw new Error('Attendance E2E must run locally.');
@@ -69,6 +71,14 @@ test.afterAll(async () => {
     await client.query('delete from attendance_groups where created_by=any($1::uuid[])', [ids]);
     for (const id of ids) await client.query('delete from auth.users where id = $1', [id]);
   });
+  // Through the Storage API, which also removes the file (Postgres refuses to).
+  if (photoName) {
+    await fetch(`${authUrl}/storage/v1/object/kid-photos`, {
+      method: 'DELETE',
+      headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prefixes: [photoName] }),
+    });
+  }
 });
 
 test('Program sets up a team; both coaches mark it; Program sees results and locks it', async ({ page, browser }) => {
@@ -97,11 +107,25 @@ test('Program sets up a team; both coaches mark it; Program sees results and loc
   await page.getByRole('button', { name: 'Create day', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Attendance open' })).toBeVisible();
   const sessionUrl = page.url();
+  // The kid has a photo, so a coach can match the face to the name. Uploaded as
+  // the service role here, because this test is about who sees it, not uploading.
+  photoName = `${randomUUID()}.jpg`;
+  const upload = await fetch(`${authUrl}/storage/v1/object/kid-photos/${photoName}`, {
+    method: 'POST',
+    headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}`, 'Content-Type': 'image/jpeg' },
+    body: readFileSync('e2e/fixtures/kid.jpg'),
+  });
+  expect(upload.ok).toBe(true);
+  await db((client) => client.query('update kids set photo_path = $1, photo_updated_at = now() where id = $2', [photoName, kidId]));
   await expect(page.getByRole('combobox', { name: `Attendance for Attendance ${suffix}` })).toBeDisabled();
   const firstContext = await browser.newContext(); const first = await firstContext.newPage();
   const secondContext = await browser.newContext(); const second = await secondContext.newPage();
   try {
     await signIn(first, 'coach'); await first.goto(sessionUrl);
+    // The coach of the kid's team is handed a signed link to the photo, and it loads.
+    const face = first.locator('img[src*="/storage/v1/object/sign/kid-photos/"]');
+    await expect(face).toHaveCount(1);
+    await expect.poll(() => face.evaluate((i) => (i as HTMLImageElement).complete && (i as HTMLImageElement).naturalWidth > 0)).toBe(true);
     await first.getByRole('combobox', { name: `Attendance for Attendance ${suffix}` }).selectOption('present');
     await expect(first.getByText('Saved', { exact: true })).toBeVisible();
     await expect(page.getByText('1 / 1 present · 0 unmarked', { exact: true })).toBeVisible({ timeout: 20000 });

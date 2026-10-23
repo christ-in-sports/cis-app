@@ -22,6 +22,7 @@
 
 import { z } from 'zod';
 import { defaultDivision, divisionAllowedForGrade, type Division } from '@/lib/attendance';
+import { KID_PHOTO_PATH, kidPhotoPathSchema } from '@/lib/validation/photo';
 
 /** Matches the `gender` CHECK on `kids`. Stored lower-case. */
 export const GENDERS = ['male', 'female'] as const;
@@ -184,6 +185,17 @@ const returningKidSchema = parentKidSchema.omit({
 const waiverAgreed = z.literal(true, 'You must agree to the liability waiver');
 
 /**
+ * The photo the browser has already uploaded (`uploadKidPhoto`). A new kid must
+ * have one. A returning kid must too unless they already have a photo on file,
+ * which only the database can know, so here it is optional and `register_kid()`
+ * refuses a missing one. The error path is `photo_path`, so the form can show it
+ * beside the photo.
+ */
+const requiredPhoto = z
+  .string({ error: 'Add a photo of your kid' })
+  .regex(KID_PHOTO_PATH, 'Add a photo of your kid');
+
+/**
  * One parent form submission (ENG-4): either a new kid or a returning one.
  *
  * The grade/division rule lives on `registration`, so its error path is
@@ -194,6 +206,7 @@ export const parentRegistrationSchema = z.discriminatedUnion('mode', [
     mode: z.literal('new'),
     kid: parentKidSchema,
     registration: registrationSchema,
+    photo_path: requiredPhoto,
     consent: waiverAgreed,
   }),
   z.object({
@@ -201,6 +214,7 @@ export const parentRegistrationSchema = z.discriminatedUnion('mode', [
     kid_id: z.uuid('Pick one of your kids'),
     kid: returningKidSchema,
     registration: registrationSchema,
+    photo_path: kidPhotoPathSchema.nullish(),
     consent: waiverAgreed,
   }),
 ]);

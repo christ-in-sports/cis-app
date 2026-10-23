@@ -8,6 +8,8 @@
  */
 
 import { checkRole } from '@/lib/auth/roles';
+import { signedPhotoUrls, toKidPhoto } from '@/lib/photo/signed-urls';
+import type { KidPhoto } from '@/lib/photo/types';
 
 export interface ParentKid {
   id: string;
@@ -24,6 +26,8 @@ export interface ParentKid {
   guardian_name: string;
   guardian_phone: string;
   guardian_email: string;
+  /** The kid's photo with a link to it, or null if they have none yet. */
+  photo: KidPhoto | null;
   /** This season's registration, if the kid already has one. */
   registration: {
     id: string;
@@ -71,7 +75,7 @@ export async function loadParentRegistrationContext(): Promise<ParentContext> {
     .select(
       `id, first_name, last_name, dob, gender, email, phone, allergies,
        home_address, emergency_contact_name, emergency_contact_phone,
-       guardian_name, guardian_phone, guardian_email,
+       guardian_name, guardian_phone, guardian_email, photo_path,
        registrations ( id, season_id, grade, division, tshirt_size, top_sports,
                        team_id, consent_given_at )`,
     )
@@ -84,15 +88,21 @@ export async function loadParentRegistrationContext(): Promise<ParentContext> {
     return { status: 'ok', season, kids: [] };
   }
 
+  // One request signs every photo on the page. A failure leaves kids with their
+  // initials; it never stops a parent registering.
+  const photoUrls = await signedPhotoUrls(supabase, (kids ?? []).map((k) => k.photo_path));
+
   return {
     status: 'ok',
     season,
     kids: (kids ?? []).map((k) => {
       const reg = (k.registrations ?? []).find((r) => r.season_id === season.id) ?? null;
-      const { registrations: _omit, ...kid } = k;
+      // `photo_path` is replaced by `photo`: the path alone is no use to the page.
+      const { registrations: _omit, photo_path, ...kid } = k;
       void _omit;
       return {
-        ...(kid as Omit<ParentKid, 'registration'>),
+        ...(kid as Omit<ParentKid, 'registration' | 'photo'>),
+        photo: toKidPhoto(photo_path, photoUrls),
         registration: reg
           ? {
               id: reg.id,

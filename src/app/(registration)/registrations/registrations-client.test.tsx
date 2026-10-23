@@ -10,19 +10,37 @@
  * bulk bar, and the per-kid Payments block.
  */
 
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import RegistrationsClient, { type RosterEntry } from './registrations-client';
 import { deletePayment, recordPayments } from './actions';
+import { PhotoError, preparePhoto } from '@/lib/photo/prepare';
+import { uploadKidPhoto } from '@/lib/photo/upload';
+import { replaceKidPhoto } from '../kid-photo-actions';
 
+// What `useSearchParams` reads. Next.js re-renders on `history.replaceState`;
+// the test double does not, so tests set this before rendering and check the
+// calls to `replaceState` instead.
+let mockSearch = '';
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ refresh: jest.fn(), push: jest.fn() }),
+  useSearchParams: () => new URLSearchParams(mockSearch),
+  usePathname: () => '/registrations',
 }));
 
+// Replaced per test where one needs to drive a write.
+let mockSupabase: { from: jest.Mock } = { from: jest.fn() };
 jest.mock('@/lib/supabase/client', () => ({
-  createClient: () => ({ from: jest.fn() }),
+  createClient: () => mockSupabase,
 }));
+
+jest.mock('../kid-photo-actions', () => ({ replaceKidPhoto: jest.fn() }));
+jest.mock('@/lib/photo/prepare', () => {
+  const actual = jest.requireActual('@/lib/photo/prepare');
+  return { ...actual, preparePhoto: jest.fn() };
+});
+jest.mock('@/lib/photo/upload', () => ({ uploadKidPhoto: jest.fn() }));
 
 const toast = jest.fn();
 jest.mock('@/components/ui/toast', () => ({
@@ -40,6 +58,8 @@ const deletePaymentMock = deletePayment as jest.MockedFunction<typeof deletePaym
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockSearch = '';
+  mockSupabase = { from: jest.fn() };
 });
 
 function entry(overrides: Partial<RosterEntry> = {}): RosterEntry {
@@ -363,5 +383,172 @@ describe('the Add / Edit registration form', () => {
 
     const panel = screen.getByRole('heading', { name: 'New registration' }).closest('div[class*="bg-background"]');
     expect(panel).toHaveClass('text-cis-ink');
+  });
+});
+
+describe('roster row -- photos', () => {
+  const PHOTO = { photoPath: 'mina.webp', signedUrl: 'https://signed/mina' };
+  const NEW_PATH = '4f3c1d52-9c7e-4d52-8a35-0b1f2f6c7a11.webp';
+  const withPhoto = (over: Partial<RosterEntry> = {}) =>
+    entry({ kid: { ...entry().kid, photo: PHOTO }, ...over });
+  const marina = () =>
+    entry({
+      registration_id: 'reg-2',
+      kid: { ...entry().kid, id: 'kid-2', first_name: 'Marina', last_name: 'Zaky' },
+    });
+
+  const replaceState = jest.spyOn(window.history, 'replaceState');
+  const photoInput = () => document.querySelector('input[type="file"]') as HTMLInputElement;
+  const choose = (name = 'IMG_1.jpg') =>
+    fireEvent.change(photoInput(), { target: { files: [new File(['x'], name, { type: 'image/jpeg' })] } });
+
+  beforeEach(() => {
+    replaceState.mockClear();
+    URL.createObjectURL = jest.fn(() => 'blob:preview');
+    URL.revokeObjectURL = jest.fn();
+    jest.mocked(preparePhoto).mockResolvedValue({ blob: new Blob(['x']) } as never);
+    jest.mocked(uploadKidPhoto).mockResolvedValue(NEW_PATH);
+  });
+
+  it('shows the photo beside the name, or the initials when there is none', () => {
+    const { container } = renderRoster({ rows: [withPhoto(), marina()] });
+
+    expect(container.querySelectorAll('tbody img')).toHaveLength(1);
+    expect(container.querySelector('tbody img')).toHaveAttribute('src', 'https://signed/mina');
+    expect(screen.getByText('MZ')).toBeInTheDocument();
+  });
+
+  it('says in the details whether a photo is on file', () => {
+    renderRoster({ rows: [withPhoto()] });
+    fireEvent.click(screen.getByText('Juniors'));
+
+    expect(screen.getByText('Photo on file')).toBeInTheDocument();
+  });
+
+  describe('replacing a photo', () => {
+    it('lets an Admin add one, and shows it at once', async () => {
+      jest.mocked(replaceKidPhoto).mockResolvedValue({
+        ok: true,
+        photo: { photoPath: NEW_PATH, signedUrl: 'https://signed/new' },
+      });
+      const { container } = renderRoster({ rows: [entry()] });
+      fireEvent.click(screen.getByText('Juniors'));
+      expect(screen.getByText('No photo yet')).toBeInTheDocument();
+
+      choose();
+
+      await waitFor(() => expect(replaceKidPhoto).toHaveBeenCalledWith({ kid_id: 'kid-1', photo_path: NEW_PATH }));
+      await waitFor(() => expect(container.querySelector('tbody img')).toHaveAttribute('src', 'https://signed/new'));
+      expect(screen.getByText('Photo on file')).toBeInTheDocument();
+      expect(toast).toHaveBeenCalledWith({ title: 'Photo saved' });
+      expect(screen.getByRole('button', { name: 'Replace photo' })).toBeInTheDocument();
+    });
+
+    it('shows why it failed, and leaves the photo as it was', async () => {
+      jest.mocked(replaceKidPhoto).mockResolvedValue({ ok: false, error: 'Could not save the photo.' });
+      const { container } = renderRoster({ rows: [withPhoto()] });
+      fireEvent.click(screen.getByText('Juniors'));
+
+      choose();
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('Could not save the photo.');
+      expect(container.querySelector('tbody img')).toHaveAttribute('src', 'https://signed/mina');
+      expect(toast).not.toHaveBeenCalled();
+    });
+
+    it('shows a problem with the file itself', async () => {
+      jest.mocked(preparePhoto).mockRejectedValue(new PhotoError('unreadable', 'That file could not be read as a photo.'));
+      renderRoster({ rows: [entry()] });
+      fireEvent.click(screen.getByText('Juniors'));
+
+      choose('notes.pdf');
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('could not be read');
+      expect(replaceKidPhoto).not.toHaveBeenCalled();
+    });
+
+    it('keeps the photo when an Admin edits the kid', async () => {
+      const kidRow = {
+        ...entry().kid,
+        photo_path: 'mina.webp',
+        photo_updated_at: '2026-10-22T00:00:00Z',
+      };
+      const regRow = {
+        id: 'reg-1', grade: 6, division: 'juniors', tshirt_size: 'YM', top_sports: null,
+        active: true, consent_given_at: null, team_id: null,
+      };
+      const one = (data: unknown) => ({ eq: () => ({ select: () => ({ single: async () => ({ data, error: null }) }) }) });
+      mockSupabase = {
+        from: jest.fn((table: string) => ({ update: () => one(table === 'kids' ? kidRow : regRow) })),
+      };
+      const { container } = renderRoster({ rows: [withPhoto()] });
+      fireEvent.click(screen.getByText('Juniors'));
+      fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Save changes' }));
+
+      await waitFor(() => expect(toast).toHaveBeenCalledWith({ title: 'Saved' }));
+      expect(container.querySelector('tbody img')).toHaveAttribute('src', 'https://signed/mina');
+    });
+  });
+
+  describe('the missing-photo filter', () => {
+    it('counts the kids who still need a photo', () => {
+      renderRoster({ rows: [withPhoto(), marina()] });
+
+      expect(screen.getByRole('button', { name: '1 still need a photo' })).toHaveAttribute('aria-pressed', 'false');
+    });
+
+    it('is not there when everybody has one', () => {
+      renderRoster({ rows: [withPhoto()] });
+
+      expect(screen.queryByRole('button', { name: /need a photo/ })).not.toBeInTheDocument();
+    });
+
+    it('is kept in the address, so the view can be shared', () => {
+      renderRoster({ rows: [withPhoto(), marina()] });
+
+      fireEvent.click(screen.getByRole('button', { name: '1 still need a photo' }));
+
+      expect(replaceState).toHaveBeenCalledWith(null, '', '/registrations?photo=missing');
+    });
+
+    it('narrows the roster to kids without a photo when the address says so', () => {
+      mockSearch = 'photo=missing';
+      renderRoster({ rows: [withPhoto(), marina()] });
+
+      expect(screen.getByRole('button', { name: '1 still need a photo' })).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByRole('button', { name: 'Zaky, Marina' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Guirguis, Mina' })).not.toBeInTheDocument();
+      expect(screen.getByText(/1 shown/)).toBeInTheDocument();
+    });
+
+    it('turns off by taking itself out of the address, and keeps other filters', () => {
+      mockSearch = 'photo=missing&q=x';
+      renderRoster({ rows: [withPhoto(), marina()] });
+
+      fireEvent.click(screen.getByRole('button', { name: '1 still need a photo' }));
+
+      expect(replaceState).toHaveBeenCalledWith(null, '', '/registrations?q=x');
+    });
+
+    it('can be switched off from an address that no longer has anyone missing', () => {
+      mockSearch = 'photo=missing';
+      renderRoster({ rows: [withPhoto()] });
+
+      expect(screen.getByRole('heading', { name: 'Nobody left to chase' })).toBeInTheDocument();
+      expect(screen.getByText('Every kid matching these filters has a photo.')).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Everyone has a photo' }));
+      expect(replaceState).toHaveBeenCalledWith(null, '', '/registrations');
+    });
+
+    it('works alongside the consent filter', () => {
+      mockSearch = 'photo=missing';
+      renderRoster({ rows: [marina()] });
+
+      fireEvent.click(screen.getByRole('button', { name: /still owe a consent form/ }));
+
+      expect(screen.getByRole('button', { name: 'Zaky, Marina' })).toBeInTheDocument();
+    });
   });
 });

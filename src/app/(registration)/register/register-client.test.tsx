@@ -4,13 +4,16 @@
  * division, and that a bad form never reaches the server action.
  *
  * Registration validation is on AGENTS.md §7's must-test list. The schema has
- * its own tests; these check that the screen actually applies it.
+ * its own tests; these check that the screen actually applies it, including the
+ * rule that every kid has a photo.
  */
 
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import RegisterClient from './register-client';
+import { PhotoError, preparePhoto } from '@/lib/photo/prepare';
+import { uploadKidPhoto } from '@/lib/photo/upload';
 import type { ParentKid } from '@/lib/registration/parent';
 import { WAIVER_URL } from '@/lib/registration/waiver';
 
@@ -23,6 +26,22 @@ const registerKid = jest.fn();
 jest.mock('./actions', () => ({
   registerKid: (input: unknown) => registerKid(input),
 }));
+
+const replaceKidPhoto = jest.fn();
+jest.mock('../kid-photo-actions', () => ({
+  replaceKidPhoto: (input: unknown) => replaceKidPhoto(input),
+}));
+
+// The browser pipeline (canvas, HEIC, Storage) is tested on its own; here it
+// just has to hand the form a path.
+jest.mock('@/lib/photo/prepare', () => {
+  const actual = jest.requireActual('@/lib/photo/prepare');
+  return { ...actual, preparePhoto: jest.fn() };
+});
+jest.mock('@/lib/photo/upload', () => ({ uploadKidPhoto: jest.fn() }));
+
+const PHOTO_PATH = '4f3c1d52-9c7e-4d52-8a35-0b1f2f6c7a11.webp';
+const ON_FILE = { photoPath: 'on-file.webp', signedUrl: 'https://signed/on-file' };
 
 const season = { id: 'season-1', name: 'CIS 2026-2027' };
 
@@ -42,6 +61,7 @@ function kid(overrides: Partial<ParentKid> = {}): ParentKid {
     guardian_name: 'Mariam Guirguis',
     guardian_phone: '(510) 555-0111',
     guardian_email: 'mariam@example.com',
+    photo: ON_FILE,
     registration: {
       id: 'reg-1',
       grade: 6,
@@ -60,8 +80,19 @@ const withReg = (patch: Partial<NonNullable<ParentKid['registration']>>) =>
 
 const field = (label: string) => screen.getByLabelText(label) as HTMLInputElement;
 
+/** Chooses a photo file, as a parent would, and waits for the upload to finish. */
+async function choosePhoto(name = 'IMG_1.jpg') {
+  const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+  fireEvent.change(input, { target: { files: [new File(['x'], name, { type: 'image/jpeg' })] } });
+  await screen.findByRole('button', { name: 'Replace photo' });
+}
+
 beforeEach(() => {
   jest.clearAllMocks();
+  URL.createObjectURL = jest.fn(() => 'blob:preview');
+  URL.revokeObjectURL = jest.fn();
+  jest.mocked(preparePhoto).mockResolvedValue({ blob: new Blob(['x']) } as never);
+  jest.mocked(uploadKidPhoto).mockResolvedValue(PHOTO_PATH);
 });
 
 describe('the kid picker', () => {
@@ -96,6 +127,27 @@ describe('the kid picker', () => {
     const peter = screen.getByText('Peter Guirguis').closest('button')!;
     expect(within(peter).getByText('Not registered this season')).toBeInTheDocument();
     expect(within(peter).getByText('Register')).toBeInTheDocument();
+  });
+
+  it('shows each kid’s photo, and says when one is still needed', () => {
+    const { container } = render(
+      <RegisterClient
+        season={season}
+        kids={[kid(), kid({ id: 'k2', first_name: 'Marina', photo: null })]}
+      />,
+    );
+
+    const mina = screen.getByText('Mina Guirguis').closest('button')!;
+    expect(mina.querySelector('img')).toHaveAttribute('src', 'https://signed/on-file');
+    expect(within(mina).getByText('Review')).toBeInTheDocument();
+
+    // A kid without a photo is not finished, however complete the rest is.
+    const marina = screen.getByText('Marina Guirguis').closest('button')!;
+    expect(marina.querySelector('img')).toBeNull();
+    expect(within(marina).getByText('MG')).toBeInTheDocument();
+    expect(within(marina).getByText('Grade 6 · Registered · Photo needed')).toBeInTheDocument();
+    expect(within(marina).getByText('Finish')).toBeInTheDocument();
+    expect(container.querySelectorAll('img')).toHaveLength(1);
   });
 
   it('carries household details to a new kid, but nothing about the child', () => {
@@ -152,6 +204,58 @@ describe('a returning kid', () => {
     expect(refresh).toHaveBeenCalled();
   });
 
+  it('keeps the photo on file when none is chosen, and shows it', async () => {
+    registerKid.mockResolvedValue({ ok: true });
+    render(<RegisterClient season={season} kids={[kid()]} />);
+    fireEvent.click(screen.getByText('Mina Guirguis'));
+
+    expect(screen.getByRole('button', { name: 'Replace photo' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() => expect(registerKid).toHaveBeenCalledTimes(1));
+    expect(registerKid.mock.calls[0][0].photo_path).toBeUndefined();
+  });
+
+  it('sends a replacement photo with the registration', async () => {
+    registerKid.mockResolvedValue({ ok: true });
+    render(<RegisterClient season={season} kids={[kid()]} />);
+    fireEvent.click(screen.getByText('Mina Guirguis'));
+
+    await choosePhoto();
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() => expect(registerKid).toHaveBeenCalledTimes(1));
+    expect(registerKid.mock.calls[0][0].photo_path).toBe(PHOTO_PATH);
+  });
+
+  it('asks for a photo from a kid who has none, and does not submit without one', async () => {
+    render(<RegisterClient season={season} kids={[kid({ photo: null })]} />);
+    fireEvent.click(screen.getByText('Mina Guirguis'));
+    fireEvent.click(screen.getByRole('checkbox'));
+
+    expect(screen.getByRole('button', { name: 'Add a photo' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    expect(registerKid).not.toHaveBeenCalled();
+    expect(screen.getByText('Add a photo of your kid')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Add a photo' })).toHaveFocus());
+  });
+
+  it('lets that kid be registered once a photo is added', async () => {
+    registerKid.mockResolvedValue({ ok: true });
+    render(<RegisterClient season={season} kids={[kid({ photo: null })]} />);
+    fireEvent.click(screen.getByText('Mina Guirguis'));
+
+    await choosePhoto();
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() => expect(registerKid).toHaveBeenCalledTimes(1));
+    expect(registerKid.mock.calls[0][0].photo_path).toBe(PHOTO_PATH);
+  });
+
   // The database refuses this too; the screen just should not offer the form.
   it('offers no form once the kid is on a team', () => {
     render(<RegisterClient season={season} kids={[withReg({ on_team: true })]} />);
@@ -160,6 +264,52 @@ describe('a returning kid', () => {
     expect(screen.getByText('Mina Guirguis is on a team')).toBeInTheDocument();
     expect(screen.getByText(/Contact an Admin/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Save changes|Register/ })).not.toBeInTheDocument();
+  });
+
+  describe('on a team, where only the photo can still change', () => {
+    const onTeam = () => withReg({ on_team: true });
+
+    it('replaces the photo at once, with no registration to submit', async () => {
+      replaceKidPhoto.mockResolvedValue({ ok: true, photo: { photoPath: PHOTO_PATH, signedUrl: 'https://signed/new' } });
+      const kids = [onTeam()];
+      const { container } = render(<RegisterClient season={season} kids={kids} />);
+      fireEvent.click(screen.getByText('Mina Guirguis'));
+      expect(screen.getByText('You can still replace their photo.')).toBeInTheDocument();
+
+      await choosePhoto();
+
+      expect(replaceKidPhoto).toHaveBeenCalledWith({ kid_id: kid().id, photo_path: PHOTO_PATH });
+      expect(registerKid).not.toHaveBeenCalled();
+      expect(refresh).toHaveBeenCalled();
+      expect(container.querySelector('img')).toHaveAttribute('src', 'https://signed/new');
+    });
+
+    it('asks for a photo from a kid on a team who has none', async () => {
+      replaceKidPhoto.mockResolvedValue({ ok: true, photo: { photoPath: PHOTO_PATH, signedUrl: 'https://signed/new' } });
+      render(<RegisterClient season={season} kids={[kid({ photo: null, registration: { ...kid().registration!, on_team: true } })]} />);
+      fireEvent.click(screen.getByText('Mina Guirguis'));
+
+      expect(screen.getByText(/Add one so coaches can recognise them/)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Add a photo' })).toBeInTheDocument();
+
+      await choosePhoto();
+
+      expect(screen.queryByText(/Add one so coaches/)).not.toBeInTheDocument();
+      expect(screen.getByText('You can still replace their photo.')).toBeInTheDocument();
+    });
+
+    it('shows why a replacement was refused, and keeps the photo on screen', async () => {
+      replaceKidPhoto.mockResolvedValue({ ok: false, error: 'You can only change the photo of your own kids.' });
+      const { container } = render(<RegisterClient season={season} kids={[onTeam()]} />);
+      fireEvent.click(screen.getByText('Mina Guirguis'));
+
+      const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+      fireEvent.change(input, { target: { files: [new File(['x'], 'a.jpg', { type: 'image/jpeg' })] } });
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('your own kids');
+      expect(container.querySelector('img')).toHaveAttribute('src', 'https://signed/on-file');
+      expect(refresh).not.toHaveBeenCalled();
+    });
   });
 });
 
@@ -272,6 +422,7 @@ describe('submitting a new kid', () => {
     const alerts = screen.getAllByRole('alert').map((a) => a.textContent);
     expect(alerts).toEqual(
       expect.arrayContaining([
+        'Add a photo of your kid',
         'First name is required',
         'Last name is required',
         'Choose a grade',
@@ -290,11 +441,48 @@ describe('submitting a new kid', () => {
     }
     expect(field('First name')).toHaveAttribute('aria-invalid', 'true');
 
-    return waitFor(() => expect(field('First name')).toHaveFocus());
+    // The photo is the first thing on the form, so it is the first problem.
+    return waitFor(() => expect(screen.getByRole('button', { name: 'Add a photo' })).toHaveFocus());
   });
 
-  it('will not submit without the waiver', () => {
+  it('will not submit without a photo, and says so beside the photo', async () => {
     render(<RegisterClient season={season} kids={[]} />);
+    fillValid();
+    fireEvent.click(screen.getByRole('checkbox'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Register' }));
+
+    expect(registerKid).not.toHaveBeenCalled();
+    const group = screen.getByRole('group', { name: 'Photo' });
+    expect(within(group).getByRole('alert')).toHaveTextContent('Add a photo of your kid');
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Add a photo' })).toHaveFocus());
+  });
+
+  it('takes the photo error away once a photo is added', async () => {
+    render(<RegisterClient season={season} kids={[]} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Register' }));
+    const group = screen.getByRole('group', { name: 'Photo' });
+    expect(within(group).getByRole('alert')).toBeInTheDocument();
+
+    await choosePhoto();
+
+    expect(within(group).queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('shows what the photo step says when it fails, and nothing is sent', async () => {
+    jest.mocked(preparePhoto).mockRejectedValue(new PhotoError('heic-failed', 'That photo could not be converted. Choose a JPEG instead.'));
+    render(<RegisterClient season={season} kids={[]} />);
+
+    const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [new File(['x'], 'IMG_1.HEIC')] } });
+
+    expect(await screen.findByText(/Choose a JPEG instead/)).toBeInTheDocument();
+    expect(registerKid).not.toHaveBeenCalled();
+  });
+
+  it('will not submit without the waiver', async () => {
+    render(<RegisterClient season={season} kids={[]} />);
+    await choosePhoto();
     fillValid();
 
     fireEvent.click(screen.getByRole('button', { name: 'Register' }));
@@ -306,6 +494,7 @@ describe('submitting a new kid', () => {
   it('sends a valid registration and shows the done screen', async () => {
     registerKid.mockResolvedValue({ ok: true, kidId: 'k', registrationId: 'r' });
     render(<RegisterClient season={season} kids={[]} />);
+    await choosePhoto();
     fillValid();
     fireEvent.click(screen.getByRole('checkbox'));
 
@@ -314,6 +503,7 @@ describe('submitting a new kid', () => {
     await waitFor(() => expect(registerKid).toHaveBeenCalledTimes(1));
     const sent = registerKid.mock.calls[0][0];
     expect(sent.mode).toBe('new');
+    expect(sent.photo_path).toBe(PHOTO_PATH);
     expect(sent.consent).toBe(true);
     expect(sent.kid).toMatchObject({ first_name: 'Marina', gender: 'female', dob: '2012-05-20' });
     expect(sent.registration).toMatchObject({ grade: 6, division: 'juniors', tshirt_size: 'M' });
@@ -329,6 +519,7 @@ describe('submitting a new kid', () => {
       fieldErrors: { 'kid.guardian_email': ['Parent/guardian email is not a valid email address'] },
     });
     render(<RegisterClient season={season} kids={[]} />);
+    await choosePhoto();
     fillValid();
     fireEvent.click(screen.getByRole('checkbox'));
     fireEvent.click(screen.getByRole('button', { name: 'Register' }));
@@ -345,11 +536,28 @@ describe('submitting a new kid', () => {
       error: 'You have already added a kid with that name and date of birth.',
     });
     render(<RegisterClient season={season} kids={[]} />);
+    await choosePhoto();
     fillValid();
     fireEvent.click(screen.getByRole('checkbox'));
     fireEvent.click(screen.getByRole('button', { name: 'Register' }));
 
     expect(await screen.findByText(/already added a kid/)).toBeInTheDocument();
     expect(screen.queryByText('Registered')).not.toBeInTheDocument();
+  });
+
+  it('shows the server\'s photo errors beside the photo', async () => {
+    registerKid.mockResolvedValue({
+      ok: false,
+      error: 'The photo upload was not found. Choose the photo again.',
+      fieldErrors: { photo_path: ['Choose the photo again'] },
+    });
+    render(<RegisterClient season={season} kids={[]} />);
+    await choosePhoto();
+    fillValid();
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: 'Register' }));
+
+    const group = screen.getByRole('group', { name: 'Photo' });
+    expect(await within(group).findByText('Choose the photo again')).toBeInTheDocument();
   });
 });

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { type RosterKid, type MinistryTeam, DIVISION_SHORT, fmtDay } from '@/lib/attendance';
 import { Field, FieldError, SelectInput, TextInput, TickRow } from '@/components/cis/form';
 import { DangerButton, PrimaryButton, SecondaryButton } from '@/components/cis/button';
+import { KidAvatar } from '@/components/cis/kid-avatar';
 import { SheetHeading } from '@/components/cis/sheet';
 import { AttendanceSheet } from '../parts';
 import { assignCoach, assignKids, createTeam, deleteTeam, renameTeam } from '../actions';
@@ -112,8 +113,11 @@ export default function TeamsClient({ archived, teams, kids, coaches, links }: {
         {!shown.length && <p>No registered kids match. Registrations arrive through the parent form or Admin CSV import.</p>}
         {shown.map((kid) => <TickRow key={kid.id} checked={selected.includes(kid.id)}
           onChange={(checked) => setSelected((prev) => checked ? [...prev, kid.id] : prev.filter((id) => id !== kid.id))}
-          ><span className="block font-bold">{kid.first_name} {kid.last_name}</span>
-          <span className="block text-cis-sm text-cis-ink-muted">Grade {kid.grade} · {teams.find((team) => team.id === kid.team_id)?.name ?? 'No team'}</span></TickRow>)}
+          ><span className="flex items-center gap-3">
+            <KidAvatar size="sm" firstName={kid.first_name} lastName={kid.last_name} photo={kid.photo} />
+            <span className="min-w-0"><span className="block font-bold">{kid.first_name} {kid.last_name}</span>
+              <span className="block text-cis-sm text-cis-ink-muted">Grade {kid.grade} · {teams.find((team) => team.id === kid.team_id)?.name ?? 'No team'}</span></span>
+          </span></TickRow>)}
       </fieldset>
       <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); run(() => assignKids({ ids: selected, teamId: target || null }), 'Team assignments saved.'); }}>
         <Field label={`Assign ${selected.length} selected kids to`}>{(props) => <SelectInput {...props} value={target} onChange={(e) => setTarget(e.target.value)}>
