@@ -6,7 +6,6 @@ import { caprasimo, figtree } from '@/lib/fonts';
 export const metadata: Metadata = {
   title: 'Christ in Sports',
   description: 'Manage your CIS season',
-  manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -29,10 +28,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${caprasimo.variable} ${figtree.variable}`}>
-      <head>
-        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-      </head>
       <body className="min-h-screen bg-background font-cis-body text-foreground">
         <Toaster>
           {children}
