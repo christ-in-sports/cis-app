@@ -17,7 +17,8 @@ const input = { kid_id: KID, photo_path: NEW_PATH };
 
 const rpc = jest.fn();
 const remove = jest.fn();
-const storage = { from: jest.fn(() => ({ remove })) };
+const createSignedUrls = jest.fn();
+const storage = { from: jest.fn(() => ({ remove, createSignedUrls })) };
 
 function signedInAs(roles: { userId: string | null; hasRole: boolean }) {
   jest.mocked(checkAnyRole).mockResolvedValue({
@@ -32,6 +33,10 @@ beforeEach(() => {
   signedInAs({ userId: 'user-id', hasRole: true });
   rpc.mockResolvedValue({ data: null, error: null });
   remove.mockResolvedValue({ data: [], error: null });
+  createSignedUrls.mockImplementation(async (paths: string[]) => ({
+    data: paths.map((path) => ({ path, signedUrl: `https://signed/${path}`, error: null })),
+    error: null,
+  }));
 });
 
 describe('replaceKidPhoto -- who may call it', () => {
@@ -78,7 +83,7 @@ describe('replaceKidPhoto -- input', () => {
 
 describe('replaceKidPhoto -- replacing', () => {
   it('attaches the upload through set_kid_photo', async () => {
-    expect(await replaceKidPhoto(input)).toEqual({ ok: true });
+    expect(await replaceKidPhoto(input)).toMatchObject({ ok: true });
     expect(rpc).toHaveBeenCalledWith('set_kid_photo', { p_kid: KID, p_path: NEW_PATH });
   });
 
@@ -122,7 +127,23 @@ describe('replaceKidPhoto -- replacing', () => {
     rpc.mockResolvedValue({ data: OLD_PATH, error: null });
     remove.mockResolvedValue({ data: null, error: { message: 'denied' } });
 
-    expect(await replaceKidPhoto(input)).toEqual({ ok: true });
+    expect(await replaceKidPhoto(input)).toMatchObject({ ok: true });
+  });
+
+  it('hands back the new photo with a fresh link, because the roster keeps its rows in state', async () => {
+    const result = await replaceKidPhoto(input);
+
+    expect(createSignedUrls).toHaveBeenCalledWith([NEW_PATH], 3600);
+    expect(result.photo).toEqual({ photoPath: NEW_PATH, signedUrl: `https://signed/${NEW_PATH}` });
+  });
+
+  it('still succeeds, with no link, when the new photo cannot be signed', async () => {
+    createSignedUrls.mockResolvedValue({ data: null, error: { message: 'down' } });
+
+    const result = await replaceKidPhoto(input);
+
+    expect(result.ok).toBe(true);
+    expect(result.photo).toEqual({ photoPath: NEW_PATH, signedUrl: null });
   });
 
   it('refreshes the screens that show photos', async () => {

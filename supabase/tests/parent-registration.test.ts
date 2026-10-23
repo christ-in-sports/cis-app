@@ -1,7 +1,9 @@
 /**
  * RLS + behaviour tests for the parent registration functions
  * (supabase/migrations/*_parent_registration.sql): `register_kid()`,
- * `link_my_kids()` and the "authenticated reads current season" policy.
+ * `link_my_kids()` and the "authenticated reads current season" policy. The
+ * photo rules `register_kid()` gained for kid photos are at the end of the
+ * `register_kid` tests, below.
  *
  * Both functions are SECURITY DEFINER and write records about minors, so what
  * is worth protecting is: who may call them (AGENTS.md §7), that a parent can
@@ -11,6 +13,7 @@
  *
  * Run with `npm run test:db` (requires `npx supabase start`).
  */
+import { randomUUID } from 'crypto';
 import type { Pool, PoolClient } from 'pg';
 import { asUser, createProfile, grantRole, makePool, withTx } from './helpers';
 
@@ -60,7 +63,21 @@ async function currentSeasonId(client: PoolClient): Promise<string> {
   return r.rows[0].id;
 }
 
-/** Calls register_kid as `userId`. */
+/** A photo the browser has uploaded, as the Storage API leaves it. Call as the superuser. */
+async function uploadPhoto(client: PoolClient, ownerId: string): Promise<string> {
+  const name = `${randomUUID()}.webp`;
+  await client.query(
+    `insert into storage.objects (bucket_id, name, owner_id) values ('kid-photos', $1, $2)`,
+    [name, ownerId]
+  );
+  return name;
+}
+
+/**
+ * Calls register_kid as `userId`. By default it uploads a fresh photo first and
+ * sends it, because a kid needs one; pass `photo: null` to send none, or a path
+ * to send that one.
+ */
 async function registerAs(
   client: PoolClient,
   userId: string,
@@ -69,16 +86,19 @@ async function registerAs(
     kid?: Record<string, unknown>;
     reg?: Record<string, unknown>;
     consent?: boolean;
+    photo?: string | null;
   } = {}
-): Promise<{ kid_id: string; registration_id: string }> {
+): Promise<{ kid_id: string; registration_id: string; old_photo_path: string | null }> {
+  const photo = opts.photo === undefined ? await uploadPhoto(client, userId) : opts.photo;
   return asUser(client, userId, async () => {
     const r = await client.query(
-      'select * from register_kid($1::uuid, $2::jsonb, $3::jsonb, $4)',
+      'select * from register_kid($1::uuid, $2::jsonb, $3::jsonb, $4, $5)',
       [
         opts.kidId ?? null,
         JSON.stringify(opts.kid ?? kidPayload()),
         JSON.stringify(opts.reg ?? regPayload()),
         opts.consent ?? true,
+        photo,
       ]
     );
     return r.rows[0];
@@ -550,3 +570,188 @@ describe('seasons -- signed-in users read the current season only', () => {
     });
   });
 });
+
+describe('register_kid -- the photo', () => {
+  const kidRows = (client: PoolClient, parentId: string) =>
+    client.query('select photo_path, photo_updated_at from kids where parent_user_id = $1', [parentId]);
+
+  it('attaches the photo to a new kid, in the same call', async () => {
+    await withTx(pool, async (client) => {
+      const parentId = await makeParent(client, 'rk-photo-new@test.local');
+      const photo = await uploadPhoto(client, parentId);
+
+      const { kid_id, old_photo_path } = await registerAs(client, parentId, { photo });
+
+      expect(old_photo_path).toBeNull();
+      const r = await client.query('select photo_path, photo_updated_at from kids where id = $1', [kid_id]);
+      expect(r.rows[0].photo_path).toBe(photo);
+      expect(r.rows[0].photo_updated_at).not.toBeNull();
+    });
+  });
+
+  it('refuses a new kid with no photo, and writes nothing', async () => {
+    await withTx(pool, async (client) => {
+      const parentId = await makeParent(client, 'rk-photo-none@test.local');
+
+      const err = await asUserError(client, () => registerAs(client, parentId, { photo: null }));
+
+      expect(err.code).toBe('22004');
+      expect((await kidRows(client, parentId)).rowCount).toBe(0);
+    });
+  });
+
+  it('refuses a call with the old four arguments for a new kid, so the photo cannot be skipped', async () => {
+    await withTx(pool, async (client) => {
+      const parentId = await makeParent(client, 'rk-photo-four@test.local');
+
+      const err = await asUserError(client, () =>
+        asUser(client, parentId, () =>
+          client.query('select * from register_kid(null::uuid, $1::jsonb, $2::jsonb, true)', [
+            JSON.stringify(kidPayload()),
+            JSON.stringify(regPayload()),
+          ])
+        )
+      );
+
+      expect(err.code).toBe('22004');
+    });
+  });
+
+  it('refuses a returning kid who has no photo on file and sends none', async () => {
+    await withTx(pool, async (client) => {
+      const parentId = await makeParent(client, 'rk-photo-imp@test.local');
+      const kid = await importedKid(client, { parentUserId: parentId });
+      await importedRegistration(client, kid);
+
+      const err = await asUserError(client, () =>
+        registerAs(client, parentId, { kidId: kid, reg: regPayload({ grade: 6 }), photo: null })
+      );
+
+      expect(err.code).toBe('22004');
+    });
+  });
+
+  it('adds the photo for a returning kid who had none', async () => {
+    await withTx(pool, async (client) => {
+      const parentId = await makeParent(client, 'rk-photo-add@test.local');
+      const kid = await importedKid(client, { parentUserId: parentId });
+      await importedRegistration(client, kid);
+      const photo = await uploadPhoto(client, parentId);
+
+      const r = await registerAs(client, parentId, { kidId: kid, reg: regPayload({ grade: 6 }), photo });
+
+      expect(r.old_photo_path).toBeNull();
+      expect((await kidRows(client, parentId)).rows[0].photo_path).toBe(photo);
+    });
+  });
+
+  it('lets a returning kid who already has a photo send none, and keeps it', async () => {
+    await withTx(pool, async (client) => {
+      const parentId = await makeParent(client, 'rk-photo-keep@test.local');
+      const first = await registerAs(client, parentId);
+      const before = (await kidRows(client, parentId)).rows[0];
+
+      const again = await registerAs(client, parentId, { kidId: first.kid_id, photo: null });
+
+      expect(again.old_photo_path).toBeNull();
+      expect((await kidRows(client, parentId)).rows[0].photo_path).toBe(before.photo_path);
+    });
+  });
+
+  it('replaces the photo and returns the old one so it can be deleted', async () => {
+    await withTx(pool, async (client) => {
+      const parentId = await makeParent(client, 'rk-photo-swap@test.local');
+      const first = await registerAs(client, parentId);
+      const original = (await kidRows(client, parentId)).rows[0].photo_path;
+      const next = await uploadPhoto(client, parentId);
+
+      const again = await registerAs(client, parentId, { kidId: first.kid_id, photo: next });
+
+      expect(again.old_photo_path).toBe(original);
+      expect((await kidRows(client, parentId)).rows[0].photo_path).toBe(next);
+    });
+  });
+
+  it('refuses an upload that does not exist, with the same error as someone else’s', async () => {
+    await withTx(pool, async (client) => {
+      const parentId = await makeParent(client, 'rk-photo-miss@test.local');
+      const otherId = await makeParent(client, 'rk-photo-other@test.local');
+      const theirs = await uploadPhoto(client, otherId);
+
+      const missing = await asUserError(client, () =>
+        registerAs(client, parentId, { photo: `${randomUUID()}.webp` })
+      );
+      const stolen = await asUserError(client, () => registerAs(client, parentId, { photo: theirs }));
+
+      expect(missing.code).toBe('02000');
+      expect(stolen.code).toBe('02000');
+      expect(stolen.message).toBe(missing.message);
+      expect((await kidRows(client, parentId)).rowCount).toBe(0);
+    });
+  });
+
+  it('refuses a photo that is already another kid’s, and says it is the photo', async () => {
+    await withTx(pool, async (client) => {
+      const parentId = await makeParent(client, 'rk-photo-dup@test.local');
+      const photo = await uploadPhoto(client, parentId);
+      await registerAs(client, parentId, { photo });
+
+      const err = await asUserError(client, () =>
+        registerAs(client, parentId, { kid: kidPayload({ first_name: 'Mark' }), photo })
+      );
+
+      expect(err.code).toBe('23505');
+      expect(err.message).toMatch(/photo/i);
+    });
+  });
+
+  it('does not tell a duplicate kid from a reused photo by anything but the message', async () => {
+    await withTx(pool, async (client) => {
+      const parentId = await makeParent(client, 'rk-photo-twin@test.local');
+      await registerAs(client, parentId);
+
+      const err = await asUserError(client, () => registerAs(client, parentId));
+
+      expect(err.code).toBe('23505');
+      expect(err.message).not.toMatch(/photo/i);
+    });
+  });
+
+  it('rolls the photo back when the registration is refused', async () => {
+    await withTx(pool, async (client) => {
+      const parentId = await makeParent(client, 'rk-photo-team@test.local');
+      const first = await registerAs(client, parentId);
+      const before = (await kidRows(client, parentId)).rows[0].photo_path;
+      const team = await client.query<{ id: string }>(
+        `insert into ministry_teams (name, division) values ('Photo Team','juniors') returning id`
+      );
+      await client.query('update registrations set team_id = $2 where id = $1', [
+        first.registration_id,
+        team.rows[0].id,
+      ]);
+      const next = await uploadPhoto(client, parentId);
+
+      await expect(
+        registerAs(client, parentId, { kidId: first.kid_id, photo: next })
+      ).rejects.toThrow(/already on a team/i);
+
+      expect((await kidRows(client, parentId)).rows[0].photo_path).toBe(before);
+    });
+  });
+});
+
+/** Runs `fn` expecting a Postgres error, and returns it. */
+async function asUserError(
+  client: PoolClient,
+  fn: () => Promise<unknown>
+): Promise<{ code?: string; message: string }> {
+  await client.query('SAVEPOINT expect_error');
+  try {
+    await fn();
+  } catch (err) {
+    await client.query('ROLLBACK TO SAVEPOINT expect_error');
+    return err as { code?: string; message: string };
+  }
+  await client.query('RELEASE SAVEPOINT expect_error');
+  throw new Error('expected the call to be rejected, but it succeeded');
+}

@@ -11,6 +11,7 @@
 import { revalidatePath } from 'next/cache';
 
 import { checkRole } from '@/lib/auth/roles';
+import { removeReplacedPhoto } from '@/lib/photo/replaced';
 import { parentRegistrationSchema } from '@/lib/validation/kid';
 
 export interface RegisterKidResult {
@@ -27,6 +28,8 @@ const WAIVER = '22023';
 const NO_SEASON = '55000';
 const ON_TEAM = '55006';
 const DUPLICATE = '23505';
+const PHOTO_REQUIRED = '22004';
+const UPLOAD_NOT_FOUND = '02000';
 const CHECK_FAILED = '23514';
 
 export async function registerKid(input: unknown): Promise<RegisterKidResult> {
@@ -54,6 +57,7 @@ export async function registerKid(input: unknown): Promise<RegisterKidResult> {
     p_kid: parsed.data.kid,
     p_registration: parsed.data.registration,
     p_consent: parsed.data.consent,
+    p_photo_path: parsed.data.photo_path ?? null,
   });
 
   if (error) {
@@ -69,7 +73,28 @@ export async function registerKid(input: unknown): Promise<RegisterKidResult> {
           ok: false,
           error: 'This kid is already on a team. Contact an Admin to change the registration.',
         };
+      case PHOTO_REQUIRED:
+        return {
+          ok: false,
+          error: 'Please add a photo of your kid.',
+          fieldErrors: { photo_path: ['Add a photo of your kid'] },
+        };
+      case UPLOAD_NOT_FOUND:
+        return {
+          ok: false,
+          error: 'The photo upload was not found. Choose the photo again.',
+          fieldErrors: { photo_path: ['Choose the photo again'] },
+        };
       case DUPLICATE:
+        // A reused photo and a duplicate kid share a code; only the message,
+        // which says "photo" for the first, tells them apart.
+        if (/photo/i.test(error.message)) {
+          return {
+            ok: false,
+            error: 'That photo is already used by another kid. Choose it again.',
+            fieldErrors: { photo_path: ['Choose the photo again'] },
+          };
+        }
         return {
           ok: false,
           error: 'You have already added a kid with that name and date of birth.',
@@ -86,7 +111,12 @@ export async function registerKid(input: unknown): Promise<RegisterKidResult> {
     return { ok: false, error: 'Could not save the registration.' };
   }
 
-  const row = (data ?? [])[0] as { kid_id: string; registration_id: string } | undefined;
+  const row = (data ?? [])[0] as
+    | { kid_id: string; registration_id: string; old_photo_path: string | null }
+    | undefined;
+
+  // After the registration is saved, never before (see `removeReplacedPhoto`).
+  await removeReplacedPhoto(supabase, row?.old_photo_path);
 
   revalidatePath('/register');
   revalidatePath('/registrations');

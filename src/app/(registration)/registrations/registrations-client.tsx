@@ -1,9 +1,14 @@
 'use client';
 
 import { Fragment, useMemo, useState } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import Papa from 'papaparse';
 import { createClient } from '@/lib/supabase/client';
+import { PhotoError } from '@/lib/photo/prepare';
 import type { KidPhoto } from '@/lib/photo/types';
+import { KidAvatar } from '@/components/cis/kid-avatar';
+import { PhotoPicker } from '@/components/cis/photo-field';
+import { replaceKidPhoto } from '../kid-photo-actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -116,6 +121,21 @@ function fmtDate(iso: string | null) {
 const nullIfBlank = (v: string) => (v.trim() === '' ? null : v.trim());
 
 /**
+ * A kid row as a write returns it, as the roster holds it: without the photo
+ * columns the database adds (the roster never shows a raw path) and with the
+ * photo it already had, which a write to the other columns does not change.
+ */
+function kidWithPhoto<T extends object>(
+  row: T & { photo_path?: unknown; photo_updated_at?: unknown },
+  photo: KidPhoto | null
+): Kid {
+  const { photo_path: _path, photo_updated_at: _at, ...rest } = row;
+  void _path;
+  void _at;
+  return { ...(rest as unknown as Kid), photo };
+}
+
+/**
  * Rebuilds a roster entry from the two rows a write returns. The list keeps its
  * own state, so it is updated from the write rather than by re-fetching --
  * `router.refresh()` alone would not help, since `rows` is seeded from a prop
@@ -183,6 +203,21 @@ export default function RegistrationsClient({
   const [showForm, setShowForm] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [chase, setChase] = useState<ChaseMode>(null);
+
+  // Narrowing to kids with no photo is a view someone may want to share or come
+  // back to, so it lives in the address (`?photo=missing`), not in state. It has
+  // no bulk action, which is why it is not a `ChaseMode`.
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const missingPhotoOnly = searchParams.get('photo') === 'missing';
+  const togglePhotoFilter = () => {
+    const next = new URLSearchParams(searchParams.toString());
+    if (missingPhotoOnly) next.delete('photo');
+    else next.set('photo', 'missing');
+    const query = next.toString();
+    // Next.js ties this to `useSearchParams` without a server round trip.
+    window.history.replaceState(null, '', query ? `${pathname}?${query}` : pathname);
+  };
   const [consentBusy, setConsentBusy] = useState(false);
   const [paymentBusy, setPaymentBusy] = useState(false);
   const [bulkPayment, setBulkPayment] = useState<PaymentDraft>(emptyPaymentDraft);
@@ -195,13 +230,17 @@ export default function RegistrationsClient({
       if (gradeFilter !== 'all' && String(r.grade) !== gradeFilter) return false;
       if (chase === 'consent' && r.consent_given_at !== null) return false;
       if (chase === 'payment' && r.payments.length > 0) return false;
+      if (missingPhotoOnly && r.kid.photo) return false;
       if (!q) return true;
       return [
         r.kid.first_name, r.kid.last_name, r.kid.guardian_name,
         r.kid.guardian_phone, r.kid.guardian_email, r.kid.phone,
       ].some((v) => v?.toLowerCase().includes(q));
     });
-  }, [rows, search, gradeFilter, chase]);
+  }, [rows, search, gradeFilter, chase, missingPhotoOnly]);
+
+  /** Every kid needs a photo; these are the ones still without. */
+  const missingPhoto = useMemo(() => rows.filter((r) => !r.kid.photo).length, [rows]);
 
   const missingConsent = useMemo(
     () => rows.filter((r) => r.consent_given_at === null).length,
@@ -314,7 +353,7 @@ export default function RegistrationsClient({
       }
       setRows((p) => sortRows(
         p.map((r) => (r.registration_id === editing.registration_id
-          ? { ...r, ...toEntry(reg, kid, r.payments) }
+          ? { ...r, ...toEntry(reg, kidWithPhoto(kid, editing.kid.photo ?? null), r.payments) }
           : r))
       ));
       toast({ title: 'Saved' });
@@ -355,7 +394,7 @@ export default function RegistrationsClient({
       return;
     }
 
-    setRows((p) => sortRows([...p, toEntry(reg, kid)]));
+    setRows((p) => sortRows([...p, toEntry(reg, kidWithPhoto(kid, null))]));
     toast({ title: 'Registration added' });
     setShowForm(false);
     setSaving(false);
@@ -635,13 +674,24 @@ export default function RegistrationsClient({
         {/* Chasing ~300 paper forms is only practical if the roster can be
             narrowed to who still owes one. Same toggle-chip pattern as the
             import screen's "Show only problems". */}
-        {(missingConsent > 0 || chase === 'consent' || (isAdmin && (unpaid > 0 || chase === 'payment'))) && (
+        {(missingConsent > 0 ||
+          chase === 'consent' ||
+          missingPhoto > 0 ||
+          missingPhotoOnly ||
+          (isAdmin && (unpaid > 0 || chase === 'payment'))) && (
           <div className="flex flex-wrap items-center gap-cis-2">
             {(missingConsent > 0 || chase === 'consent') && (
               <ChaseChip pressed={chase === 'consent'} onClick={() => toggleChase('consent')}>
                 {missingConsent === 0
                   ? 'Everyone has a consent form'
                   : `${missingConsent} still owe a consent form`}
+              </ChaseChip>
+            )}
+            {(missingPhoto > 0 || missingPhotoOnly) && (
+              <ChaseChip pressed={missingPhotoOnly} onClick={togglePhotoFilter}>
+                {missingPhoto === 0
+                  ? 'Everyone has a photo'
+                  : `${missingPhoto} still need a photo`}
               </ChaseChip>
             )}
             {/* Admin only: payments are invisible to every other staff role,
@@ -712,7 +762,7 @@ export default function RegistrationsClient({
           <SheetHeading className="text-cis-xl">
             {rows.length === 0
               ? 'No registrations yet'
-              : chase !== null
+              : chase !== null || missingPhotoOnly
                 ? 'Nobody left to chase'
                 : 'No matches'}
           </SheetHeading>
@@ -723,7 +773,9 @@ export default function RegistrationsClient({
                 ? 'Every kid matching these filters has a consent form recorded.'
                 : chase === 'payment'
                   ? 'Every kid matching these filters has a payment recorded.'
-                  : 'Try a different search.'}
+                  : missingPhotoOnly
+                    ? 'Every kid matching these filters has a photo.'
+                    : 'Try a different search.'}
           </p>
           {/* The roster is empty at the start of a season, which is exactly
               when the once-a-year import matters. Saying so here is what makes
@@ -815,22 +867,32 @@ export default function RegistrationsClient({
                         </td>
                       )}
                       <td className="py-[10px] pr-[6px]">
-                        {/* Deliberately carries no onClick: the row above handles the
-                            toggle, and both a pointer click and a keyboard Enter or
-                            Space on this button raise a click that bubbles up to it.
-                            The real <button> stays because it is what makes the row
-                            focusable and announces its expanded state -- an onClick on
-                            the <tr> alone would be unreachable without a mouse. */}
-                        <button
-                          type="button"
-                          aria-expanded={open}
-                          aria-controls={panelId}
-                          className="text-left text-cis-base font-bold leading-[1.3] group-hover:underline"
-                        >
-                          {r.kid.last_name}, {r.kid.first_name}
-                        </button>
-                        <div className="text-cis-xs font-semibold text-cis-ink-muted">
-                          {fmtDate(r.kid.dob)}
+                        <div className="flex items-center gap-cis-2">
+                          <KidAvatar
+                            size="sm"
+                            firstName={r.kid.first_name}
+                            lastName={r.kid.last_name}
+                            photo={r.kid.photo}
+                          />
+                          <div className="min-w-0">
+                            {/* Deliberately carries no onClick: the row above handles the
+                                toggle, and both a pointer click and a keyboard Enter or
+                                Space on this button raise a click that bubbles up to it.
+                                The real <button> stays because it is what makes the row
+                                focusable and announces its expanded state -- an onClick on
+                                the <tr> alone would be unreachable without a mouse. */}
+                            <button
+                              type="button"
+                              aria-expanded={open}
+                              aria-controls={panelId}
+                              className="text-left text-cis-base font-bold leading-[1.3] group-hover:underline"
+                            >
+                              {r.kid.last_name}, {r.kid.first_name}
+                            </button>
+                            <div className="text-cis-xs font-semibold text-cis-ink-muted">
+                              {fmtDate(r.kid.dob)}
+                            </div>
+                          </div>
                         </div>
                       </td>
                       <td className="py-[10px] text-right text-cis-base font-extrabold tabular-nums">
@@ -845,6 +907,46 @@ export default function RegistrationsClient({
                       <tr id={panelId} className="border-b border-cis-rule">
                         <td colSpan={canSelect ? 4 : 3} className="pb-cis-4">
                           <SheetRule className="mb-cis-3 h-[2px] rounded-none" />
+
+                          <div className="mb-cis-3 flex items-start gap-cis-3">
+                            <KidAvatar
+                              size="lg"
+                              firstName={r.kid.first_name}
+                              lastName={r.kid.last_name}
+                              photo={r.kid.photo}
+                            />
+                            <div className="flex min-w-0 flex-1 flex-col gap-cis-2 text-cis-sm">
+                              <span className="font-bold">
+                                {r.kid.photo ? 'Photo on file' : 'No photo yet'}
+                              </span>
+                              {/* Only an Admin or the kid's parent may change a photo
+                                  (the role matrix, `project_spec.md` 1.5). */}
+                              {isAdmin && (
+                                <PhotoPicker
+                                  label={r.kid.photo ? 'Replace photo' : 'Add a photo'}
+                                  onUploaded={async (uploaded) => {
+                                    const result = await replaceKidPhoto({
+                                      kid_id: r.kid.id,
+                                      photo_path: uploaded.path,
+                                    });
+                                    URL.revokeObjectURL(uploaded.previewUrl);
+                                    if (!result.ok) {
+                                      throw new PhotoError('save-failed', result.error ?? 'Could not save the photo.');
+                                    }
+                                    // The roster keeps its rows in state, so the new link goes in here.
+                                    setRows((p) =>
+                                      p.map((x) =>
+                                        x.kid.id === r.kid.id
+                                          ? { ...x, kid: { ...x.kid, photo: result.photo ?? null } }
+                                          : x
+                                      )
+                                    );
+                                    toast({ title: 'Photo saved' });
+                                  }}
+                                />
+                              )}
+                            </div>
+                          </div>
 
                           <div className="mb-cis-3 flex flex-wrap items-center gap-cis-2 text-cis-sm">
                             <span className="font-semibold text-cis-ink-muted">Consent</span>

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { Field, FieldError, SelectInput, TextInput } from './form';
 import { PrimaryButton } from './button';
+import { KidAvatar } from './kid-avatar';
 import { type AttendanceRecord, type RosterKid, type AttStatus } from '@/lib/attendance';
 
 export const ATTENDANCE_LABELS: Record<AttStatus, string> = {
@@ -31,8 +32,12 @@ export function AttendanceRow({ record, kid, teamName, disabled, save, qrHref }:
   };
   return <li className="space-y-3 border-b border-cis-rule py-4 last:border-0">
     <div className="flex items-start justify-between gap-3">
-      <div><p className="text-cis-md font-bold">{kid.first_name} {kid.last_name}</p>
-        <p className="text-cis-sm text-cis-ink-muted">Grade {kid.grade} · {teamName}</p></div>
+      <div className="flex min-w-0 items-center gap-3">
+        {/* A face to match to the name: coaches mark attendance by looking at the kids in front of them. */}
+        <KidAvatar size="md" firstName={kid.first_name} lastName={kid.last_name} photo={kid.photo} />
+        <div className="min-w-0"><p className="text-cis-md font-bold">{kid.first_name} {kid.last_name}</p>
+          <p className="text-cis-sm text-cis-ink-muted">Grade {kid.grade} · {teamName}</p></div>
+      </div>
       <span className={record.status === 'present' ? 'rounded-cis-chip bg-cis-orange px-3 py-2 font-bold text-cis-ink-dark' : 'py-2 font-bold'}>{ATTENDANCE_LABELS[record.status]}</span>
     </div>
     <Field label={`Attendance for ${kid.first_name} ${kid.last_name}`}>{(props) => <SelectInput {...props} value={record.status} disabled={disabled || pending}

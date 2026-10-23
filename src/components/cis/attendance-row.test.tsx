@@ -31,3 +31,37 @@ it('disables marking and notes for viewers and locked sessions', () => {
   expect(screen.getByRole('combobox')).toBeDisabled();
   expect(screen.getByRole('button', { name: 'Save note', hidden: true })).toBeDisabled();
 });
+
+describe('the kid’s photo', () => {
+  it('shows the face beside the name, so a coach can match who is in front of them', () => {
+    const { container } = render(
+      <AttendanceRow
+        kid={{ ...kid, photo: { photoPath: 'a.webp', signedUrl: 'https://signed/a' } }}
+        record={record} teamName="Lions" disabled={false} save={jest.fn()}
+      />
+    );
+
+    expect(container.querySelector('img')).toHaveAttribute('src', 'https://signed/a');
+    expect(screen.getByText('Test Player')).toBeInTheDocument();
+  });
+
+  it('shows the initials when there is no photo, as on archived days', () => {
+    const { container } = render(
+      <AttendanceRow kid={kid} record={record} teamName="Lions" disabled={false} save={jest.fn()} />
+    );
+
+    expect(container.querySelector('img')).toBeNull();
+    expect(screen.getByText('TP')).toBeInTheDocument();
+  });
+
+  it('keeps showing the same photo link while the roster refreshes underneath it', () => {
+    const photo = (t: number) => ({ photoPath: 'a.webp', signedUrl: `https://signed/a?t=${t}` });
+    const { container, rerender } = render(
+      <AttendanceRow kid={{ ...kid, photo: photo(1) }} record={record} teamName="Lions" disabled={false} save={jest.fn()} />
+    );
+
+    rerender(<AttendanceRow kid={{ ...kid, photo: photo(2) }} record={record} teamName="Lions" disabled={false} save={jest.fn()} />);
+
+    expect(container.querySelector('img')).toHaveAttribute('src', 'https://signed/a?t=1');
+  });
+});

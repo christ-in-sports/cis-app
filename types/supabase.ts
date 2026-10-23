@@ -1187,10 +1187,12 @@ export type Database = {
           p_consent: boolean
           p_kid: Json
           p_kid_id: string
+          p_photo_path?: string
           p_registration: Json
         }
         Returns: {
           kid_id: string
+          old_photo_path: string
           registration_id: string
         }[]
       }

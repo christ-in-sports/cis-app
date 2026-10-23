@@ -26,7 +26,8 @@ export type PhotoErrorCode =
   | 'unreadable'
   | 'heic-failed'
   | 'encode-failed'
-  | 'upload-failed';
+  | 'upload-failed'
+  | 'save-failed';
 
 /** An error whose message is safe to show to a parent as it is. */
 export class PhotoError extends Error {

@@ -431,6 +431,11 @@ describe('payments survive the other registration writes', () => {
       const parentId = await makeUser(client, 'pay-resave-parent@test.local', 'parent');
       const { kidId, registrationId } = await createRegistration(client, { parentUserId: parentId });
       await recordAs(client, adminId, registrationId);
+      // A returning kid has a photo on file by now, so the re-save sends none.
+      await client.query(
+        `update kids set photo_path = '4f3c1d52-9c7e-4d52-8a35-0b1f2f6c7a11.webp', photo_updated_at = now() where id = $1`,
+        [kidId]
+      );
 
       await asUser(client, parentId, () =>
         client.query('select * from register_kid($1::uuid, $2::jsonb, $3::jsonb, true)', [

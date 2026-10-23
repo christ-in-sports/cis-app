@@ -9,6 +9,12 @@
  * consent is stamped with the signed-in parent, and a CSV-imported kid keeps its
  * `import` source when the parent completes it.
  *
+ * Every kid needs a photo (ENG-21), so the run uploads real ones to the local
+ * Storage: a JPEG for the imported kid, and an iPhone-style HEIC for the new one,
+ * which Chromium cannot decode itself and so exercises the converter. They are
+ * checked in Storage as WebP, owned by the parent, and a kid on a team can still
+ * have a photo replaced.
+ *
  * Needs the local Supabase stack (`npx supabase start`) and an app built against
  * it -- see `roster-import.spec.ts` for why `NEXT_PUBLIC_SUPABASE_*` must point
  * at the local stack when this runs outside CI.
@@ -90,6 +96,7 @@ async function ensureUser(email: string, role: string | null): Promise<void> {
  * Scoped to this parent's own rows, so it never touches anyone else's data.
  */
 async function resetParentData(): Promise<void> {
+  await deleteParentUploads();
   await withDb(async (client) => {
     await client.query(
       `delete from kids
@@ -139,6 +146,62 @@ async function registrationFor(firstName: string): Promise<StoredRegistration | 
       [PARENT_EMAIL, firstName],
     );
     return r.rows[0];
+  });
+}
+
+interface StoredPhoto {
+  photo_path: string | null;
+  mimetype: string | null;
+  owner_id: string | null;
+}
+
+/** The kid's photo as Storage holds it: its path, type and who uploaded it. */
+async function storedPhotoFor(firstName: string): Promise<StoredPhoto | undefined> {
+  return withDb(async (client) => {
+    const r = await client.query<StoredPhoto>(
+      `select k.photo_path, o.metadata ->> 'mimetype' as mimetype, o.owner_id
+         from kids k
+         left join storage.objects o on o.bucket_id = 'kid-photos' and o.name = k.photo_path
+        where k.guardian_email = $1 and k.first_name = $2`,
+      [PARENT_EMAIL, firstName],
+    );
+    return r.rows[0];
+  });
+}
+
+async function objectExists(name: string): Promise<boolean> {
+  return withDb(async (client) => {
+    const r = await client.query(
+      `select 1 from storage.objects where bucket_id = 'kid-photos' and name = $1`,
+      [name],
+    );
+    return r.rowCount === 1;
+  });
+}
+
+/**
+ * Removes what earlier runs uploaded for this parent, through the Storage API
+ * (which also removes the files; Postgres refuses to delete objects itself).
+ */
+async function deleteParentUploads(): Promise<void> {
+  const names = await withDb(async (client) => {
+    const r = await client.query<{ name: string }>(
+      `select o.name from storage.objects o
+        where o.bucket_id = 'kid-photos'
+          and o.owner_id in (select id::text from auth.users where email = $1)`,
+      [PARENT_EMAIL],
+    );
+    return r.rows.map((row) => row.name);
+  });
+  if (names.length === 0) return;
+  await fetch(`${AUTH_URL}/storage/v1/object/kid-photos`, {
+    method: 'DELETE',
+    headers: {
+      apikey: SERVICE_KEY,
+      Authorization: `Bearer ${SERVICE_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ prefixes: names }),
   });
 }
 
@@ -202,7 +265,9 @@ test('a parent completes an imported kid, then registers a new one', async ({ pa
   await expect(page.getByRole('heading', { name: 'Who are you registering?' })).toBeVisible();
   const mina = page.getByRole('button', { name: /Mina Guirguis/ });
   await expect(mina).toContainText('Grade 6 · Waiver needed');
+  await expect(mina).toContainText('Photo needed');
   await expect(mina).toContainText('Finish');
+  await expect(mina.locator('img')).toHaveCount(0); // initials, not a photo
   await page.screenshot({ path: 'test-results/register-1-picker.png', fullPage: true });
 
   // ---- Complete her: identity is locked, the waiver is required ---------------
@@ -212,9 +277,15 @@ test('a parent completes an imported kid, then registers a new one', async ({ pa
   await expect(page.getByLabel('First name')).toHaveCount(0);
   await expect(page.getByLabel('Date of birth')).toHaveCount(0);
 
+  // She has no photo yet, and the form will not go without one.
   await page.getByRole('button', { name: 'Save changes' }).click();
   await expect(page.getByText('You must agree to the liability waiver')).toBeVisible();
+  await expect(page.getByRole('alert').filter({ hasText: 'Add a photo of your kid' })).toBeVisible();
   expect((await registrationFor('Mina'))?.consent_given_at).toBeNull();
+
+  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/kid.jpg');
+  await expect(page.getByRole('button', { name: 'Replace photo' })).toBeVisible();
+  await expect(page.getByRole('alert').filter({ hasText: 'Add a photo of your kid' })).toHaveCount(0);
 
   await page.getByText('I have read and agree to the liability waiver.').click();
   await page.getByRole('button', { name: 'Save changes' }).click();
@@ -225,6 +296,12 @@ test('a parent completes an imported kid, then registers a new one', async ({ pa
   expect(minaRow?.consent_given_at).not.toBeNull();
   expect(minaRow?.consent_by_user_id).toBe(await parentId());
   expect(minaRow?.source).toBe('import');
+
+  // The photo was uploaded by the parent, resized to WebP, and attached to her.
+  const minaPhoto = await storedPhotoFor('Mina');
+  expect(minaPhoto?.photo_path).toMatch(/^[0-9a-f-]{36}\.webp$/);
+  expect(minaPhoto?.mimetype).toBe('image/webp');
+  expect(minaPhoto?.owner_id).toBe(await parentId());
 
   // ---- Add a sibling: household details carry over, the child's do not --------
   await page.getByRole('button', { name: 'Register another kid' }).click();
@@ -246,10 +323,16 @@ test('a parent completes an imported kid, then registers a new one', async ({ pa
   await page.getByRole('group', { name: 'T-shirt size' }).getByText('M', { exact: true }).click();
   await page.screenshot({ path: 'test-results/register-2-form.png', fullPage: true });
 
-  // Without the waiver nothing is written.
+  // Without the waiver, or a photo, nothing is written.
   await page.getByRole('button', { name: 'Register', exact: true }).click();
   await expect(page.getByText('You must agree to the liability waiver')).toBeVisible();
+  await expect(page.getByRole('alert').filter({ hasText: 'Add a photo of your kid' })).toBeVisible();
   expect(await registrationFor('Marina')).toBeUndefined();
+
+  // An iPhone photo. Chromium cannot read HEIC, so this goes through the
+  // converter, which is downloaded only now and takes a moment.
+  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/IMG_0001.HEIC');
+  await expect(page.getByRole('button', { name: 'Replace photo' })).toBeVisible({ timeout: 30_000 });
 
   await page.getByText('I have read and agree to the liability waiver.').click();
   await page.getByRole('button', { name: 'Register', exact: true }).click();
@@ -268,10 +351,68 @@ test('a parent completes an imported kid, then registers a new one', async ({ pa
   });
   expect(marina?.consent_given_at).not.toBeNull();
 
-  // ---- Back on the picker both kids are done ----------------------------------
+  // The HEIC was converted in the browser: WebP is what is stored, never HEIC.
+  const marinaPhoto = await storedPhotoFor('Marina');
+  expect(marinaPhoto?.photo_path).toMatch(/^[0-9a-f-]{36}\.webp$/);
+  expect(marinaPhoto?.mimetype).toBe('image/webp');
+  expect(marinaPhoto?.owner_id).toBe(await parentId());
+
+  // ---- Back on the picker both kids are done, each with a face ----------------
   await page.goto('/register');
   await expect(page.getByRole('button', { name: /Mina Guirguis/ })).toContainText('Registered');
   await expect(page.getByRole('button', { name: /Marina Guirguis/ })).toContainText('Registered');
+  await expect(page.getByText('Photo needed')).toHaveCount(0);
+  for (const name of [/Mina Guirguis/, /Marina Guirguis/]) {
+    const face = page.getByRole('button', { name }).locator('img');
+    await expect(face).toHaveCount(1);
+    // A real image from the private bucket, through a signed link, not a broken one.
+    await expect
+      .poll(() => face.evaluate((i) => (i as HTMLImageElement).complete && (i as HTMLImageElement).naturalWidth > 0))
+      .toBe(true);
+  }
+  await page.screenshot({ path: 'test-results/register-4-picker-photos.png', fullPage: true });
+});
+
+test('a kid on a team can still have their photo replaced, and the old one is deleted', async ({ page }) => {
+  await signIn(page, PARENT_EMAIL);
+  await page.goto('/register');
+  const before = (await storedPhotoFor('Marina'))?.photo_path;
+  expect(before).toBeTruthy();
+
+  // An Admin places her on a team: the registration is locked from here.
+  await withDb(async (client) => {
+    const team = await client.query<{ id: string }>(
+      `insert into ministry_teams (name, division) values ('E2E photo team', 'ambassadors') returning id`,
+    );
+    await client.query(
+      `update registrations set team_id = $1
+        where kid_id in (select id from kids where guardian_email = $2 and first_name = 'Marina')`,
+      [team.rows[0].id, PARENT_EMAIL],
+    );
+  });
+  try {
+    await page.goto('/register');
+    await page.getByRole('button', { name: /Marina Guirguis/ }).click();
+    await expect(page.getByText('Marina Guirguis is on a team')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Save changes' })).toHaveCount(0);
+
+    await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/kid.jpg');
+
+    // It attaches at once: there is no registration left to submit it with.
+    await expect.poll(async () => (await storedPhotoFor('Marina'))?.photo_path).not.toBe(before);
+    expect((await storedPhotoFor('Marina'))?.mimetype).toBe('image/webp');
+    // The replaced file is gone, because its uploader may delete it once nothing uses it.
+    await expect.poll(() => objectExists(before!)).toBe(false);
+  } finally {
+    await withDb(async (client) => {
+      await client.query(
+        `update registrations set team_id = null
+          where kid_id in (select id from kids where guardian_email = $1)`,
+        [PARENT_EMAIL],
+      );
+      await client.query(`delete from ministry_teams where name = 'E2E photo team'`);
+    });
+  }
 });
 
 test('the waiver links to the program\'s document in a new tab', async ({ page }) => {

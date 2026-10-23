@@ -197,7 +197,15 @@ one-off markup per screen.
 | `DivisionTabs` | Admin standings | Juniors/Ambassadors switch; active tab joined visually to the sheet below. |
 | ~~`UnverifiedFilterChip`~~ | ~~Admin standings~~ | **Dropped 2026-10-08.** There is no score verification step (`docs/decisions.md`), so there is nothing to flag or filter. The Admin Standings reference still draws it; ignore that chip and the "unverified" labels in it. |
 | `VerseProgressBadge` | Spiritual/verse screens | Sage-colored, carries psalm-point state — not a bare dot. |
+| `KidAvatar` | Rosters, attendance rows, the parent form | A kid's photo, or their initials where there is none (ENG-21). **A square with the 12px chip radius, never a circle**: the full pill is for buttons only (§6). No border, and the initials tile is plain paper with ink text, because orange, ember or sage would read as present, a score or a verse. Sizes: `sm` 40px (a dense list), `md` 56px (an attendance row, big enough to recognise a face from a sideline), `lg` 112px (a form). The photo is decorative (`alt=""`) because the name is always beside it. It keeps the first signed link it sees for a photo, since the attendance screens re-read the roster every 10 seconds and a new link is a new download, and switches only when the photo changes or the link has expired. |
 | `BottomNav` | Global (mobile shell) | 4 items, Lucide icons (stroke-width 2.75), 11px labels, 56×48px min tap target. Items are a prop — only the Coach and Admin sets are designed. |
+
+**Photos** — `src/components/cis/kid-avatar.tsx` and `photo-field.tsx`. Derived from the rules above, not from a prototype (see §8).
+
+| Component | Used for | Notes |
+|---|---|---|
+| `PhotoPicker` | Choosing a photo | A secondary button that opens the file chooser, then says what it is doing: "Preparing photo…" (a HEIC from an iPhone can take a second or two to convert), "Uploading photo…", "Saving photo…". It is disabled while it works so it is not tapped twice. An error reads as a `FieldError`. It uploads the file and hands back the path; the caller decides when to attach it. |
+| `PhotoField` | The parent form | A labelled group: the kid's `lg` avatar beside the picker, so the parent sees what was chosen. The label is "Add a photo", or "Replace photo" once the kid has one. It is a group, not a `Field`, because `Field`'s `<label for>` would become the button's name and a screen reader would say "Photo, button" instead of "Add a photo". Required is unmarked, as on every form field. |
 
 **Sports components** — designed in `design/reference/CIS Sports *.dc.html` (2026-10-08). All are built from existing tokens; none needs a new color or radius. Rebuild in React; don't port the markup.
 
@@ -324,3 +332,5 @@ QR attendance (2026-10-21): open days show a Scan attendance sheet with explicit
 QR card page spacing: the print action occupies its own row. Secondary navigation sits below a neutral rule, stacks with separate tap targets on narrow screens, and wraps with explicit gaps on wider screens. Instruction text uses relaxed line spacing.
 
 Attendance bottom navigation includes a labeled QR codes tab using the Lucide QrCode icon. It opens the selected day’s cards, or the latest accessible current roster when outside a day. QR card pages activate only the QR codes tab. The shared bar scrolls horizontally on very narrow screens to preserve its 56px minimum targets.
+
+Kid photos (2026-10-23): every kid has one, so the parent form opens with a Photo field, and a kid without one reads "Photo needed" in the parent's picker with the action "Finish". The Admin roster shows the avatar beside each name, a "Photo on file / No photo yet" line with Replace photo in the details, and a "N still need a photo" toggle chip beside the consent and payment chips. It reuses the roster's existing `ChaseChip` and is kept in the address (`?photo=missing`) rather than in state. The `UnverifiedFilterChip` named in the ticket was dropped on 2026-10-08, so `ChaseChip` is the toggle chip. Attendance rows show a 56px avatar, and the team assignment list a 40px one; archived attendance days show initials only. No new tokens, radii or colours are introduced.
