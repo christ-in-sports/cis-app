@@ -93,8 +93,8 @@ GRANT EXECUTE ON FUNCTION public.kid_photo_attached(text) TO authenticated;
 -- SELECT   Admin; or anyone who may read the kid whose photo it is; or the
 --          uploader while nothing references it yet (the form previews the
 --          photo before the kid exists). Once a replaced photo is unreferenced
---          nobody but its uploader and Admin can read it, and the daily cleanup
---          removes it.
+--          nobody but its uploader and Admin can read it, until it is deleted
+--          by hand.
 --          The kid check goes through the kids table, so it is already scoped
 --          by RLS; can_read_kid() is named anyway so the rule is visible here.
 -- INSERT   Admin or Parent, as themselves, under a random `<uuid>.webp|jpg`

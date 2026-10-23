@@ -3,6 +3,7 @@
 import { Fragment, useMemo, useState } from 'react';
 import Papa from 'papaparse';
 import { createClient } from '@/lib/supabase/client';
+import type { KidPhoto } from '@/lib/photo/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,6 +41,8 @@ const TSHIRT_SIZES = ['YS', 'YM', 'YL', 'XS', 'S', 'M', 'L', 'XL', 'XXL'] as con
 
 export interface Kid {
   id: string;
+  /** Signed link to the kid's photo; shown by KidAvatar (ENG-24). */
+  photo?: KidPhoto | null;
   first_name: string;
   last_name: string;
   dob: string;

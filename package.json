@@ -19,6 +19,7 @@
     "@zxing/browser": "0.2.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "heic-to": "1.6.6",
     "lucide-react": "^1.16.0",
     "next": "16.2.6",
     "papaparse": "^5.7.0",
