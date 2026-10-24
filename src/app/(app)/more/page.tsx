@@ -13,7 +13,6 @@ import { redirect } from 'next/navigation';
 import { BoardHeader } from '@/components/cis/board-shell';
 import { MenuRow, MenuSheet } from '@/components/cis/menu-list';
 import { RegistrationColumn } from '@/components/cis/registration-frame';
-import { ASSIGNABLE_ROLES } from '@/lib/auth/app-roles';
 import { getMyRoles } from '@/lib/auth/roles';
 import { SERVANT_REGISTRATION_PATH } from '@/lib/auth/servant-gate';
 
@@ -26,8 +25,9 @@ export default async function MorePage() {
 
   const isAdmin = roles.has('admin');
   const manages = isAdmin || roles.has('program');
-  // Servant registration is for the servant roles; a kid's account has nothing to submit.
-  const isServant = ASSIGNABLE_ROLES.some((r) => roles.has(r));
+  // Servant registration is for servants: Admin, Program, Coach or Prayer. A Parent
+  // or Kid account is not one, and the page and the database refuse them too.
+  const isServant = isAdmin || roles.has('program') || roles.has('coach') || roles.has('prayer');
 
   return (
     <>
@@ -35,7 +35,7 @@ export default async function MorePage() {
       <RegistrationColumn>
         {isServant && (
           <MenuSheet heading="You">
-            <MenuRow href={SERVANT_REGISTRATION_PATH} title="My servant registration" note="Your season details and sub-teams" />
+            <MenuRow href={SERVANT_REGISTRATION_PATH} title="My registration" note="Your season details and sub-teams" />
           </MenuSheet>
         )}
         {roles.has('parent') && (
@@ -45,7 +45,7 @@ export default async function MorePage() {
         )}
         {isAdmin && (
           <MenuSheet heading="Season">
-            <MenuRow href="/registrations" title="Roster" note="Every registered kid, consent and payments" />
+            <MenuRow href="/registrations" title="CISers" note="Every registered kid, consent and payments" />
             <MenuRow href="/servants" title="Servants" note="This season's servant registrations" />
             <MenuRow href="/admin/imports" title="Roster import" note="Bring in the season's CSV" />
             <MenuRow href="/admin/roles" title="Roles" note="Give servants their roles" />

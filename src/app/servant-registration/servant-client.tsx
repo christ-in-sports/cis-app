@@ -303,7 +303,7 @@ export default function ServantClient({
   if (confirmed) {
     return (
       <BoardShell>
-        <BoardHeader kicker="Servants" title="Servant registration" meta={season.name} />
+        <BoardHeader kicker="Servants" title="My registration" meta={season.name} />
         <RegistrationColumn>
           <Sheet className="flex flex-col gap-cis-3 px-cis-5 pb-cis-6 pt-cis-6">
             <div role="status" className="flex flex-col gap-cis-3">
@@ -380,7 +380,7 @@ export default function ServantClient({
     <BoardShell>
       <BoardHeader
         kicker="Servants"
-        title="Servant registration"
+        title="My registration"
         meta={season.name}
         action={
           hasRole ? (

@@ -66,7 +66,7 @@ test('a new servant signs up, is sent to the form, registers, then edits it', as
   await page.waitForURL(/\/servant-registration$/, { timeout: 15_000 });
   await page.goto('/sports');
   await expect(page).toHaveURL(/\/servant-registration$/);
-  await expect(page.getByRole('heading', { name: 'Servant registration' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'My registration', level: 1 })).toBeVisible();
   await expect(page.getByLabel('Email')).toHaveValue(EMAIL);
 
   // The session and team questions are hidden until the servant says "Yes".
@@ -151,5 +151,9 @@ test('a servant who already has a role is not sent to the form', async ({ page }
   await expect(page).toHaveURL(/\/$/);
   // Today, not the form: a Coach gets the app, and the form is a row in More.
   await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Servant registration' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'My registration', level: 1 })).toHaveCount(0);
+
+  // The form is a row in More for a servant.
+  await page.goto('/more');
+  await expect(page.getByRole('link', { name: 'My registration' })).toBeVisible();
 });
