@@ -149,5 +149,7 @@ test('a servant who already has a role is not sent to the form', async ({ page }
   await page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 15_000 });
 
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByText('Servant Registration')).toBeVisible();
+  // Today, not the form: a Coach gets the app, and the form is a row in More.
+  await expect(page.getByRole('heading', { name: 'Today', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Servant registration' })).toHaveCount(0);
 });

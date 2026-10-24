@@ -1,6 +1,6 @@
 /**
- * The Registration bottom nav: which tabs each kind of viewer gets, and which one
- * is marked current. A tab that leads somewhere you may not go is a dead end, so
+ * The Registration section tabs: which tabs each kind of viewer gets, and which
+ * one is marked current. A tab that leads somewhere you may not go is a dead end, so
  * the per-role sets are the thing worth pinning down.
  */
 
@@ -19,34 +19,19 @@ const none = { isParent: false, isAdmin: false };
 
 describe('registrationNavItems', () => {
   it('gives a parent Register, and no roster, import or roles', () => {
-    expect(labels({ ...none, isParent: true })).toEqual(['Home', 'Register', 'Sports']);
+    expect(labels({ ...none, isParent: true })).toEqual(['Register']);
   });
 
   it('gives an Admin the roster, servants, the import and role assignment', () => {
-    expect(labels({ ...none, isAdmin: true })).toEqual([
-      'Home',
-      'Roster',
-      'Servants',
-      'Import',
-      'Roles',
-      'Sports',
-    ]);
+    expect(labels({ ...none, isAdmin: true })).toEqual(['Roster', 'Servants', 'Import', 'Roles']);
   });
 
   it('merges the sets for someone who is both a parent and an Admin, in a fixed order', () => {
-    expect(labels({ isParent: true, isAdmin: true })).toEqual([
-      'Home',
-      'Register',
-      'Roster',
-      'Servants',
-      'Import',
-      'Roles',
-      'Sports',
-    ]);
+    expect(labels({ isParent: true, isAdmin: true })).toEqual(['Register', 'Roster', 'Servants', 'Import', 'Roles']);
   });
 
-  it('gives a user with no registration role only Home and Sports', () => {
-    expect(labels(none)).toEqual(['Home', 'Sports']);
+  it('gives a user with no registration role no tabs', () => {
+    expect(labels(none)).toEqual([]);
   });
 });
 
@@ -78,10 +63,10 @@ describe('RegistrationNav', () => {
     expect(current()).not.toContain('Register');
   });
 
-  it('never marks Home as current, because it leaves the section', () => {
-    pathname = '/';
-    render(<RegistrationNav {...all} />);
-    expect(current()).toEqual([]);
+  it('shows no tabs to a parent alone, since one tab is no choice', () => {
+    pathname = '/register';
+    render(<RegistrationNav isParent isAdmin={false} />);
+    expect(screen.queryByRole('navigation', { name: 'Registration' })).not.toBeInTheDocument();
   });
 
   it('links each tab to its screen', () => {
@@ -91,6 +76,6 @@ describe('RegistrationNav', () => {
     const hrefs = within(nav)
       .getAllByRole('link')
       .map((a) => a.getAttribute('href'));
-    expect(hrefs).toEqual(['/', '/register', '/registrations', '/servants', '/admin/imports', '/admin/roles', '/sports']);
+    expect(hrefs).toEqual(['/register', '/registrations', '/servants', '/admin/imports', '/admin/roles']);
   });
 });

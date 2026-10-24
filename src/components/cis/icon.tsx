@@ -21,7 +21,9 @@ import {
   ClipboardList,
   ChevronLeft,
   ChevronRight,
+  ClipboardCheck,
   House,
+  Menu,
   Lock,
   Minus,
   Pencil,
@@ -29,6 +31,7 @@ import {
   QrCode,
   ShieldCheck,
   SlidersHorizontal,
+  Sun,
   Trash2,
   Trophy,
   TriangleAlert,
@@ -74,6 +77,10 @@ const GLYPHS = {
   schedule: Calendar,
   bracket: Bracket,
   manage: SlidersHorizontal,
+  // App bottom nav.
+  today: Sun,
+  attendance: ClipboardCheck,
+  more: Menu,
   // Registration section nav.
   register: UserPlus,
   roster: Users,

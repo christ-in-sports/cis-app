@@ -137,6 +137,7 @@ Full spec: `DESIGN_SYSTEM.md` (companion to this file). Key rules that affect ho
 - **No status dots** — state is carried by a label, chip, or tick box (also a WCAG requirement).
 - **Pill radius (`999px`) is reserved for buttons only** — sheets/chips/tick boxes use their own fixed radii (see `DESIGN_SYSTEM.md` §6).
 - **Repeated 8+ utility Tailwind strings become a component or `cva` variant**, not copy-paste.
+- **One app shell.** Signed-in screens live in the `src/app/(app)/` route group: one `BoardShell` and one role-based bottom bar (`AppNav`: Today · Sports · Attendance/My team · More), with each section's pages as `SectionTabs` at the top. See `docs/arch_decisions.md` (2026-10-23).
 - Fonts: Caprasimo (display — scores, headings only) + Figtree (UI/body), via Google Fonts.
 - `/design/tokens.css` and `/design/tokens.json` are literal — import directly into `globals.css`/`tailwind.config`, don't reinterpret. `/design/reference/*.dc.html` files are prototypes only — rebuild faithfully in React/Tailwind/shadcn, never port the raw markup.
 
