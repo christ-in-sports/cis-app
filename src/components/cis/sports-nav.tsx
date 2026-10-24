@@ -4,7 +4,7 @@
  * `SportsNav`, from the Sports components (`DESIGN_SYSTEM.md` §7).
  *
  * Entering Sports swaps the bottom nav to Home / Standings / Schedule / Bracket,
- * with Manage added for Admin and Program Team. "Home" goes back to the app.
+ * with Teams and Manage added for Admin and Program Team. "Home" goes back to the app.
  * The bar itself is `SectionNav`, shared with the Registration section; this
  * only says which items Sports has.
  *
@@ -31,7 +31,7 @@ const MANAGE: SectionNavItem = { href: '/sports/manage', label: 'Manage', icon: 
  * (`KeepSelection` puts what a page resolved into the URL for this to read.)
  */
 function carry(href: string, params: URLSearchParams): string {
-  if (href === '/') return href;
+  if (href === '/' || href === '/teams') return href;
   const keep = new URLSearchParams();
   for (const key of ['division', 'block']) {
     const value = params.get(key);
@@ -43,7 +43,7 @@ function carry(href: string, params: URLSearchParams): string {
 
 export function SportsNav({ canManage }: { canManage: boolean }) {
   const params = useSearchParams();
-  const items = (canManage ? [...ITEMS, MANAGE] : ITEMS).map((item) => ({
+  const items = (canManage ? [...ITEMS, { href: '/teams', label: 'Teams', icon: 'roster' as const }, MANAGE] : ITEMS).map((item) => ({
     ...item,
     // The link carries the viewer's division and sport; `href` stays the plain
     // path so `SectionNav` still matches the current page against it.

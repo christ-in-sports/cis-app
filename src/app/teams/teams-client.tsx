@@ -7,8 +7,8 @@ import { Field, FieldError, SelectInput, TextInput, TickRow } from '@/components
 import { DangerButton, PrimaryButton, SecondaryButton } from '@/components/cis/button';
 import { KidAvatar } from '@/components/cis/kid-avatar';
 import { SheetHeading } from '@/components/cis/sheet';
-import { AttendanceSheet } from '../parts';
-import { assignCoach, assignKids, createTeam, deleteTeam, renameTeam } from '../actions';
+import { AttendanceSheet } from '../attendance/parts';
+import { assignCoach, assignKids, createTeam, deleteTeam, renameTeam } from './actions';
 
 type Coach = { id: string; display_name: string };
 type Link = { team_id: string; user_id: string };
@@ -86,7 +86,7 @@ export default function TeamsClient({ archived, teams, kids, coaches, links }: {
             <div className="flex flex-wrap gap-3">
               <SecondaryButton type="submit" disabled={pending}>Save team name</SecondaryButton>
               <DangerButton type="button" disabled={pending} onClick={() => {
-                if (window.confirm(`Delete ${team.name}? Kids will be unassigned and coach assignments removed. Attendance marks will be kept.`)) run(() => deleteTeam(team.id), 'Team deleted. Kids are ready to assign to another team.');
+                if (window.confirm(`Delete ${team.name}? Kids will be unassigned and coach assignments removed. Attendance marks and existing sports games and scores will be kept.`)) run(() => deleteTeam(team.id), 'Team deleted. Kids are ready to assign to another team.');
               }}>Delete team</DangerButton>
             </div>
           </form>
@@ -106,7 +106,7 @@ export default function TeamsClient({ archived, teams, kids, coaches, links }: {
     </AttendanceSheet>
     {!archived && <AttendanceSheet>
       <SheetHeading>Assign registered kids</SheetHeading>
-      <p className="text-cis-sm text-cis-ink-muted">{kids.filter((k) => k.division === division && !k.team_id).length} kids without a team in this division. Assignments apply to attendance days using this roster.</p>
+      <p className="text-cis-sm text-cis-ink-muted">{kids.filter((k) => k.division === division && !k.team_id).length} kids without a team in this division. Assignments are shared with Attendance and Sports. Archived attendance keeps its saved roster.</p>
       <Field label="Search kids">{(props) => <TextInput {...props} type="search" value={search} onChange={(e) => setSearch(e.target.value)} />}</Field>
       <fieldset disabled={pending} className="space-y-2">
         <legend className="sr-only">Select kids to assign</legend>

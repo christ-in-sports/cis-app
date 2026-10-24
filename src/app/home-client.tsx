@@ -1,5 +1,6 @@
 'use client';
 
+import { Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -44,7 +45,15 @@ const FEATURES = [
   },
 ];
 
-export default function HomeClient({ displayName }: { displayName?: string | null }) {
+const TEAMS_FEATURE = {
+  title: 'Teams',
+  description: 'Create teams and assign coaches and registered kids',
+  href: '/teams',
+  ready: true,
+  emoji: '',
+};
+
+export default function HomeClient({ displayName, canManageTeams = false }: { displayName?: string | null; canManageTeams?: boolean }) {
   const router = useRouter();
   const supabase = createClient();
 
@@ -77,7 +86,7 @@ export default function HomeClient({ displayName }: { displayName?: string | nul
       <div className="max-w-4xl mx-auto px-6 py-8">
         <h2 className="text-lg font-semibold mb-4 text-muted-foreground">Features</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {FEATURES.map((feature) => {
+          {(canManageTeams ? [...FEATURES, TEAMS_FEATURE] : FEATURES).map((feature) => {
             const card = (
               <Card
                 className={`h-full transition-all ${
@@ -89,7 +98,7 @@ export default function HomeClient({ displayName }: { displayName?: string | nul
                 <CardHeader className="pb-2">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-base flex items-center gap-2">
-                      <span className="text-2xl">{feature.emoji}</span>
+                      <span className="text-2xl">{feature.href === '/teams' ? <Users aria-hidden="true" /> : feature.emoji}</span>
                       {feature.title}
                     </CardTitle>
                     {!feature.ready && (

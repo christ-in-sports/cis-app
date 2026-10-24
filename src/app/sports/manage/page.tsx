@@ -46,7 +46,7 @@ export default async function ManagePage({
   }
 
   const newHref = sportsHref('/sports/manage/new', { division });
-  const teamCount = data.teams.filter((t) => t.division === division).length;
+  const teamCount = data.teams.filter((t) => t.active && t.division === division).length;
 
   const switcher = (
     <BlockSwitcher

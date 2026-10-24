@@ -24,7 +24,7 @@ export async function AttendanceOverview({ archived }: { archived: boolean }) {
     <AttendanceSheet>
       <p className="text-cis-base text-cis-ink-muted">{archived ? 'Past attendance is saved here. Open a day to view its marks.' : 'Choose a day to take attendance. Changes save as you go.'}</p>
       {!archived && canManage && <AttendanceClient hasDays={!!days?.length || !!activeTeams?.length} />}
-      {archived && canManage && <Link className={secondaryButtonClasses} href="/attendance/teams?view=archive">View archived teams</Link>}
+      {archived && canManage && <Link className={secondaryButtonClasses} href="/teams?view=archive">View archived teams</Link>}
     </AttendanceSheet>
     <AttendanceSheet>
       <SheetHeading>{archived ? 'Archived days' : 'Attendance days'}</SheetHeading>

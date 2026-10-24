@@ -27,7 +27,7 @@ import {
 const teamIds = (n: number) => Array.from({ length: n }, (_, i) => `t${i + 1}`);
 const teamMap = (n: number) =>
   new Map<string, TeamRecord>(
-    teamIds(n).map((id) => [id, { id, name: `Team ${id.slice(1)}`, division: 'juniors' as const }])
+    teamIds(n).map((id) => [id, { id, name: `Team ${id.slice(1)}`, active: true, division: 'juniors' as const }])
   );
 
 function game(over: Partial<GameRecord> & { id: string }): GameRecord {

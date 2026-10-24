@@ -13,7 +13,7 @@ export function AttendanceNav({ canManage }: { canManage: boolean }) {
     { href: '/', label: 'Home', icon: 'home' },
     { href: '/attendance', label: 'Attendance', icon: 'schedule', exact: true, also: dayPath && pathname === dayPath ? [dayPath] : [] },
     { href: '/attendance/codes', to: codesPath, label: 'QR codes', icon: 'qr', also: dayPath ? [`${dayPath}/codes`] : [] },
-    ...(canManage ? [{ href: '/attendance/teams', label: 'Teams', icon: 'roster' as const }] : []),
+    ...(canManage ? [{ href: '/teams', label: 'Teams', icon: 'roster' as const }] : []),
     { href: '/attendance/summary', label: 'Summary', icon: 'standings', also: ['/attendance/awards'] },
     { href: '/attendance/archive', label: 'Archive', icon: 'archive' },
   ];

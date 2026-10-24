@@ -83,7 +83,17 @@ test.afterAll(async () => {
 
 test('Program sets up a team; both coaches mark it; Program sees results and locks it', async ({ page, browser }) => {
   await signIn(page, 'program');
-  await page.goto('/attendance/teams');
+  await expect(page.getByRole('link', { name: /Teams/ })).toBeVisible();
+  // An empty current season must not offer kids from an older registration roster.
+  await page.goto('/teams');
+  await expect(page.getByText(`Attendance ${suffix}`, { exact: true })).toHaveCount(0);
+  await db(async (client) => {
+    await client.query('update seasons set is_current=false where id=$1', [emptySeasonId]);
+    await client.query('update seasons set is_current=true where id=$1', [seasonId]);
+  });
+  // Existing bookmarks preserve their filters and open the standalone page.
+  await page.goto('/attendance/teams?division=juniors');
+  await expect(page).toHaveURL('/teams?division=juniors');
   await page.getByLabel('New team name').fill(`Lions ${suffix}`);
   await page.getByRole('button', { name: 'Create team', exact: true }).click();
   await expect(page.getByRole('heading', { name: `Lions ${suffix}` })).toBeVisible();
@@ -100,6 +110,14 @@ test('Program sets up a team; both coaches mark it; Program sees results and loc
   await page.getByLabel('Assign 1 selected kids to').selectOption({ label: `Tigers ${suffix}` });
   await page.getByRole('button', { name: 'Save assignments' }).click();
   await expect(page.getByText('Team assignments saved.')).toBeVisible();
+  // Sports reads the same newly created team and coach links.
+  await page.getByRole('link', { name: 'Sports', exact: true }).click();
+  await page.getByRole('link', { name: 'Manage', exact: true }).click();
+  await page.getByRole('link', { name: 'New block', exact: true }).click();
+  await page.getByRole('button', { name: 'Create block', exact: true }).click();
+  await expect(page.getByText('Needs at least 6 teams. This division has 1.')).toBeVisible();
+  await page.getByRole('link', { name: 'Teams', exact: true }).click();
+  await expect(page.getByRole('heading', { name: `Tigers ${suffix}` })).toBeVisible();
   await page.getByRole('link', { name: 'Attendance', exact: true }).click();
   await page.getByRole('button', { name: 'Create attendance day' }).click();
   await expect(page.getByLabel('Season', { exact: true })).toHaveCount(0);
@@ -121,7 +139,11 @@ test('Program sets up a team; both coaches mark it; Program sees results and loc
   const firstContext = await browser.newContext(); const first = await firstContext.newPage();
   const secondContext = await browser.newContext(); const second = await secondContext.newPage();
   try {
-    await signIn(first, 'coach'); await first.goto(sessionUrl);
+    await signIn(first, 'coach');
+    await expect(first.getByRole('link', { name: 'Teams' })).toHaveCount(0);
+    await first.goto('/teams');
+    await expect(first).toHaveURL('/');
+    await first.goto(sessionUrl);
     // The coach of the kid's team is handed a signed link to the photo, and it loads.
     const face = first.locator('img[src*="/storage/v1/object/sign/kid-photos/"]');
     await expect(face).toHaveCount(1);
@@ -182,6 +204,10 @@ test('Program sets up a team; both coaches mark it; Program sees results and loc
     await page.getByText('View roster', { exact: true }).click();
     await expect(page.getByText(`Attendance ${suffix} · Grade 6`, { exact: true })).toBeVisible();
     await expect(page.getByText('Edit team', { exact: true })).toHaveCount(0);
+    // Retired teams remain for history but no longer inflate Sports setup counts.
+    await page.goto('/sports/manage?division=juniors');
+    await expect(page.getByText('Needs at least 6 teams. This division has 0.')).toBeVisible();
+    await page.goto('/teams?view=archive');
     await page.getByLabel('Teams', { exact: true }).selectOption('current');
     await expect(page.getByRole('heading', { name: `Tigers ${suffix}` })).toHaveCount(0);
     await page.getByLabel('New team name').fill(`Tigers ${suffix}`);

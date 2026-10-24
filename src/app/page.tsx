@@ -1,6 +1,7 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { redirectIfRoleless } from '@/lib/auth/servant-gate';
+import { getMyRoles } from '@/lib/auth/roles';
 import HomeClient from './home-client';
 
 export default async function HomePage() {
@@ -18,5 +19,6 @@ export default async function HomePage() {
     .eq('id', user.id)
     .maybeSingle();
 
-  return <HomeClient displayName={profile?.display_name} />;
+  const { roles } = await getMyRoles();
+  return <HomeClient displayName={profile?.display_name} canManageTeams={roles.has('admin') || roles.has('program')} />;
 }
