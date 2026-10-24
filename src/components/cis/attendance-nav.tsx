@@ -1,21 +1,21 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { SectionNav, type SectionNavItem } from './section-nav';
+import type { SectionNavItem } from './section-nav';
+import { SectionTabs } from './section-tabs';
 
-/** The same fixed icon-and-label bar used by Registration. */
+/** The Attendance section's tabs, at the top of the board like Sports' and Registration's. */
 export function AttendanceNav({ canManage }: { canManage: boolean }) {
   const pathname = usePathname();
   const day = pathname.match(/^\/attendance\/([0-9a-f-]{36})(?:\/codes)?$/i)?.[1];
   const dayPath = day ? `/attendance/${day}` : undefined;
   const codesPath = dayPath ? `${dayPath}/codes` : '/attendance/codes';
   const items: SectionNavItem[] = [
-    { href: '/', label: 'Home', icon: 'home' },
-    { href: '/attendance', label: 'Attendance', icon: 'schedule', exact: true, also: dayPath && pathname === dayPath ? [dayPath] : [] },
-    { href: '/attendance/codes', to: codesPath, label: 'QR codes', icon: 'qr', also: dayPath ? [`${dayPath}/codes`] : [] },
-    ...(canManage ? [{ href: '/attendance/teams', label: 'Teams', icon: 'roster' as const }] : []),
-    { href: '/attendance/summary', label: 'Summary', icon: 'standings', also: ['/attendance/awards'] },
-    { href: '/attendance/archive', label: 'Archive', icon: 'archive' },
+    { href: '/attendance', label: 'Days', exact: true, also: dayPath && pathname === dayPath ? [dayPath] : [] },
+    { href: '/attendance/codes', to: codesPath, label: 'QR codes', also: dayPath ? [`${dayPath}/codes`] : [] },
+    ...(canManage ? [{ href: '/attendance/teams', label: 'Teams' }] : []),
+    { href: '/attendance/summary', label: 'Summary', also: ['/attendance/awards'] },
+    { href: '/attendance/archive', label: 'Archive' },
   ];
-  return <SectionNav label="Attendance" items={items} />;
+  return <SectionTabs label="Attendance" items={items} />;
 }

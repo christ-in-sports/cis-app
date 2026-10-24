@@ -1,9 +1,10 @@
 'use client';
 
 /**
- * `SectionNav`: the fixed bottom nav a section swaps in when you enter it
- * (`DESIGN_SYSTEM.md` §7). Sports and Registration each pass their own items;
- * the bar itself is the same, so it lives here once rather than being copied.
+ * `SectionNav`: the fixed bottom bar (`DESIGN_SYSTEM.md` §7). `AppNav` is the one
+ * place that renders it: the same role-based items on every screen. Sections
+ * list their own pages with `SectionTabs` at the top instead, which share
+ * `SectionNavItem` and `isNavItemOn` with this bar.
  *
  * Eleven-pixel labels, 56 x 48px minimum targets, opaque board ground: a
  * translucent bar fails in direct sun (§3). The current item is apricot and
@@ -24,7 +25,8 @@ export interface SectionNavItem {
    */
   to?: string;
   label: string;
-  icon: IconName;
+  /** Shown in the bottom bar; `SectionTabs` are text only. */
+  icon?: IconName;
   /**
    * Lit only on this exact path (and `also`). Use it where the item's path is a
    * prefix of its siblings' -- Standings lives at `/sports`, which is a prefix of
@@ -38,11 +40,11 @@ export interface SectionNavItem {
 
 /**
  * Whether `item` is the current page. A prefix only counts at a path boundary
- * (`href + '/'`), so `/register` is not lit on `/registrations`. Home leaves the
- * section, so it is never current inside it.
+ * (`href + '/'`), so `/register` is not lit on `/registrations`. `/` is a prefix
+ * of everything, so Today is lit on the home page alone.
  */
 export function isNavItemOn(item: SectionNavItem, pathname: string): boolean {
-  if (item.href === '/') return false;
+  if (item.href === '/') return pathname === '/';
   return (
     pathname === item.href ||
     (!item.exact && pathname.startsWith(`${item.href}/`)) ||
@@ -71,7 +73,7 @@ export function SectionNav({ label, items }: { label: string; items: readonly Se
                   on && 'font-extrabold text-cis-apricot',
                 )}
               >
-                <Icon name={item.icon} />
+                {item.icon ? <Icon name={item.icon} /> : null}
                 {item.label}
               </Link>
             </li>

@@ -3,27 +3,23 @@
 /**
  * `SportsNav`, from the Sports components (`DESIGN_SYSTEM.md` §7).
  *
- * Entering Sports swaps the bottom nav to Home / Standings / Schedule / Bracket,
- * with Manage added for Admin and Program Team. "Home" goes back to the app.
- * The bar itself is `SectionNav`, shared with the Registration section; this
- * only says which items Sports has.
- *
- * The global set proposed alongside these designs (Today / Sports / Calendar /
- * Team) is not agreed and is not built; this is the in-section nav only.
+ * The Sports section's tabs: Standings / Schedule / Bracket, with Manage added
+ * for Admin and Program Team. They sit at the top of the board (`SectionTabs`);
+ * the app's bottom bar (`AppNav`) stays as it is.
  */
 
 import { useSearchParams } from 'next/navigation';
 
-import { SectionNav, type SectionNavItem } from '@/components/cis/section-nav';
+import type { SectionNavItem } from '@/components/cis/section-nav';
+import { SectionTabs } from '@/components/cis/section-tabs';
 
 const ITEMS: SectionNavItem[] = [
-  { href: '/', label: 'Home', icon: 'home' },
-  { href: '/sports', label: 'Standings', icon: 'standings', exact: true, also: ['/sports/places'] },
-  { href: '/sports/schedule', label: 'Schedule', icon: 'schedule' },
-  { href: '/sports/bracket', label: 'Bracket', icon: 'bracket' },
+  { href: '/sports', label: 'Standings', exact: true, also: ['/sports/places'] },
+  { href: '/sports/schedule', label: 'Schedule' },
+  { href: '/sports/bracket', label: 'Bracket' },
 ];
 
-const MANAGE: SectionNavItem = { href: '/sports/manage', label: 'Manage', icon: 'manage' };
+const MANAGE: SectionNavItem = { href: '/sports/manage', label: 'Manage' };
 
 /**
  * The division and sport the viewer is on, carried onto every in-section link so
@@ -31,7 +27,6 @@ const MANAGE: SectionNavItem = { href: '/sports/manage', label: 'Manage', icon: 
  * (`KeepSelection` puts what a page resolved into the URL for this to read.)
  */
 function carry(href: string, params: URLSearchParams): string {
-  if (href === '/') return href;
   const keep = new URLSearchParams();
   for (const key of ['division', 'block']) {
     const value = params.get(key);
@@ -46,9 +41,9 @@ export function SportsNav({ canManage }: { canManage: boolean }) {
   const items = (canManage ? [...ITEMS, MANAGE] : ITEMS).map((item) => ({
     ...item,
     // The link carries the viewer's division and sport; `href` stays the plain
-    // path so `SectionNav` still matches the current page against it.
+    // path so `SectionTabs` still matches the current page against it.
     to: carry(item.href, params),
   }));
 
-  return <SectionNav label="Sports" items={items} />;
+  return <SectionTabs label="Sports" items={items} />;
 }

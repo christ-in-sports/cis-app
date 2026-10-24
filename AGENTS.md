@@ -207,7 +207,7 @@ Every PR that touches the items in the "non-negotiable" list must include or upd
 
 ## 8. Attendance conventions
 
-- Attendance UI uses `BoardShell`, `Sheet`, CIS form controls and `AttendanceRow`; mutations go through `src/app/attendance/actions.ts` with Zod input validation.
+- Attendance UI uses `BoardShell`, `Sheet`, CIS form controls and `AttendanceRow`; mutations go through `src/app/(app)/attendance/actions.ts` with Zod input validation.
 - Admin and Program create dated attendance days, rename/delete current teams, manage coach links, and archive/restore attendance. Attendance has no season picker or season-rollover action. Program assigns only `registrations.team_id` through `assign_attendance_team()`; it does not gain general roster write access. Only users holding Coach can be assigned as coaches.
 - Admin marks all kids; Coaches read/mark only their assigned teams. Program reads results but cannot mark unless also an assigned Coach. A team link alone never grants a role.
 - Admin and Program can delete a single attendance day, including locked/archived days, only after a confirmation naming the date and permanent loss of its marks/notes. Delete the day through the authenticated Server Action; its existing foreign-key cascade removes only that day's records. Keep kids, registrations, teams and other days.
@@ -220,11 +220,17 @@ Every PR that touches the items in the "non-negotiable" list must include or upd
 - When applying committed migrations through MCP, align repository filenames with the versions actually recorded by MCP; preserve hosted migration-history records.
 - Locks, immutable attendance identity, season validation and audit stamps are enforced in Postgres. Keep database permission/submission tests in `supabase/tests/attendance-roles.test.ts` current.
 - QR cards use `attendanceQrValue(kid_id)` and `/attendance/[id]/codes` (optional `?kid=`). `scanAttendance()` resolves only through the authenticated day roster and existing RLS; never add anonymous kid lookup or trust client record IDs. Scanning is Admin/assigned Coach only on open, non-archived days; preserve present/late marks and notes. Camera decoding stays local, starts on a tap, and stops on hide/navigation.
-- Attendance views refresh server data every 10 seconds while visible and on window focus; no Realtime publication is required. Team/division/archive filters use URL search params. Attendance reuses Registration’s fixed `SectionNav` with Home, Attendance, QR codes, Teams (managers), Summary and Archive. The QR tab opens the selected day’s cards or `/attendance/codes`, which resolves the latest accessible current roster.
+- Attendance views refresh server data every 10 seconds while visible and on window focus; no Realtime publication is required. Team/division/archive filters use URL search params. Attendance lists its pages as `SectionTabs` at the top of the board (Days, QR codes, Teams for managers, Summary, Archive) under the app's role-based `AppNav` bottom bar. The QR tab opens the selected day’s cards or `/attendance/codes`, which resolves the latest accessible current roster.
 
 ---
 
-## 9. Docs & Further Reading
+## 9. App shell and navigation
+
+- Every signed-in screen lives in the `src/app/(app)/` route group, whose layout renders `BoardShell` and the one bottom bar, `AppNav`, once. Don't render `BoardShell` or a bottom bar in a page or section layout. Auth pages and `/servant-registration` (the only screen for a roleless servant) stay outside it.
+- `AppNav` items come from the viewer's roles (`appNavItems`); a section's own pages go in that section's layout as `SectionTabs`, never as a second bottom bar. A tab must lead only to a screen the role may use (`project_spec.md` §1.5); the pages still check access and RLS is the boundary.
+- A new screen that is not a daily job is linked from More (`/more`) and listed in `AppNav`'s `also` so More stays lit on it.
+
+## 10. Docs & Further Reading
 
 | Doc | What's in it |
 |---|---|
@@ -241,4 +247,4 @@ Every PR that touches the items in the "non-negotiable" list must include or upd
 ---
 
 *Last updated: keep this line current — if you edit this file, update the date below.*
-**Last updated:** 2026-10-22
+**Last updated:** 2026-10-23

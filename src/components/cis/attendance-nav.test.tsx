@@ -13,7 +13,8 @@ it.each([true, false])('exposes labeled QR navigation for canManage=%s', (canMan
 });
 
 it.each([
-  [day, 'Attendance'],
+  ['/attendance', 'Days'],
+  [day, 'Days'],
   [`${day}/codes`, 'QR codes'],
   ['/attendance/codes', 'QR codes'],
   ['/attendance/awards', 'Summary'],

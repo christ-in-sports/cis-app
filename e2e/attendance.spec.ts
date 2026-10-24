@@ -100,7 +100,7 @@ test('Program sets up a team; both coaches mark it; Program sees results and loc
   await page.getByLabel('Assign 1 selected kids to').selectOption({ label: `Tigers ${suffix}` });
   await page.getByRole('button', { name: 'Save assignments' }).click();
   await expect(page.getByText('Team assignments saved.')).toBeVisible();
-  await page.getByRole('link', { name: 'Attendance', exact: true }).click();
+  await page.getByRole('navigation', { name: 'Attendance' }).getByRole('link', { name: 'Days', exact: true }).click();
   await page.getByRole('button', { name: 'Create attendance day' }).click();
   await expect(page.getByLabel('Season', { exact: true })).toHaveCount(0);
   await page.getByLabel('Date', { exact: true }).fill('2026-11-01');
@@ -171,7 +171,7 @@ test('Program sets up a team; both coaches mark it; Program sees results and loc
     await expect(second).toHaveURL('/');
     await first.reload();
     await expect(first.getByRole('button', { name: 'Delete attendance day' })).toHaveCount(0);
-    await page.getByRole('link', { name: 'Attendance', exact: true }).click();
+    await page.getByRole('navigation', { name: 'Attendance' }).getByRole('link', { name: 'Days', exact: true }).click();
     page.once('dialog', (dialog) => dialog.accept());
     await page.getByRole('button', { name: 'Archive current attendance' }).click();
     await expect(page).toHaveURL('/attendance/archive');
