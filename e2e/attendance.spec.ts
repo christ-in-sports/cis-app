@@ -193,7 +193,7 @@ test('Program sets up a team; both coaches mark it; Program sees results and loc
     await expect(second).toHaveURL('/');
     await first.reload();
     await expect(first.getByRole('button', { name: 'Delete attendance day' })).toHaveCount(0);
-    await page.getByRole('link', { name: 'Attendance', exact: true }).click();
+    await page.getByRole('navigation', { name: 'App' }).getByRole('link', { name: 'Attendance', exact: true }).click();
     page.once('dialog', (dialog) => dialog.accept());
     await page.getByRole('button', { name: 'Archive current attendance' }).click();
     await expect(page).toHaveURL('/attendance/archive');

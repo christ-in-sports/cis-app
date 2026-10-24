@@ -144,9 +144,9 @@ test('upload, review, and commit a roster', async ({ page }) => {
   await page.goto('/admin/imports');
   await expect(page.getByRole('heading', { name: "Import this year's roster" })).toBeVisible();
 
-  // The Admin's Registration nav, with Import as the current tab.
+  // The Admin's Registration tabs, with Import as the current tab.
   const nav = page.getByRole('navigation', { name: 'Registration' });
-  await expect(nav.getByRole('link')).toHaveText(['Home', 'Roster', 'Servants', 'Import', 'Roles', 'Sports']);
+  await expect(nav.getByRole('link')).toHaveText(['CISers', 'Servants', 'Import', 'Roles']);
   await expect(nav.getByRole('link', { name: 'Import' })).toHaveAttribute('aria-current', 'page');
   await page.screenshot({ path: 'test-results/import-1-empty.png', fullPage: true });
 
@@ -212,19 +212,21 @@ test('upload, review, and commit a roster', async ({ page }) => {
   await expect(page.getByRole('button', { name: /^Import \d+ rows$/ })).toHaveCount(0);
 });
 
-test('the roster shares the Registration frame, with Roster as the current tab', async ({ page }) => {
+test('the kid list sits in the app shell, with CISers as the current tab', async ({ page }) => {
   await signIn(page);
   await page.goto('/registrations');
 
-  await expect(page.getByRole('heading', { name: 'Roster', level: 1 })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'CISers', level: 1 })).toBeVisible();
   const nav = page.getByRole('navigation', { name: 'Registration' });
-  await expect(nav.getByRole('link', { name: 'Roster' })).toHaveAttribute('aria-current', 'page');
+  await expect(nav.getByRole('link', { name: 'CISers' })).toHaveAttribute('aria-current', 'page');
   // `/register` is a prefix of `/registrations`; only the roster tab may be lit.
   await expect(nav.locator('[aria-current="page"]')).toHaveCount(1);
   await page.screenshot({ path: 'test-results/roster.png', fullPage: true });
 
-  // Home leaves the section.
-  await nav.getByRole('link', { name: 'Home' }).click();
+  // The app bar keeps More lit, since the roster is reached from More; Today goes home.
+  const app = page.getByRole('navigation', { name: 'App' });
+  await expect(app.getByRole('link', { name: 'More' })).toHaveAttribute('aria-current', 'page');
+  await app.getByRole('link', { name: 'Today' }).click();
   await expect(page).toHaveURL(/\/$/);
 });
 

@@ -602,7 +602,7 @@ export default function RegistrationsClient({
   if (!isAdmin) {
     return (
       <>
-        <BoardHeader kicker="Registration" title="Roster" />
+        <BoardHeader kicker="Registration" title="CISers" />
         <RegistrationColumn>
           <Sheet tone="paper" className="flex flex-col gap-cis-3 px-cis-5 pb-cis-6 pt-cis-6">
             <SheetHeading className="text-cis-xl">Staff only</SheetHeading>
@@ -627,7 +627,7 @@ export default function RegistrationsClient({
           counts that used to sit under the title live in the filters sheet. */}
       <BoardHeader
         kicker="Registration"
-        title="Roster"
+        title="CISers"
         action={
           <PrimaryButton className="px-5" onClick={openNew} disabled={!season}>
             Add
@@ -795,7 +795,7 @@ export default function RegistrationsClient({
         </Sheet>
       ) : (
         <Sheet className="flex flex-col gap-cis-3 px-cis-4 pb-cis-4 pt-cis-5">
-          <SheetHeading>Roster</SheetHeading>
+          <SheetHeading>CISers</SheetHeading>
 
           {/* A real table, per DESIGN_SYSTEM.md §3 -- a roster is tabular data,
               so it is not a grid of cards. Details expand into a row beneath

@@ -4,7 +4,7 @@
  * Each function takes a Supabase client, so it runs as whoever is signed in:
  * RLS and the `has_role()` checks inside the database functions stay the
  * security boundary (project_spec.md 1.5). The Server Actions in
- * `src/app/sports/actions.ts` authenticate and validate first and then call
+ * `src/app/(app)/sports/actions.ts` authenticate and validate first and then call
  * these; keeping them apart lets the same code be exercised against a real local
  * database in `supabase/tests/competition-actions.test.ts`.
  *

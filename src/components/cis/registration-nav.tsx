@@ -1,29 +1,26 @@
 'use client';
 
 /**
- * `RegistrationNav`: the bottom nav of the Registration section, the same bar as
- * Sports' (`SectionNav`) with Registration's own items.
+ * `RegistrationNav`: the Registration section's tabs, at the top of the board
+ * like Sports' (`SectionTabs`). The app's bottom bar keeps More lit here, since
+ * these screens are reached from More.
  *
- * Which items appear depends on who is looking, because each role has a different
+ * Which tabs appear depends on who is looking, because each role has a different
  * job here and a tab that leads to a screen you may not use is just a dead end:
  *   - a Parent registers their kids;
- *   - staff read the roster;
- *   - an Admin also reads the servant registrations, imports the season's CSV and
- *     assigns roles.
- * Everyone gets Home (back to the app) and a Sports shortcut. These item sets are
- * a proposal built from the Sports pattern, not an agreed design
- * (`DESIGN_SYSTEM.md` §10).
+ *   - an Admin reads the roster and the servant registrations, imports the
+ *     season's CSV and assigns roles.
+ * A Parent alone has one tab, which `SectionTabs` does not show.
  */
 
-import { SectionNav, type SectionNavItem } from '@/components/cis/section-nav';
+import type { SectionNavItem } from '@/components/cis/section-nav';
+import { SectionTabs } from '@/components/cis/section-tabs';
 
-const HOME: SectionNavItem = { href: '/', label: 'Home', icon: 'home' };
-const SPORTS: SectionNavItem = { href: '/sports', label: 'Sports', icon: 'sports' };
-const REGISTER: SectionNavItem = { href: '/register', label: 'Register', icon: 'register' };
-const ROSTER: SectionNavItem = { href: '/registrations', label: 'Roster', icon: 'roster' };
-const SERVANTS: SectionNavItem = { href: '/servants', label: 'Servants', icon: 'servants' };
-const IMPORT: SectionNavItem = { href: '/admin/imports', label: 'Import', icon: 'import' };
-const ROLES: SectionNavItem = { href: '/admin/roles', label: 'Roles', icon: 'roles' };
+const REGISTER: SectionNavItem = { href: '/register', label: 'Register' };
+const ROSTER: SectionNavItem = { href: '/registrations', label: 'CISers' };
+const SERVANTS: SectionNavItem = { href: '/servants', label: 'Servants' };
+const IMPORT: SectionNavItem = { href: '/admin/imports', label: 'Import' };
+const ROLES: SectionNavItem = { href: '/admin/roles', label: 'Roles' };
 
 export interface RegistrationNavRoles {
   isParent: boolean;
@@ -40,15 +37,9 @@ export function registrationNavItems({
   isParent,
   isAdmin,
 }: RegistrationNavRoles): SectionNavItem[] {
-  return [
-    HOME,
-    ...(isParent ? [REGISTER] : []),
-    ...(isAdmin ? [ROSTER, SERVANTS] : []),
-    ...(isAdmin ? [IMPORT, ROLES] : []),
-    SPORTS,
-  ];
+  return [...(isParent ? [REGISTER] : []), ...(isAdmin ? [ROSTER, SERVANTS, IMPORT, ROLES] : [])];
 }
 
 export function RegistrationNav(props: RegistrationNavRoles) {
-  return <SectionNav label="Registration" items={registrationNavItems(props)} />;
+  return <SectionTabs label="Registration" items={registrationNavItems(props)} />;
 }

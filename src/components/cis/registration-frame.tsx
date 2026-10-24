@@ -1,14 +1,7 @@
 /**
- * The frame the Registration screens share: the board behind them, the nav under
- * them, and a column that holds sheets the way the Sports screens do -- 14px in
- * from the board's edge and 14px apart.
- *
- * `RegistrationFrame` is rendered once, by the route group's layout
- * (`app/(registration)/layout.tsx`), not by each page. That is what keeps the
- * board and the nav on screen while a page is still loading: a layout stays put
- * and only its page swaps, whereas a frame built inside each page vanishes with
- * the page and leaves the root loading screen's cream background in its place.
- * Sports does the same with `app/sports/layout.tsx`.
+ * `RegistrationColumn`: the column the Registration screens hold their sheets in,
+ * 14px in from the board's edge and 14px apart, the way the Sports screens do.
+ * The board and the bottom bar come from the app shell (`app/(app)/layout.tsx`).
  *
  * Anything placed directly on the board (not inside a sheet) is on a dark brown
  * ground: dark ink and orange text are unreadable there. Put controls inside a
@@ -17,27 +10,7 @@
 
 import type { ReactNode } from 'react';
 
-import { BoardShell } from '@/components/cis/board-shell';
 import { cn } from '@/lib/utils';
-
-export function RegistrationFrame({
-  nav,
-  className,
-  children,
-}: {
-  /** The bottom nav. A slot, so the layout can stream it in once roles are known. */
-  nav: ReactNode;
-  /** Applied to the content column -- pass a width when the default is wrong. */
-  className?: string;
-  children: ReactNode;
-}) {
-  return (
-    <BoardShell className={className}>
-      {children}
-      {nav}
-    </BoardShell>
-  );
-}
 
 /**
  * The column the sheets sit in under a `BoardHeader`. The 6px on top is the same

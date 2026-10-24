@@ -83,9 +83,11 @@ export function DangerButton({ block, className, children, ...props }: ButtonPro
 export const secondaryButtonClasses = cn(
   base,
   'min-h-cis-tap-primary px-6 border-[3px] border-cis-ink bg-cis-paper-light text-cis-ink',
-  // §3: hover changes background only -- the one non-opaque value in the
-  // system is this wash.
-  'hover:bg-[rgba(36,31,28,.07)]',
+  // §3: hover changes background only, and to an opaque colour. A secondary
+  // button can sit straight on the dark board (Sign out), where a translucent
+  // wash over its cream fill lets the board show through and the button looks
+  // see-through. The paper tone is the same shade the wash gave on a sheet.
+  'hover:bg-cis-paper',
   'active:translate-y-[1px]',
 );
 

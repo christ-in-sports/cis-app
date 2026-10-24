@@ -146,6 +146,42 @@ describe('submit_servant_registration', () => {
       ).rejects.toThrow(/permission denied/);
     });
   });
+
+  // ENG-26: parents and kids are not servants.
+  it.each([['parent'], ['kid'], ['parent', 'kid']])(
+    'rejects an account whose only roles are %s',
+    async (...roles) => {
+      await withTx(pool, async (client) => {
+        const id = await createProfile(client, { email: `not-servant-${roles.join('-')}@test.local` });
+        for (const role of roles) await grantRole(client, id, role);
+
+        await expect(submitAs(client, id)).rejects.toMatchObject({ code: '42501' });
+        expect((await client.query('select 1 from servant_registrations where user_id = $1', [id])).rows).toHaveLength(0);
+      });
+    }
+  );
+
+  it.each([['admin'], ['program'], ['coach'], ['prayer'], ['coach', 'parent'], ['parent', 'prayer']])(
+    'lets an account holding %s submit',
+    async (...roles) => {
+      await withTx(pool, async (client) => {
+        const id = await createProfile(client, { email: `servant-role-${roles.join('-')}@test.local` });
+        for (const role of roles) await grantRole(client, id, role);
+
+        expect(await submitAs(client, id)).toBe(true);
+      });
+    }
+  );
+
+  it('stops a roleless servant who becomes a Parent only from editing the registration', async () => {
+    await withTx(pool, async (client) => {
+      const id = await createProfile(client, { email: 'became-parent@test.local' });
+      expect(await submitAs(client, id)).toBe(true);
+
+      await grantRole(client, id, 'parent');
+      await expect(submitAs(client, id, payload({ notes: 'edited' }))).rejects.toMatchObject({ code: '42501' });
+    });
+  });
 });
 
 describe('servant_registrations read access', () => {
@@ -188,6 +224,28 @@ describe('servant_registrations read access', () => {
       });
     }
   );
+
+  it.each([['parent'], ['kid']])('hides an existing row from the owner once they hold only %s', async (role) => {
+    await withTx(pool, async (client) => {
+      const id = await createProfile(client, { email: `row-then-${role}@test.local` });
+      await submitAs(client, id);
+      expect(await readAs(client, id)).toHaveLength(1);
+
+      await grantRole(client, id, role);
+      expect(await readAs(client, id)).toHaveLength(0);
+    });
+  });
+
+  it('keeps the owner\'s row visible while they also hold a servant role', async () => {
+    await withTx(pool, async (client) => {
+      const id = await createProfile(client, { email: 'row-coach-parent@test.local' });
+      await submitAs(client, id);
+      await grantRole(client, id, 'parent');
+      await grantRole(client, id, 'coach');
+
+      expect(await readAs(client, id)).toEqual([{ user_id: id }]);
+    });
+  });
 
   it('rejects an anonymous read', async () => {
     await withTx(pool, async (client) => {

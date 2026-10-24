@@ -1,5 +1,4 @@
 import { AttendanceNav } from '@/components/cis/attendance-nav';
-import { BoardShell } from '@/components/cis/board-shell';
 import { redirectIfRoleless } from '@/lib/auth/servant-gate';
 import { attendanceAccess } from './data';
 
@@ -8,8 +7,8 @@ export default async function AttendanceLayout({ children }: { children: React.R
   // than being turned away to the home page first.
   await redirectIfRoleless();
   const { canManage } = await attendanceAccess();
-  return <BoardShell>
-    {children}
+  return <>
     <AttendanceNav canManage={canManage} />
-  </BoardShell>;
+    {children}
+  </>;
 }

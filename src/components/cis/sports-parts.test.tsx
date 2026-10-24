@@ -92,11 +92,10 @@ describe('BlockSwitcher', () => {
 });
 
 describe('SportsNav', () => {
-  it('offers Home, Standings, Schedule and Bracket, with Manage only for those who can', () => {
+  it('offers Standings, Schedule and Bracket, with Manage only for those who can', () => {
     pathname = '/sports';
     const { rerender } = render(<SportsNav canManage={false} />);
     expect(within(screen.getByRole('navigation', { name: 'Sports' })).getAllByRole('link').map((l) => l.textContent)).toEqual([
-      'Home',
       'Standings',
       'Schedule',
       'Bracket',
@@ -119,7 +118,7 @@ describe('SportsNav', () => {
     expect(current.map((l) => l.textContent)).toEqual([label]);
   });
 
-  it('carries the division and sport onto every section link, but not Home', () => {
+  it('carries the division and sport onto every section link', () => {
     pathname = '/sports/schedule';
     search = 'division=ambassadors&block=b-1&mine=1';
     render(<SportsNav canManage />);
@@ -128,16 +127,8 @@ describe('SportsNav', () => {
     expect(href('Schedule')).toBe('/sports/schedule?division=ambassadors&block=b-1');
     expect(href('Bracket')).toBe('/sports/bracket?division=ambassadors&block=b-1');
     expect(href('Manage')).toBe('/sports/manage?division=ambassadors&block=b-1');
-    expect(href('Home')).toBe('/');
     expect(href('Teams')).toBe('/teams');
     search = '';
-  });
-
-  it('points Home back at the app and never lights it', () => {
-    pathname = '/sports/schedule';
-    render(<SportsNav canManage={false} />);
-    expect(screen.getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/');
-    expect(screen.getByRole('link', { name: 'Home' })).not.toHaveAttribute('aria-current');
   });
 });
 

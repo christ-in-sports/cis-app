@@ -77,10 +77,10 @@ The app supports **6 roles**. A person may hold more than one role simultaneousl
 | AI team generation | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
 | View equipment list | ✓ | ✓ | ✗ | ✓ | ✗ | ✗ |
 | Update equipment list | ✓ | ✓ | ✗ | ✓ | ✗ | ✗ |
-| Submit own servant registration | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ |
+| Submit own servant registration | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ |
 | View all servant registrations | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
 
-A servant registration (the season commitment form, which replaced the Google Form) is submitted by any signed-in servant, including one with no role yet. A servant reads only their own; only Admin reads all, because it holds DOB, home address and emergency contacts. Sub-teams on it are a preference and never grant a role.
+A servant registration (the season commitment form, which replaced the Google Form) is submitted by a servant: someone holding Admin, Program Team, Coach or Prayer Team, or someone with no role yet. A Parent or Kid account is not a servant and cannot open, submit or read it (ENG-26); a Coach who is also a Parent can. A servant reads only their own; only Admin reads all, because it holds DOB, home address and emergency contacts. Sub-teams on it are a preference and never grant a role.
 
 **Permissions must be enforced server-side via Supabase Row Level Security — never client-side only.**
 
@@ -137,6 +137,7 @@ Full spec: `DESIGN_SYSTEM.md` (companion to this file). Key rules that affect ho
 - **No status dots** — state is carried by a label, chip, or tick box (also a WCAG requirement).
 - **Pill radius (`999px`) is reserved for buttons only** — sheets/chips/tick boxes use their own fixed radii (see `DESIGN_SYSTEM.md` §6).
 - **Repeated 8+ utility Tailwind strings become a component or `cva` variant**, not copy-paste.
+- **One app shell.** Signed-in screens live in the `src/app/(app)/` route group: one `BoardShell` and one role-based bottom bar (`AppNav`: Today · Sports · Attendance/My team · More), with each section's pages as `SectionTabs` at the top. See `docs/arch_decisions.md` (2026-10-23).
 - Fonts: Caprasimo (display — scores, headings only) + Figtree (UI/body), via Google Fonts.
 - `/design/tokens.css` and `/design/tokens.json` are literal — import directly into `globals.css`/`tailwind.config`, don't reinterpret. `/design/reference/*.dc.html` files are prototypes only — rebuild faithfully in React/Tailwind/shadcn, never port the raw markup.
 
@@ -254,7 +255,7 @@ Divisions (`juniors` / `ambassadors`) are an attribute on `Registration` and `Te
 
 ### 2.4.1 Team attendance implementation
 
-- `/teams` is the standalone Admin/Program team manager, linked from Home, Attendance and Sports. Kids come from active current-season `registrations` joined to `kids`, without the attendance fallback to an older populated season. Teams can be created before registrations arrive. This page writes the existing `ministry_teams`, `team_coaches`, and `registrations.team_id` through authenticated Server Actions and existing RLS/RPCs; no duplicate team store or sync job is introduced. Team mutations invalidate all three sections. Teams and Sports refresh visible server data every 10 seconds and on focus. Sports setup counts only active teams, retaining retired team records for historical game names. `/attendance/teams` redirects to `/teams` preserving archive/division filters.
+- `/teams` is the standalone Admin/Program team manager, linked from Today, More, Attendance and Sports. Kids come from active current-season `registrations` joined to `kids`, without the attendance fallback to an older populated season. Teams can be created before registrations arrive. This page writes the existing `ministry_teams`, `team_coaches`, and `registrations.team_id` through authenticated Server Actions and existing RLS/RPCs; no duplicate team store or sync job is introduced. Team mutations invalidate all three sections. Teams and Sports refresh visible server data every 10 seconds and on focus. Sports setup counts only active teams, retaining retired team records for historical game names. `/attendance/teams` redirects to `/teams` preserving archive/division filters.
 
 - `/attendance` lists current attendance days across registration seasons. Admin and Program choose a date to create a day; there is no session-title, division or season setup step. The roster is populated atomically from active `registrations` joined to `kids`, with coaches marking only their assigned teams.
 - Registration/sports seasons remain internal relationships. `attendance_roster_season()` prefers a populated current registration season and falls back to the latest populated season when someone creates an empty current season. This keeps existing kids and team assignments available without changing the global current season. No registrations are copied or deleted.

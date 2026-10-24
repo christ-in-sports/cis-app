@@ -57,7 +57,8 @@ export async function submitServantRegistration(input: unknown): Promise<SubmitS
   if (error) {
     switch (error.code) {
       case FORBIDDEN:
-        return { ok: false, error: 'You are no longer signed in.' };
+        // Signed out, or an account that is not a servant (a Parent or Kid).
+        return { ok: false, error: 'This account cannot submit this form. Sign in again, or ask an Admin.' };
       case NO_SEASON:
         return { ok: false, error: 'Registration is not open right now.' };
       case CHECK_FAILED:

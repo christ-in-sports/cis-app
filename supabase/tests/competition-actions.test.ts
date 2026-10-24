@@ -1,7 +1,7 @@
 /**
  * The sports Server Actions, end to end (ENG-14).
  *
- * These call the real actions in src/app/sports/actions.ts, which call the real
+ * These call the real actions in src/app/(app)/sports/actions.ts, which call the real
  * operations in src/lib/competition/service.ts, which talk to the local Supabase
  * stack over PostgREST as real signed-in users. That is deliberate: it exercises
  * what the pg-level tests in competition.test.ts cannot -- the API grants (who
@@ -38,7 +38,7 @@ import {
   resetSportBlock,
   saveSportBlock,
   scheduleGameDay,
-} from '@/app/sports/actions';
+} from '@/app/(app)/sports/actions';
 
 const DB_URL = process.env.SUPABASE_DB_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
 const API_URL = process.env.SUPABASE_URL ?? 'http://127.0.0.1:54321';

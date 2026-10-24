@@ -256,10 +256,19 @@ test('a parent completes an imported kid, then registers a new one', async ({ pa
   await signIn(page, PARENT_EMAIL);
   await page.goto('/register');
 
-  // ---- The Registration nav: a parent gets Register, and no roster or import --
-  const nav = page.getByRole('navigation', { name: 'Registration' });
-  await expect(nav.getByRole('link')).toHaveText(['Home', 'Register', 'Sports']);
-  await expect(nav.getByRole('link', { name: 'Register' })).toHaveAttribute('aria-current', 'page');
+  // ---- The app bar: a parent gets no attendance and no Registration tabs -----
+  const app = page.getByRole('navigation', { name: 'App' });
+  await expect(app.getByRole('link')).toHaveText(['Today', 'Sports', 'More']);
+  await expect(app.getByRole('link', { name: 'More' })).toHaveAttribute('aria-current', 'page');
+  await expect(page.getByRole('navigation', { name: 'Registration' })).toHaveCount(0);
+
+  // ---- A parent is not a servant: no servant registration, in More or by URL --
+  await page.goto('/more');
+  await expect(page.getByRole('link', { name: /Register a kid/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'My registration' })).toHaveCount(0);
+  await page.goto('/servant-registration');
+  await expect(page).toHaveURL(/\/$/);
+  await page.goto('/register');
 
   // ---- The imported kid was linked by guardian email, and is not finished ----
   await expect(page.getByRole('heading', { name: 'Who are you registering?' })).toBeVisible();
