@@ -17,7 +17,7 @@ import type { SectionNavItem } from '@/components/cis/section-nav';
 import { SectionTabs } from '@/components/cis/section-tabs';
 
 const REGISTER: SectionNavItem = { href: '/register', label: 'Register' };
-const ROSTER: SectionNavItem = { href: '/registrations', label: 'Roster' };
+const ROSTER: SectionNavItem = { href: '/registrations', label: 'CISers' };
 const SERVANTS: SectionNavItem = { href: '/servants', label: 'Servants' };
 const IMPORT: SectionNavItem = { href: '/admin/imports', label: 'Import' };
 const ROLES: SectionNavItem = { href: '/admin/roles', label: 'Roles' };

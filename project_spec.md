@@ -77,10 +77,10 @@ The app supports **6 roles**. A person may hold more than one role simultaneousl
 | AI team generation | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
 | View equipment list | ✓ | ✓ | ✗ | ✓ | ✗ | ✗ |
 | Update equipment list | ✓ | ✓ | ✗ | ✓ | ✗ | ✗ |
-| Submit own servant registration | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ |
+| Submit own servant registration | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ |
 | View all servant registrations | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
 
-A servant registration (the season commitment form, which replaced the Google Form) is submitted by any signed-in servant, including one with no role yet. A servant reads only their own; only Admin reads all, because it holds DOB, home address and emergency contacts. Sub-teams on it are a preference and never grant a role.
+A servant registration (the season commitment form, which replaced the Google Form) is submitted by a servant: someone holding Admin, Program Team, Coach or Prayer Team, or someone with no role yet. A Parent or Kid account is not a servant and cannot open, submit or read it (ENG-26); a Coach who is also a Parent can. A servant reads only their own; only Admin reads all, because it holds DOB, home address and emergency contacts. Sub-teams on it are a preference and never grant a role.
 
 **Permissions must be enforced server-side via Supabase Row Level Security — never client-side only.**
 

@@ -4,14 +4,17 @@
  * Reads run under the servant's own session, so RLS decides what comes back:
  * the "authenticated reads current season" policy for the season and the
  * owner-only policy for `servant_registrations`. The form is the one screen a
- * roleless user can use, so nothing here may require a role.
+ * roleless user can use, so nothing here may require a role. A Parent or Kid
+ * account is not a servant and gets `not-servant`.
  */
 
-import { hasAnyRole } from '@/lib/auth/roles';
+import { getMyRoles } from '@/lib/auth/roles';
 import type { ServantRegistrationRecord, ServantSeason } from './servant-form';
 
 export type ServantContext =
   | { status: 'signed-out' }
+  /** Holds roles, but none of them is a servant role (a Parent or Kid account). */
+  | { status: 'not-servant' }
   | { status: 'no-season'; hasRole: boolean }
   | {
       status: 'ok';
@@ -35,8 +38,16 @@ const COLUMNS =
   'emergency_contact_phone, gender, dob, home_address, updated_at';
 
 export async function loadServantRegistrationContext(): Promise<ServantContext> {
-  const { supabase, userId, hasRole } = await hasAnyRole();
+  const { supabase, userId, roles } = await getMyRoles();
   if (userId === null) return { status: 'signed-out' };
+
+  const hasRole = roles.size > 0;
+  // Servants only: no role yet, or Admin, Program Team, Coach or Prayer Team. A
+  // Parent or Kid account is not a servant. UX only: the database refuses the
+  // same callers (`submit_servant_registration()` and the read policy).
+  const isServant =
+    !hasRole || roles.has('admin') || roles.has('program') || roles.has('coach') || roles.has('prayer');
+  if (!isServant) return { status: 'not-servant' };
 
   const { data: season } = await supabase
     .from('seasons')

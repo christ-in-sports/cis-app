@@ -23,11 +23,11 @@ describe('registrationNavItems', () => {
   });
 
   it('gives an Admin the roster, servants, the import and role assignment', () => {
-    expect(labels({ ...none, isAdmin: true })).toEqual(['Roster', 'Servants', 'Import', 'Roles']);
+    expect(labels({ ...none, isAdmin: true })).toEqual(['CISers', 'Servants', 'Import', 'Roles']);
   });
 
   it('merges the sets for someone who is both a parent and an Admin, in a fixed order', () => {
-    expect(labels({ isParent: true, isAdmin: true })).toEqual(['Register', 'Roster', 'Servants', 'Import', 'Roles']);
+    expect(labels({ isParent: true, isAdmin: true })).toEqual(['Register', 'CISers', 'Servants', 'Import', 'Roles']);
   });
 
   it('gives a user with no registration role no tabs', () => {
@@ -48,7 +48,7 @@ describe('RegistrationNav', () => {
 
   it.each([
     ['/register', 'Register'],
-    ['/registrations', 'Roster'],
+    ['/registrations', 'CISers'],
     ['/admin/imports', 'Import'],
   ])('marks only %s as current', (path, label) => {
     pathname = path;
@@ -57,7 +57,7 @@ describe('RegistrationNav', () => {
   });
 
   // `/register` is a string prefix of `/registrations`; only a path boundary counts.
-  it('does not light Register on the roster page', () => {
+  it('does not light Register on the CISers page', () => {
     pathname = '/registrations';
     render(<RegistrationNav {...all} />);
     expect(current()).not.toContain('Register');

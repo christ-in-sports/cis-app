@@ -262,6 +262,14 @@ test('a parent completes an imported kid, then registers a new one', async ({ pa
   await expect(app.getByRole('link', { name: 'More' })).toHaveAttribute('aria-current', 'page');
   await expect(page.getByRole('navigation', { name: 'Registration' })).toHaveCount(0);
 
+  // ---- A parent is not a servant: no servant registration, in More or by URL --
+  await page.goto('/more');
+  await expect(page.getByRole('link', { name: /Register a kid/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'My registration' })).toHaveCount(0);
+  await page.goto('/servant-registration');
+  await expect(page).toHaveURL(/\/$/);
+  await page.goto('/register');
+
   // ---- The imported kid was linked by guardian email, and is not finished ----
   await expect(page.getByRole('heading', { name: 'Who are you registering?' })).toBeVisible();
   const mina = page.getByRole('button', { name: /Mina Guirguis/ });

@@ -28,6 +28,12 @@ issue holds the detail; this file is the index of "what's now different from the
 
 ## Decisions
 
+### 2026-10-24 — Parents and kids are not servants: no servant registration for them
+- **PRD reference:** §5.2 Role-Feature Permission Matrix (`project_spec.md` §1.5, "Submit own servant registration"); `project_spec.md` §1.4
+- **What changed:** The matrix let Parent submit a servant registration. It no longer does: only Admin, Program Team, Coach and Prayer Team can, plus someone with no role yet (a new servant waiting for an Admin). A Parent-only or Kid-only account does not see "My registration" in More, is sent home from the page, and is refused by the database. A Coach who is also a Parent keeps access. The kid list is called "CISers" on screen, and a servant's own form is called "My registration".
+- **Why:** Parents are not servants and have nothing to say about serving this season. Showing them the form also asked them for a date of birth, home address and emergency contacts for no reason. How a parent gets an account and the Parent role is a separate open question.
+- **Linear:** [ENG-26](https://linear.app/cis-app/issue/ENG-26/app-shell-polish-servant-link-visibility-wording-secondary-button), [ENG-27](https://linear.app/cis-app/issue/ENG-27/parent-onboarding-how-parents-get-into-the-app-and-receive-the-parent)
+
 ### 2026-10-22 — Every kid has a photo, so servants can identify them
 - **PRD reference:** §3.5 US-PA-01 (registration captures a photo), §6 Core Data Model (`Kid`), §5.2 Role-Feature Permission Matrix; reverses the 2026-09-23 entry below
 - **What changed:** Photos are back, at the Director's request. Every kid saved through the app must have one: the parent form requires a photo for a new kid and for a returning kid who has none yet, and any Admin manual add must require one too. CSV-imported kids (the fallback path) are the only exception and are shown to the Admin as "Missing photo" until a parent or Admin adds one. Only the kid's linked parent and Admin can upload. A photo can be replaced but never removed, and the old one is deleted, so each kid has one current photo. Photos are visible to exactly the servants who can see the kid's roster row (Admin, Program Team, the coach of the kid's current team) plus the linked parent. Prayer Team, Kids and archived attendance show none. Consent has no effect on whether a photo can be uploaded. The Google Form's photo question stays ignored by the CSV import.
