@@ -3,7 +3,7 @@
 /**
  * `SportsNav`, from the Sports components (`DESIGN_SYSTEM.md` §7).
  *
- * The Sports section's tabs: Standings / Schedule / Bracket, with Manage added
+ * The Sports section's tabs: Standings / Schedule / Bracket, with Teams and Manage added
  * for Admin and Program Team. They sit at the top of the board (`SectionTabs`);
  * the app's bottom bar (`AppNav`) stays as it is.
  */
@@ -27,6 +27,7 @@ const MANAGE: SectionNavItem = { href: '/sports/manage', label: 'Manage' };
  * (`KeepSelection` puts what a page resolved into the URL for this to read.)
  */
 function carry(href: string, params: URLSearchParams): string {
+  if (href === '/teams') return href;
   const keep = new URLSearchParams();
   for (const key of ['division', 'block']) {
     const value = params.get(key);
@@ -38,7 +39,7 @@ function carry(href: string, params: URLSearchParams): string {
 
 export function SportsNav({ canManage }: { canManage: boolean }) {
   const params = useSearchParams();
-  const items = (canManage ? [...ITEMS, MANAGE] : ITEMS).map((item) => ({
+  const items = (canManage ? [...ITEMS, { href: '/teams', label: 'Teams' }, MANAGE] : ITEMS).map((item) => ({
     ...item,
     // The link carries the viewer's division and sport; `href` stays the plain
     // path so `SectionTabs` still matches the current page against it.

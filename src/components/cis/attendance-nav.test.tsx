@@ -10,6 +10,7 @@ it.each([true, false])('exposes labeled QR navigation for canManage=%s', (canMan
   render(<AttendanceNav canManage={canManage} />);
   expect(screen.getByRole('link', { name: 'QR codes' })).toHaveAttribute('href', '/attendance/codes');
   expect(screen.queryByRole('link', { name: 'Teams' }) !== null).toBe(canManage);
+  if (canManage) expect(screen.getByRole('link', { name: 'Teams' })).toHaveAttribute('href', '/teams');
 });
 
 it.each([

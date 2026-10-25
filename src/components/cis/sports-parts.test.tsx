@@ -100,7 +100,9 @@ describe('SportsNav', () => {
       'Schedule',
       'Bracket',
     ]);
+    expect(screen.queryByRole('link', { name: 'Teams' })).not.toBeInTheDocument();
     rerender(<SportsNav canManage />);
+    expect(screen.getByRole('link', { name: 'Teams' })).toHaveAttribute('href', '/teams');
     expect(screen.getByRole('link', { name: 'Manage' })).toHaveAttribute('href', '/sports/manage');
   });
 
@@ -125,6 +127,7 @@ describe('SportsNav', () => {
     expect(href('Schedule')).toBe('/sports/schedule?division=ambassadors&block=b-1');
     expect(href('Bracket')).toBe('/sports/bracket?division=ambassadors&block=b-1');
     expect(href('Manage')).toBe('/sports/manage?division=ambassadors&block=b-1');
+    expect(href('Teams')).toBe('/teams');
     search = '';
   });
 });

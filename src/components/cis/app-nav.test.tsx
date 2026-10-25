@@ -57,6 +57,7 @@ describe('AppNav', () => {
     ['/attendance', 'Attendance'],
     ['/attendance/b885f8bc-347d-4a99-82ea-d36bb1b35554/codes', 'Attendance'],
     ['/more', 'More'],
+    ['/teams', 'More'],
     ['/registrations', 'More'],
     ['/register', 'More'],
     ['/servants', 'More'],

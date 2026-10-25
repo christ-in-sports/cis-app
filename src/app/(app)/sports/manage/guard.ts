@@ -28,7 +28,7 @@ export async function loadManagedBlock(blockId: string) {
     block,
     games,
     counts: countGames(games),
-    teamCount: data.teams.filter((t) => t.division === block.division).length,
+    teamCount: data.teams.filter((t) => t.active && t.division === block.division).length,
   };
 }
 

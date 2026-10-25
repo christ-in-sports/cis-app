@@ -52,9 +52,14 @@ export default async function MorePage() {
           </MenuSheet>
         )}
         {manages && (
+          <MenuSheet heading="Teams">
+            <MenuRow href="/teams" title="Manage teams" note="Create teams and assign coaches and registered kids" />
+          </MenuSheet>
+        )}
+        {manages && (
           <MenuSheet heading="Archives">
             <MenuRow href="/attendance/archive" title="Attendance archive" note="Past seasons' days and marks" />
-            <MenuRow href="/attendance/teams?view=archive" title="Team archive" note="Retired teams and their rosters" />
+            <MenuRow href="/teams?view=archive" title="Team archive" note="Retired teams and their rosters" />
           </MenuSheet>
         )}
         <SignOutButton />

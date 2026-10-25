@@ -17,6 +17,7 @@ export type GameStatus = 'scheduled' | 'completed';
 export type Slot = 'home' | 'away';
 
 export interface TeamRecord {
+  active: boolean;
   id: string;
   name: string;
   division: Division;

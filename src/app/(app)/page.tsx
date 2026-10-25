@@ -46,6 +46,7 @@ export default async function TodayPage() {
           <MenuSheet heading="Run the day">
             <MenuRow href="/attendance" title="Attendance days" note="Create today's day and see which teams are marked" />
             <MenuRow href="/sports/schedule" title="Games and scores" note="Today's schedule, with results to enter" />
+            <MenuRow href="/teams" title="Teams" note="Create teams and assign coaches and registered kids" />
             <MenuRow href="/sports/manage" title="Manage sports" note="Blocks, fixtures and game days" />
             {isAdmin && <MenuRow href="/servants" title="Servant registrations" note="Who has signed up this season" />}
           </MenuSheet>

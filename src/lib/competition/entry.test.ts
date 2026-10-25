@@ -46,7 +46,7 @@ function game(over: Partial<GameRecord> & { id: string }): GameRecord {
 }
 
 const teams = new Map<string, TeamRecord>(
-  ['a', 'b', 'c', 'd'].map((id) => [id, { id, name: id.toUpperCase(), division: 'juniors' as const }])
+  ['a', 'b', 'c', 'd'].map((id) => [id, { id, name: id.toUpperCase(), active: true, division: 'juniors' as const }])
 );
 
 const saved = (over: Partial<ResultRecord> = {}): ResultRecord => ({

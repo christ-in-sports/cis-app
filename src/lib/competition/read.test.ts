@@ -14,7 +14,7 @@ const block = (over: Partial<BlockRecord> & { id: string }): BlockRecord => ({
   ...over,
 });
 
-const team = (id: string, division: Division): TeamRecord => ({ id, name: id, division });
+const team = (id: string, division: Division): TeamRecord => ({ id, name: id, division, active: true });
 
 describe('blocksInDivision', () => {
   it('keeps one division, ordered by start date then sport, undated last', () => {

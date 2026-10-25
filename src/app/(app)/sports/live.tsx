@@ -49,9 +49,14 @@ export function LiveRefresh() {
       if (document.visibilityState === 'visible') refresh();
     };
     document.addEventListener('visibilitychange', onVisible);
+    // Team and coach tables need no Realtime publication; re-read their RLS-filtered data.
+    const teamTimer = window.setInterval(onVisible, 10000);
+    window.addEventListener('focus', onVisible);
 
     return () => {
       clearTimeout(timer);
+      window.clearInterval(teamTimer);
+      window.removeEventListener('focus', onVisible);
       document.removeEventListener('visibilitychange', onVisible);
       supabase.removeChannel(channel);
     };

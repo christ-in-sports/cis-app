@@ -81,7 +81,7 @@ export async function loadSportsData(db: Db, userId: string): Promise<SportsData
 
   const [blocksRes, teamsRes] = await Promise.all([
     db.from('sport_blocks').select(BLOCK_COLUMNS).eq('season_id', season.id).order('starts_on', { nullsFirst: false }),
-    db.from('ministry_teams').select('id, name, division').eq('season_id', season.id).order('name'),
+    db.from('ministry_teams').select('id, name, division, active').eq('season_id', season.id).order('name'),
   ]);
   const blocks = must<BlockRecord[]>(blocksRes, 'sport blocks');
   const teams = must<TeamRecord[]>(teamsRes, 'teams');

@@ -31,7 +31,7 @@ export function appNavItems(roles: ReadonlySet<AppRole>): SectionNavItem[] {
       href: '/more',
       label: 'More',
       icon: 'more',
-      also: ['/registrations', '/register', '/servants', '/admin'],
+      also: ['/registrations', '/register', '/servants', '/admin', '/teams'],
     },
   ];
 }
