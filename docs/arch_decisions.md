@@ -36,6 +36,25 @@ heading followed by:
 
 ## Decisions
 
+### 2026-10-25 — Parent join link: shared code, email-code sign-in, Parent granted server-side, no email linking
+- **Status:** Accepted
+- **Context:** Parents had no way in (ENG-27). `/signup` takes only the servant code and leaves the account roleless, which sends it to the servant form; Parent could only be ticked by an Admin. `link_my_kids()` attached imported kids by `guardian_email`, which was only safe if the email was really verified, but `/api/auth/signup` creates users with `email_confirm: true`. The program wants one link in the parent group chat and as few steps as possible.
+- **Decision:**
+  - `/join?code=<PARENT_JOIN_CODE>` sits outside the `(app)` group, like the other auth pages. The code is an env var checked timing-safe, sharing the check with `SERVANT_SIGNUP_CODE`. Rotating it retires old links.
+  - Sign-in is by 6-digit email code (`signInWithOtp` / `verifyOtp`, `type: 'email'`). Magic links are rejected because on phones they open inside the mail app's browser and the session lands in the wrong place. `/join` may create the user (`shouldCreateUser: true`, `display_name` in user metadata). `/login` also offers a code but never creates users.
+  - Parent is granted by a Server Action only after `verifyOtp` succeeds and the join code is re-checked. It inserts the `user_roles` row with a service-role client and treats a duplicate as success. `user_roles` stays writable only by Admin through RLS; nothing grants Parent from the browser. A signed-in user opening a valid link (a servant who is also a parent) gets Parent added to the same account.
+  - `link_my_kids()` is dropped. `kids.parent_user_id` is set only by `register_kid()` (the parent's own new kids) or by an Admin through the existing `"admin manage kids"` policy.
+  - Sessions keep Supabase's defaults (no time limit, silent refresh), so parents enter a code only on a new device or after signing out.
+  - Hosted Auth must send through Resend (custom SMTP) with the code in the Magic Link template and a raised email rate limit; the built-in sender allows only a few emails an hour.
+- **Consequences / tradeoffs:**
+  - Anyone holding the link becomes a Parent. That role reads only kids linked to the account and writes only through `register_kid()`, so the exposure is fake registrations, which an Admin can remove, along with the role.
+  - This is the one exception to "roles are granted only by an Admin" (AGENTS.md §4). The service-role grant is confined to the join action.
+  - Without email linking, a family added by CSV does not see their kids until an Admin attaches them.
+  - Servant signup still marks emails confirmed without checking them. That no longer exposes kid data, but a mistyped or false servant email still blocks the real owner from joining with it.
+  - A code that is requested but never entered leaves a roleless account, which is sent to the servant form. That form points parents back to the group-chat link, which grants Parent to the signed-in account.
+  - Rejected: per-parent Admin invites (do not match the one-link workflow) and a shared link without email codes (no login method, and no way back in without a password).
+- **Reference:** `project_spec.md` §1.4, §2.3, §2.4 (`parent_user_id`); product decision in `docs/decisions.md` (2026-10-25); [ENG-27](https://linear.app/cis-app/issue/ENG-27/parent-onboarding-how-parents-get-into-the-app-and-receive-the-parent)
+
 ### 2026-10-22 — Kid photos in a private bucket, written with the user's own session and read through signed URLs
 - **Status:** Accepted
 - **Context:** Photos are required again (`decisions.md`, 2026-10-22). The 2026-09-21 design depended on copying photos from Google Drive and named objects by kid ID. Neither works now: photos come from parents through the app, and a new kid has no ID until `register_kid()` creates them, yet the photo is required for that same registration.

@@ -33,7 +33,7 @@ Build a **Progressive Web App (PWA)** that centralizes all operational aspects o
 
 ### 1.4 Users & Roles
 
-The app supports **6 roles**. A person may hold more than one role simultaneously (e.g., a Coach who is also on the Prayer Team). New servant accounts start with no role; an Admin grants roles after signup. The `kid` role is the exception: it is never assigned by an Admin, and a kid's account gets it automatically when they self-register (not built yet).
+The app supports **6 roles**. A person may hold more than one role simultaneously (e.g., a Coach who is also on the Prayer Team). New servant accounts start with no role; an Admin grants roles after signup. Parents are an exception: they join through one link posted in the parent group chat, sign in with a code emailed to them, and get the Parent role from that link without waiting for an Admin (ENG-27; `docs/decisions.md`, 2026-10-25). The `kid` role is another exception: it is never assigned by an Admin, and a kid's account gets it automatically when they self-register (not built yet).
 
 | Role | Who They Are |
 |---|---|
@@ -205,7 +205,7 @@ Most state in this app is **server state** — rosters, standings, attendance, c
 ```
 
 - **Auth** happens through Supabase Auth (email/OTP or magic link). JWT includes role claims used by RLS policies.
-- **Roles** live only in `user_roles` and are checked with `has_role('<role>')` (SQL) or `checkRole()` / `getMyRoles()` (server code). There are no `is_staff()` / `is_coach()` helpers or profile flags (removed 2026-10-19, ENG-16). New accounts, created with the shared servant signup code, start with no role until an Admin grants one.
+- **Roles** live only in `user_roles` and are checked with `has_role('<role>')` (SQL) or `checkRole()` / `getMyRoles()` (server code). There are no `is_staff()` / `is_coach()` helpers or profile flags (removed 2026-10-19, ENG-16). Servant accounts, created with the shared servant signup code, start with no role until an Admin grants one. Parent accounts come from `/join?code=<PARENT_JOIN_CODE>` (ENG-27, being built): the parent signs in with a 6-digit email code (`signInWithOtp` / `verifyOtp`, never a magic link), and a Server Action grants Parent with the service role only after the code is verified. Parent is the one role not granted by an Admin; `user_roles` stays Admin-only under RLS. Sessions use Supabase's defaults, so a parent enters a code only on a new device or after signing out. Hosted Auth sends its email through Resend (custom SMTP). Reasoning: `docs/arch_decisions.md` (2026-10-25).
 - **All permission enforcement lives in Postgres RLS policies**, not just the UI. The UI hides/shows based on role for UX only — it is not the security boundary.
 - **Server Actions / API routes** in Next.js are the only layer allowed to call Stripe and Claude APIs — never call these directly from the client.
 - **Edge Functions** handle background/triggered work: sending push notifications, processing scheduled reminders.
@@ -240,7 +240,7 @@ Divisions (`juniors` / `ambassadors`) are an attribute on `Registration` and `Te
 `?` marks an optional (nullable) field. Field notes for `Kid` and `Registration`:
 
 - **Contact fields:** `Kid.email` and `Kid.phone` are the kid's own and optional. `guardian_name`, `guardian_phone` and `guardian_email` are required. `emergency_contact_name` and `emergency_contact_phone` are required.
-- **`parent_user_id`** is nullable so a kid can exist (e.g., from CSV import) before the parent has an account. It is linked by `link_my_kids()`, which the parent registration page calls on load: it attaches unlinked kids whose `guardian_email` matches the parent's **confirmed** auth email (case- and whitespace-insensitive), and never takes a kid from another parent. Linking on page load rather than at signup keeps it independent of how signup is built. It depends on email confirmation being enabled in production. The inline guardian fields stay as the contact snapshot either way. One parent may have many kids.
+- **`parent_user_id`** is nullable so a kid can exist (e.g., from the backup CSV import) without a parent account. It is set only by `register_kid()`, for kids the parent registers themselves, or by an Admin. Kids are never attached to a parent automatically by matching `guardian_email`: `link_my_kids()` is being retired, because anyone holding the parent join link becomes a Parent (ENG-27; `docs/arch_decisions.md`, 2026-10-25). The inline guardian fields stay as the contact snapshot either way. One parent may have many kids; a kid has at most one linked parent for now.
 - **`allergies`** holds allergies and medical notes. It is retained from the earlier schema.
 - **`grade`** is an integer from 4 to 12. **`division`** must be `juniors` when grade < 7, `ambassadors` when grade > 7, and either when grade = 7. Enforce this with a database `CHECK` constraint on `Registration`; the Zod schema mirrors it for form errors.
 - **`tshirt_size`** is one of `YS`, `YM`, `YL`, `XS`, `S`, `M`, `L`, `XL`, `XXL`.
