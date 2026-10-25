@@ -106,7 +106,7 @@ If a new screen seems to need breaking an anti-pattern above, flag it in the PR 
 These are hard rules, not preferences. If a task conflicts with one of these, stop and ask rather than improvise.
 
 - **RLS is the real permission boundary.** Every table holding user data needs a Row Level Security policy written in the *same* change that creates the table or column — never as a follow-up. UI-level role checks are for UX only.
-- **Check the specific role, never a helper.** Policies, SQL functions and server code call `has_role('<role>')` / `checkRole()` / `getMyRoles()` and name every role they allow. Do not add helpers like `is_staff()` or `is_coach()`, or role flags on `profiles`. Roles are granted only by an Admin; signup creates an account with no role.
+- **Check the specific role, never a helper.** Policies, SQL functions and server code call `has_role('<role>')` / `checkRole()` / `getMyRoles()` and name every role they allow. Do not add helpers like `is_staff()` or `is_coach()`, or role flags on `profiles`. Roles are granted only by an Admin; servant signup creates an account with no role. The one exception is Parent, which the parent join link grants server-side after the email code is verified (ENG-27). Never grant any other role that way, and never attach kids to a parent by matching email.
 - **Permissions must match the Role Permission Matrix exactly** (`project_spec.md` §1.5). If a permission isn't listed there, ask — don't assume or invent one.
 - **Never call Stripe or the Claude API from client components.** Server Actions or API routes only. No secrets (Stripe secret key, Claude API key, Supabase service role key) in client-side code, ever.
 - **Server Actions are preferred** over client-side fetch + API route for mutations, unless a stable REST endpoint is genuinely needed (e.g., a Stripe webhook receiver).
@@ -248,4 +248,4 @@ Every PR that touches the items in the "non-negotiable" list must include or upd
 ---
 
 *Last updated: keep this line current — if you edit this file, update the date below.*
-**Last updated:** 2026-10-24
+**Last updated:** 2026-10-25
