@@ -158,6 +158,20 @@ describe('registerKid -- photo errors from the database', () => {
     expect(duplicate.fieldErrors).toBeUndefined();
   });
 
+  it('tells a parent a kid already on file needs an Admin, and does not echo the kid', async () => {
+    rpc.mockResolvedValue({
+      data: null,
+      error: { code: '55007', message: 'That kid is already on file; ask an Admin to attach them to your account' },
+    });
+
+    const result = await registerKid(newKid);
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/already on file/i);
+    expect(result.error).toMatch(/Ask an Admin/i);
+    expect(result.fieldErrors).toBeUndefined();
+  });
+
   it('logs only the error code, because a message can name a kid', async () => {
     rpc.mockResolvedValue({ data: null, error: { code: 'XX000', message: `kid ${KID} photo ${PHOTO}` } });
 

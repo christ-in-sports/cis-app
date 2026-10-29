@@ -404,6 +404,57 @@ describe('register_kid -- the season registration', () => {
     });
   });
 
+  // The Google Form backup: the CSV import leaves kids with no parent. A parent
+  // who later registers the same child gets sent to an Admin, not a second row
+  // and not the existing one (ENG-29).
+  describe('a kid already on file with no parent', () => {
+    it('is refused, ignoring case and spaces, and nothing is written', async () => {
+      await withTx(pool, async (client) => {
+        const parentId = await makeParent(client, 'rk-onfile@test.local');
+        const imported = await importedKid(client, { lastName: 'Imported' });
+        const before = (await client.query('select 1 from kids')).rowCount;
+
+        const err = await asUserError(client, () =>
+          registerAs(client, parentId, {
+            kid: kidPayload({ first_name: ' MARINA ', last_name: 'imported', dob: '2013-06-01' }),
+          })
+        );
+
+        expect(err.code).toBe('55007');
+        expect((await client.query('select 1 from kids')).rowCount).toBe(before);
+        const owner = await client.query('select parent_user_id from kids where id = $1', [imported]);
+        expect(owner.rows[0].parent_user_id).toBeNull();
+      });
+    });
+
+    it('does not stop a twin, who differs by first name', async () => {
+      await withTx(pool, async (client) => {
+        const parentId = await makeParent(client, 'rk-onfile-twin@test.local');
+        await importedKid(client, { lastName: 'Imported' });
+
+        const { kid_id } = await registerAs(client, parentId, {
+          kid: kidPayload({ first_name: 'Mark', last_name: 'Imported', dob: '2013-06-01' }),
+        });
+
+        const r = await client.query('select parent_user_id from kids where id = $1', [kid_id]);
+        expect(r.rows[0].parent_user_id).toBe(parentId);
+      });
+    });
+
+    it('does not stop a different child with the same name and another birthday', async () => {
+      await withTx(pool, async (client) => {
+        const parentId = await makeParent(client, 'rk-onfile-dob@test.local');
+        await importedKid(client, { lastName: 'Imported' });
+
+        await expect(
+          registerAs(client, parentId, {
+            kid: kidPayload({ first_name: 'Marina', last_name: 'Imported', dob: '2012-01-01' }),
+          })
+        ).resolves.toBeDefined();
+      });
+    });
+  });
+
   it('lets one parent register several kids', async () => {
     await withTx(pool, async (client) => {
       const parentId = await makeParent(client, 'rk-many@test.local');

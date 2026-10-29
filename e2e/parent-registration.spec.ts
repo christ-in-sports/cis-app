@@ -264,6 +264,36 @@ test('someone who is not a parent gets no registration form', async ({ page }) =
   await expect(page.getByLabel('First name')).toHaveCount(0);
 });
 
+test('a kid already on file with no parent is not registered a second time', async ({ page }) => {
+  await resetParentData(); // leaves Nour, imported from the Google Form backup with no parent
+  await signIn(page, PARENT_EMAIL);
+  await page.goto('/register');
+
+  await page.getByRole('button', { name: 'Add another kid' }).click();
+  await page.getByLabel('First name').fill(' nour ');
+  await page.getByLabel('Last name').fill('GUIRGUIS');
+  await page.getByLabel('Date of birth').fill('2012-05-09');
+  await page.getByRole('group', { name: 'Gender' }).getByText('Female', { exact: true }).click();
+  await page.getByLabel('Grade').selectOption('8');
+  await page.getByRole('group', { name: 'T-shirt size' }).getByText('M', { exact: true }).click();
+  await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/kid.jpg');
+  await expect(page.getByRole('button', { name: 'Replace photo' })).toBeVisible();
+  await page.getByText('I have read and agree to the liability waiver.').click();
+  await page.getByRole('button', { name: 'Register', exact: true }).click();
+
+  await expect(page.getByText(/already on file/)).toBeVisible();
+  await expect(page.getByText(/Ask an Admin to attach them/)).toBeVisible();
+
+  // Still one Nour, still with no parent: nothing was created and nothing adopted.
+  const rows = await withDb((client) =>
+    client.query(
+      `select parent_user_id from kids where first_name = 'Nour' and guardian_email = $1`,
+      [PARENT_EMAIL],
+    ),
+  );
+  expect(rows.rows).toEqual([{ parent_user_id: null }]);
+});
+
 test('a parent completes an imported kid, then registers a new one', async ({ page }) => {
   await resetParentData();
   await signIn(page, PARENT_EMAIL);
