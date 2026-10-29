@@ -6,9 +6,11 @@
  * list their own pages with `SectionTabs` at the top instead, which share
  * `SectionNavItem` and `isNavItemOn` with this bar.
  *
- * Eleven-pixel labels, 56 x 48px minimum targets, opaque board ground: a
- * translucent bar fails in direct sun (§3). The current item is apricot and
- * carries `aria-current`.
+ * A floating dock, not a full-width slab: it sits 14px in from the edges like the
+ * sheets and shares their radius, with equal padding above and below the icons.
+ * Eleven-pixel labels, 56 x 52px minimum targets, opaque board ground: a
+ * translucent bar fails in direct sun (§3). The current item is an orange chip
+ * with ink text (orange is active nav) and carries `aria-current`.
  */
 
 import Link from 'next/link';
@@ -58,28 +60,30 @@ export function SectionNav({ label, items }: { label: string; items: readonly Se
   return (
     <nav
       aria-label={label}
-      className="fixed inset-x-0 bottom-0 z-10 overflow-x-auto bg-cis-board pb-[env(safe-area-inset-bottom)] text-cis-ink-on-dark"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-10 px-3.5 pb-[calc(env(safe-area-inset-bottom)+0.625rem)] print:hidden"
     >
-      <ul className="mx-auto flex w-full min-w-max max-w-[560px] items-center justify-between px-[14px] pb-6 pt-1.5">
-        {items.map((item) => {
-          const on = isNavItemOn(item, pathname);
-          return (
-            <li key={item.href}>
-              <Link
-                href={item.to ?? item.href}
-                aria-current={on ? 'page' : undefined}
-                className={cn(
-                  'flex min-h-[48px] min-w-[56px] flex-col items-center justify-center gap-[5px] text-[11px] font-bold',
-                  on && 'font-extrabold text-cis-apricot',
-                )}
-              >
-                {item.icon ? <Icon name={item.icon} /> : null}
-                {item.label}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+      <div className="pointer-events-auto mx-auto max-w-[560px] overflow-x-auto rounded-cis-sheet bg-cis-board text-cis-ink-on-dark shadow-cis-sheet">
+        <ul className="flex w-full min-w-max items-stretch gap-1 p-2">
+          {items.map((item) => {
+            const on = isNavItemOn(item, pathname);
+            return (
+              <li key={item.href} className="flex-1">
+                <Link
+                  href={item.to ?? item.href}
+                  aria-current={on ? 'page' : undefined}
+                  className={cn(
+                    'flex min-h-[52px] min-w-[56px] flex-col items-center justify-center gap-1 rounded-cis-chip text-[11px] font-bold',
+                    on && 'bg-cis-orange font-extrabold text-cis-ink-dark',
+                  )}
+                >
+                  {item.icon ? <Icon name={item.icon} /> : null}
+                  {item.label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </nav>
   );
 }
