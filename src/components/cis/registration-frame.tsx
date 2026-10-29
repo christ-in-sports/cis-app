@@ -3,9 +3,8 @@
  * 14px in from the board's edge and 14px apart, the way the Sports screens do.
  * The board and the bottom bar come from the app shell (`app/(app)/layout.tsx`).
  *
- * Anything placed directly on the board (not inside a sheet) is on a dark brown
- * ground: dark ink and orange text are unreadable there. Put controls inside a
- * sheet, and use the pale `BoardHeader` for the heading.
+ * The page behind the sheets is cream. Controls still go inside a sheet, and the
+ * `BoardHeader` carries the heading.
  */
 
 import type { ReactNode } from 'react';

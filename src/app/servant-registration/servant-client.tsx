@@ -384,7 +384,7 @@ export default function ServantClient({
         meta={season.name}
         action={
           hasRole ? (
-            <Link href="/" className="text-cis-sm font-bold text-cis-apricot underline">
+            <Link href="/" className="text-cis-sm font-bold text-cis-orange-text underline">
               Home
             </Link>
           ) : undefined

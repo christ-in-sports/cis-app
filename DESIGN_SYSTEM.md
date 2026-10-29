@@ -24,7 +24,7 @@ this file's anti-pattern list or component inventory if a new decision was made.
 
 ## 2. Design direction
 
-**Analog sports-clipboard, not SaaS dashboard.** A dark hardboard shell, cream paper sheets,
+**Analog sports-clipboard, not SaaS dashboard.** A cream page, paper sheets,
 heavy rules instead of card borders, a display face used sparingly for scores and section
 headings, and large, uncomplicated tap targets meant to be used standing on a court —
 this app is checked mid-game on a phone, not browsed at a desk.
@@ -81,7 +81,7 @@ screens, and flag it if a new screen seems to need breaking one.
 | `--cis-ink` / `--cis-ink-muted` | `#241F1C` / `#5E534A` | Body and secondary text |
 | `--cis-ink-dark` | `#201E1D` | Text on an orange fill; heavy rules; dark scoreboard ground |
 | `--cis-ink-on-ember` | `#FFF6EE` | Text on an ember fill — warmer than `--cis-ink-on-dark` |
-| `--cis-board` / `--cis-board-tab` | `#6F5133` / `#7A5C3C` | Clipboard hardboard and inactive tab |
+| `--cis-board` / `--cis-board-tab` | `#6F5133` / `#7A5C3C` | Clipboard brown, used as an **accent only** (2026-10-29): the bottom bar, inactive tabs and the clip. It is no longer the page behind the sheets, which is `--cis-page` |
 | `--cis-rule` / `--cis-rule-soft` / `--cis-rule-dash` | `#E3D4B8` / `#DFCFAF` / `#D6C4A6` | 1px row rule, ruled-paper gradient line, 2px dashed section break |
 | `--cis-box-empty` | `#C9B49A` | Border of an unticked attendance box |
 
@@ -231,7 +231,7 @@ one-off markup per screen.
 | `AttendanceNav` | `canManage` | Attendance's `SectionTabs`: Days / QR codes / Teams (managers) / Summary / Archive. |
 | `RegistrationNav` | `isParent`, `isAdmin` | Registration's `SectionTabs`: Register for a Parent; CISers · Servants · Import · Roles for an Admin. A Parent alone has one tab and sees none. |
 | `MenuSheet` + `MenuRow` | `heading`; `href`, `title`, `note` | A sheet of ruled rows that each link on (heading, 5px rule, hairlines between rows), used by Today and More. `LinkRow` stays for a single row under its own heavy rule. |
-| `RegistrationColumn` | — | The column that holds sheets 14px in from the board and 14px apart, used by Registration, Today and More. The board and the bar come from the app shell layout (`app/(app)/layout.tsx`), **rendered once**, not by each page, so they stay on screen while a page loads and between sections. Anything placed directly on the board must be pale: dark ink and orange text are unreadable on it, so put controls in a sheet. |
+| `RegistrationColumn` | — | The column that holds sheets 14px in from the board and 14px apart, used by Registration, Today and More. The board and the bar come from the app shell layout (`app/(app)/layout.tsx`), **rendered once**, not by each page, so they stay on screen while a page loads and between sections. The page behind the sheets is cream (`--cis-page`), so text placed directly on it is ink, with `--cis-orange-text` for links; controls still go in a sheet. |
 
 **Built so far (ENG-15, part 1 of 3: the screens everyone sees).** In `src/components/cis/`: `Chip` (variants `sport`, `active`, `outline`, `dashed`, `tint`; `faith` and `stamp` stay unbuilt), `Icon`, `Sheet` with `joined`, `DivisionTabs`, `BlockSwitcher`, `StandingsTable`, the schedule table (`ScheduleTable`, with `GameStateChip` and `TeamLines`), the bracket (`BracketSectionView`, `BracketGame`, `RoundJumpChips`), `SportsNav`, and three small ones the designs imply: `BoardShell` (the hardboard behind a screen, with the header), `LinkRow` (a ruled row that links on) and `EmptyNotice` (the waiting state: heading, sentence, optional note and action). Final places is a page in `src/app/sports/places`. **Part 2 (score entry):** `ScoreStepper`, `QuickPoints`, `SetTable`, `RoundWinnerPicker`, `PickButton` and `ScoreNumber` in `score-controls.tsx`, and `ScoreLink` (the "Enter score" / "Edit score" link scorers see under a game). The sheet itself, the tiebreak prompt, the clear confirmation and the saved panel live with the screen in `src/app/sports/score/[gameId]`: they are specific to it, so they are not shared components, and `ScoreSheet` / `TiebreakPrompt` / `StickyActionBar` from the table above are built as that page rather than as separate parts. **Part 3 (block management, `/sports/manage`):** `StageTracker` (boxes joined by a rule, each with a Done / Now / Later word), `ResultStrip`, `ActionNote` (a lock and the reason an action is closed), `Fixtures` (the three counts) and `LockedField`, in `stage-tracker.tsx` and `manage-parts.tsx`; plus `BlockSwitcher` gained an optional icon. The block form, the schedule / clear / reset forms and the action list live with the screens, not as shared components, because only Manage uses them; `BlockAction` is the action list, and `ConfirmSheet` is built as the reset and clear screens. ENG-15 is now fully built.
 
@@ -348,3 +348,5 @@ App shell and navigation (2026-10-23): every signed-in screen except the servant
 Polish (2026-10-24, ENG-26): the screen of registered kids (`/registrations`) is called "CISers", the program's own word for the kids, in the Registration tab, More and its headings; "Roster import" keeps its name until confirmed. The More row for a servant's own form reads "My registration", and so does that page's title, since it is the season form and there is no profile page. A Parent or Kid account sees neither the row nor the page. A secondary button now hovers to the opaque `--cis-paper` instead of a translucent wash, so it no longer looks transparent on the dark board (§3). No new tokens, radii or colours.
 
 Teams navigation (2026-10-24): `/teams` lives in the shared app shell, with its existing current/archive selector and division control. Today and More expose Teams only to Admin/Program, as do the Teams links in Attendance and Sports section tabs. More stays active in the app bar on Teams. Existing sheets and form controls are reused; no new tokens or control variants.
+
+Cream page (2026-10-29): after a critique of the brown shell (muddy against the orange fish logo, glare-prone outdoors, and a different mood from the cream login), `BoardShell` is now `--cis-page` with ink text, and the header kicker and meta use `--cis-orange-text` and `--cis-ink-muted`. The brown stays only on the `AppNav` bar, inactive `SectionTabs` and `DivisionTabs`, and the clip. Sheets, rules, radii and every other token are unchanged. The logo may now sit on the page ground it was designed for.

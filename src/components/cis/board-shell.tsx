@@ -1,5 +1,6 @@
 /**
- * The hardboard the Sports screens sit on, and the header that sits on it.
+ * The cream page the screens sit on, and the header that sits on it. The brown
+ * hardboard survives only as an accent: the tabs, the bottom bar and the clip.
  *
  * `PhoneShell` in the design system is the 390px board frame with a status bar;
  * on a real phone the device is the frame and the status bar is the device's own,
@@ -17,7 +18,7 @@ export function BoardShell({ className, children }: { className?: string; childr
   return (
     <div
       className={cn(
-        'cis-focus-scope min-h-screen bg-cis-board font-cis-body text-cis-ink-on-dark',
+        'cis-focus-scope min-h-screen bg-cis-page font-cis-body text-cis-ink',
         'pt-[calc(env(safe-area-inset-top)+0.75rem)]',
         'pb-[calc(env(safe-area-inset-bottom)+6rem)]',
       )}
@@ -47,10 +48,10 @@ export function BoardHeader({
   return (
     <header className="flex items-center justify-between gap-2.5 px-6 pb-2 pt-3">
       <div>
-        {kicker ? <div className="text-cis-sm font-bold text-cis-apricot">{kicker}</div> : null}
+        {kicker ? <div className="text-cis-sm font-bold text-cis-orange-text">{kicker}</div> : null}
         <h1 className="mt-0.5 font-cis-display text-cis-display-md font-normal leading-[1.1]">{title}</h1>
       </div>
-      {action ?? (meta ? <div className="text-right text-cis-xs font-bold leading-[1.5] text-cis-ink-on-dark">{meta}</div> : null)}
+      {action ?? (meta ? <div className="text-right text-cis-xs font-bold leading-[1.5] text-cis-ink-muted">{meta}</div> : null)}
     </header>
   );
 }
