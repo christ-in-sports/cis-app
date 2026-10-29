@@ -1,12 +1,13 @@
 /**
- * RLS + behaviour tests for the parent registration functions
- * (supabase/migrations/*_parent_registration.sql): `register_kid()`,
- * `link_my_kids()` and the "authenticated reads current season" policy. The
- * photo rules `register_kid()` gained for kid photos are at the end of the
- * `register_kid` tests, below.
+ * RLS + behaviour tests for parent registration
+ * (supabase/migrations/*_parent_registration.sql): `register_kid()`, the rule
+ * that a parent sees only their own kids and that kids are never linked to a
+ * parent by matching an email (`link_my_kids()` was dropped, ENG-29), and the
+ * "authenticated reads current season" policy. The photo rules `register_kid()`
+ * gained for kid photos are at the end of the `register_kid` tests, below.
  *
- * Both functions are SECURITY DEFINER and write records about minors, so what
- * is worth protecting is: who may call them (AGENTS.md §7), that a parent can
+ * `register_kid()` is SECURITY DEFINER and writes records about minors, so what
+ * is worth protecting is: who may call it (AGENTS.md §7), that a parent can
  * only touch their own kids, that the locked identity fields cannot be
  * rewritten, and that consent provenance comes from the database and not the
  * caller.
@@ -445,96 +446,48 @@ describe('register_kid -- the season registration', () => {
   });
 });
 
-describe('link_my_kids', () => {
-  async function linkAs(client: PoolClient, userId: string): Promise<number> {
-    return asUser(client, userId, async () => {
-      const r = await client.query<{ n: number }>('select link_my_kids() as n');
-      return r.rows[0].n;
-    });
+// link_my_kids() attached imported kids by matching the guardian email. Parents
+// now join through one shared link, so that would hand a family's kids to anyone
+// who signed in with the right address (ENG-27, ENG-29). A parent sees only the
+// kids they registered themselves or an Admin attached.
+describe('a parent only sees their own kids', () => {
+  async function kidsSeenBy(client: PoolClient, userId: string): Promise<string[]> {
+    return asUser(client, userId, async () =>
+      (await client.query('select id from kids order by id')).rows.map((r) => r.id)
+    );
   }
 
-  async function confirmEmail(client: PoolClient, userId: string) {
-    await client.query('update auth.users set email_confirmed_at = now() where id = $1', [userId]);
-  }
-
-  async function ownerOf(client: PoolClient, kidId: string) {
-    const r = await client.query('select parent_user_id from kids where id = $1', [kidId]);
-    return r.rows[0].parent_user_id;
-  }
-
-  it('links kids whose guardian email matches, ignoring case and whitespace', async () => {
+  it('no longer has a link_my_kids function', async () => {
     await withTx(pool, async (client) => {
-      const parentId = await makeParent(client, 'link1@test.local');
-      await confirmEmail(client, parentId);
-      const a = await importedKid(client, { guardianEmail: 'link1@test.local', lastName: 'A' });
-      const b = await importedKid(client, { guardianEmail: '  LINK1@Test.Local ', lastName: 'B' });
-      const other = await importedKid(client, { guardianEmail: 'someone@test.local', lastName: 'C' });
-
-      expect(await linkAs(client, parentId)).toBe(2);
-      expect(await ownerOf(client, a)).toBe(parentId);
-      expect(await ownerOf(client, b)).toBe(parentId);
-      expect(await ownerOf(client, other)).toBeNull();
+      const r = await client.query(`select to_regprocedure('public.link_my_kids()') as fn`);
+      expect(r.rows[0].fn).toBeNull();
     });
   });
 
-  // Otherwise anyone could sign up with someone else's address and be handed
-  // that family's children.
-  it('does nothing while the email is unconfirmed', async () => {
+  it('does not see an imported kid whose guardian email is theirs, even confirmed', async () => {
     await withTx(pool, async (client) => {
-      const parentId = await makeParent(client, 'link2@test.local');
-      const kid = await importedKid(client, { guardianEmail: 'link2@test.local' });
+      const parentId = await makeParent(client, 'own1@test.local');
+      await client.query('update auth.users set email_confirmed_at = now() where id = $1', [parentId]);
+      const imported = await importedKid(client, { guardianEmail: 'own1@test.local' });
 
-      expect(await linkAs(client, parentId)).toBe(0);
-      expect(await ownerOf(client, kid)).toBeNull();
+      expect(await kidsSeenBy(client, parentId)).toEqual([]);
+      await expect(registerAs(client, parentId, { kidId: imported })).rejects.toThrow(/not found/i);
+      const owner = await client.query('select parent_user_id from kids where id = $1', [imported]);
+      expect(owner.rows[0].parent_user_id).toBeNull();
     });
   });
 
-  it('never takes a kid from the parent who already has it', async () => {
+  it('sees the kids they registered and an Admin attached, and no one else\'s', async () => {
     await withTx(pool, async (client) => {
-      const owner = await makeParent(client, 'link-owner@test.local');
-      const parentId = await makeParent(client, 'link3@test.local');
-      await confirmEmail(client, parentId);
-      const kid = await importedKid(client, { guardianEmail: 'link3@test.local', parentUserId: owner });
+      const parentId = await makeParent(client, 'own2@test.local');
+      const otherId = await makeParent(client, 'own2-other@test.local');
+      const { kid_id: mine } = await registerAs(client, parentId);
+      const attached = await importedKid(client, { guardianEmail: 'own2@test.local', lastName: 'A', parentUserId: parentId });
+      const theirs = await importedKid(client, { guardianEmail: 'own2-other@test.local', lastName: 'B', parentUserId: otherId });
+      await importedKid(client, { guardianEmail: 'own2@test.local', lastName: 'C' }); // unlinked, same email
 
-      expect(await linkAs(client, parentId)).toBe(0);
-      expect(await ownerOf(client, kid)).toBe(owner);
-    });
-  });
-
-  it('is idempotent', async () => {
-    await withTx(pool, async (client) => {
-      const parentId = await makeParent(client, 'link4@test.local');
-      await confirmEmail(client, parentId);
-      await importedKid(client, { guardianEmail: 'link4@test.local' });
-
-      expect(await linkAs(client, parentId)).toBe(1);
-      expect(await linkAs(client, parentId)).toBe(0);
-    });
-  });
-
-  it('lets a linked parent then read the kid and re-register it', async () => {
-    await withTx(pool, async (client) => {
-      const parentId = await makeParent(client, 'link5@test.local');
-      await confirmEmail(client, parentId);
-      const kid = await importedKid(client, { guardianEmail: 'link5@test.local' });
-      await linkAs(client, parentId);
-
-      const seen = await asUser(client, parentId, async () =>
-        (await client.query('select id from kids')).rows.map((r) => r.id)
-      );
-      expect(seen).toEqual([kid]);
-
-      const { kid_id } = await registerAs(client, parentId, { kidId: kid, reg: regPayload() });
-      expect(kid_id).toBe(kid);
-    });
-  });
-
-  it.each(['coach', 'prayer', 'program', 'admin'])('refuses a %s', async (role) => {
-    await withTx(pool, async (client) => {
-      const id = await createProfile(client, { email: `link-${role}@test.local` });
-      await grantRole(client, id, role);
-
-      await expect(linkAs(client, id)).rejects.toThrow(/Parent/i);
+      expect(await kidsSeenBy(client, parentId)).toEqual([mine, attached].sort());
+      expect(await kidsSeenBy(client, otherId)).toEqual([theirs]);
     });
   });
 });

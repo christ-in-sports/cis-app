@@ -1152,7 +1152,6 @@ export type Database = {
       }
       import_commit: { Args: { p_batch_id: string }; Returns: Json }
       kid_photo_attached: { Args: { p_path: string }; Returns: boolean }
-      link_my_kids: { Args: never; Returns: number }
       parse_session_choice: {
         Args: { p_choice: string; p_grade: string }
         Returns: string
