@@ -77,7 +77,7 @@ screens, and flag it if a new screen seems to need breaking one.
 | `--cis-sage` | `#6F8457` | Spiritual: psalm-point button, verse-huddle rules, verse chips |
 | `--cis-apricot` / tint | `#FFC98E` / `#FFE3C4` | Highlights on dark grounds; chip fills (pair with `#9C3E12` text) |
 | `--cis-page` | `#E9DCC6` | App backdrop |
-| `--cis-paper-light` / `--cis-paper` | `#FFFCF6` / `#F3E7D4` | Primary and secondary paper sheets |
+| `--cis-paper-light` / `--cis-paper` | `#FFFCF6` / `#F3E7D4` | Sheet fill, primary and secondary alike. `--cis-paper` is for hover washes and things nested in a sheet: at about 1.1:1 against `--cis-page` it does not stand out as a sheet on the cream page (2026-10-29) |
 | `--cis-ink` / `--cis-ink-muted` | `#241F1C` / `#5E534A` | Body and secondary text |
 | `--cis-ink-dark` | `#201E1D` | Text on an orange fill; heavy rules; dark scoreboard ground |
 | `--cis-ink-on-ember` | `#FFF6EE` | Text on an ember fill — warmer than `--cis-ink-on-dark` |
@@ -173,7 +173,7 @@ one-off markup per screen.
 | Component | Used for | Notes |
 |---|---|---|
 | `PhoneShell` | Global | The hardboard frame: 390px, 40px radius, board brown, plus the status bar. `ShellClip` adds the two holes and the orange team pill. |
-| `Sheet` | Global | The cream paper card. `tone="light"` is the primary sheet, `tone="paper"` the secondary. `joined` squares the top corners under `DivisionTabs`. Ships with `SheetHeading` (Caprasimo 18px, sentence case) and `SheetRule` (the 5px ink rule). |
+| `Sheet` | Global | The cream paper card. `tone="light"` is the primary sheet, `tone="paper"` the secondary, with the same fill on the cream page. `joined` squares the top corners under `DivisionTabs`. Ships with `SheetHeading` (Caprasimo 18px, sentence case) and `SheetRule` (the 5px ink rule). |
 | `Chip` | Global | The 12px label the three named chips share. Variants: `sport` (ember fill), `faith` (sage outline), `tint` (apricot fill), `stamp` (rotated -5deg double rule). |
 | `Icon` | Global | Wrapper over the Lucide glyph set so stroke-width 2.75 lives in one place. |
 | `PrimaryButton` / `SecondaryButton` | Global | Pill radius, ink text on orange fill; `tone="sage"` for spiritual actions; secondary is a 3px ink outline. |

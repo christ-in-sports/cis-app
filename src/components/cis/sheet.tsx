@@ -15,12 +15,11 @@ import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 export function Sheet({
-  tone = 'light',
   joined,
   className,
   children,
 }: {
-  /** `light` is the primary sheet, `paper` the secondary one (§7). */
+  /** `light` is the primary sheet, `paper` the secondary one (§7); same fill on the cream page. */
   tone?: 'light' | 'paper';
   /**
    * Squares the top corners so the sheet reads as one piece with the active
@@ -36,7 +35,9 @@ export function Sheet({
         // Ink text, set here rather than inherited: a sheet can sit on the dark
         // board, whose own text is pale.
         'rounded-cis-sheet text-cis-ink shadow-cis-sheet',
-        tone === 'light' ? 'bg-cis-paper-light' : 'bg-cis-paper',
+        // Both tones share one fill: --cis-paper is too close to the cream page
+        // (about 1.1:1) to stand out from it, so `paper` kept only the name.
+        'bg-cis-paper-light',
         joined && 'rounded-t-none',
         className,
       )}
