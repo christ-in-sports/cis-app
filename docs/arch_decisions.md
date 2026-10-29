@@ -45,7 +45,7 @@ heading followed by:
   - Parent is granted by a Server Action only after `verifyOtp` succeeds and the join code is re-checked. It inserts the `user_roles` row with a service-role client and treats a duplicate as success. `user_roles` stays writable only by Admin through RLS; nothing grants Parent from the browser. A signed-in user opening a valid link (a servant who is also a parent) gets Parent added to the same account.
   - `link_my_kids()` is dropped. `kids.parent_user_id` is set only by `register_kid()` (the parent's own new kids) or by an Admin through the existing `"admin manage kids"` policy.
   - Sessions keep Supabase's defaults (no time limit, silent refresh), so parents enter a code only on a new device or after signing out.
-  - Hosted Auth must send through Resend (custom SMTP) with the code in the Magic Link template and a raised email rate limit; the built-in sender allows only a few emails an hour.
+  - Hosted Auth must send through Resend (custom SMTP) with the code in both the Magic Link template (existing accounts) and the Confirm signup template (a new account made by `/join`) and a raised email rate limit; the built-in sender allows only a few emails an hour.
 - **Consequences / tradeoffs:**
   - Anyone holding the link becomes a Parent. That role reads only kids linked to the account and writes only through `register_kid()`, so the exposure is fake registrations, which an Admin can remove, along with the role.
   - This is the one exception to "roles are granted only by an Admin" (AGENTS.md §4). The service-role grant is confined to the join action.

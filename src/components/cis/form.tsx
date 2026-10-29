@@ -27,7 +27,7 @@
 
 import {
   useId,
-  type InputHTMLAttributes,
+  type ComponentProps,
   type ReactNode,
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
@@ -130,7 +130,7 @@ export function Field({
   );
 }
 
-export function TextInput({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
+export function TextInput({ className, ...props }: ComponentProps<'input'>) {
   return <input className={cn(controlBase, 'h-12', className)} {...props} />;
 }
 

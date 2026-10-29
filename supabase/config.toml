@@ -195,7 +195,8 @@ password_requirements = ""
 
 [auth.rate_limit]
 # Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
-email_sent = 2
+# Raised from 2 so the sign-in code flow (ENG-28) and its e2e can send several in a run.
+email_sent = 100
 # Number of SMS messages that can be sent per hour. Requires auth.sms to be enabled.
 sms_sent = 30
 # Number of anonymous sign-ins that can be made per hour per IP address. Requires enable_anonymous_sign_ins = true.
@@ -241,6 +242,17 @@ otp_expiry = 3600
 # pass = "env(SENDGRID_API_KEY)"
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
+
+# Sign-in code emails (ENG-28). An existing user asking for a code gets the
+# magic_link template; a new account made by the parent join link (ENG-31) gets
+# confirmation. Both show the 6-digit code, never a link.
+[auth.email.template.magic_link]
+subject = "Your Christ in Sports code"
+content_path = "./supabase/templates/magic-link.html"
+
+[auth.email.template.confirmation]
+subject = "Your Christ in Sports code"
+content_path = "./supabase/templates/confirmation.html"
 
 # Uncomment to customize email template
 # [auth.email.template.invite]

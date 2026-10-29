@@ -1,0 +1,79 @@
+<!-- Sent when someone asks for a sign-in code (ENG-28). The code is the whole
+     message: no link, because on a phone a link opens in the mail app's own
+     browser and the sign-in lands in the wrong place.
+
+     Styled from the app's design tokens (design/tokens.css): page #E9DCC6,
+     paper-light sheet #FFFCF6 with the 26px sheet radius, the 5px ink rule,
+     ink #241F1C. Caprasimo for the heading and Figtree for the rest, loaded
+     from Google Fonts. Mail apps that block web fonts (Gmail) fall back to a
+     serif and Arial. Table layout and inline styles, because that is what mail
+     clients render reliably. -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <meta name="supported-color-schemes" content="light" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Figtree:wght@400;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <title>Your Christ in Sports code</title>
+  </head>
+  <body style="margin: 0; padding: 0; background-color: #E9DCC6;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#E9DCC6" style="background-color: #E9DCC6;">
+      <tr>
+        <td align="center" style="padding: 24px 16px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFFCF6" style="max-width: 440px; background-color: #FFFCF6; border-radius: 26px;">
+            <tr>
+              <td align="center" style="padding: 28px 24px 0;">
+                <img src="{{ .SiteURL }}/icons/icon-192.png" alt="Christ in Sports" width="120" height="120" style="display: block; border: 0; border-radius: 16px;" />
+              </td>
+            </tr>
+            <tr>
+              <td align="center" style="padding: 20px 24px 0; font-family: 'Caprasimo', Georgia, 'Times New Roman', serif; font-size: 26px; line-height: 1.15; font-weight: normal; color: #241F1C;">
+                Your sign-in code
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 16px 24px 0;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr><td height="5" bgcolor="#201E1D" style="height: 5px; line-height: 5px; font-size: 0; background-color: #201E1D; border-radius: 3px;">&nbsp;</td></tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 20px 24px 0; font-family: 'Figtree', Arial, Helvetica, sans-serif; font-size: 16px; line-height: 1.5; color: #241F1C;">
+                Type this code into the app to sign in:
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 14px 24px 0;">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td align="center" bgcolor="#F3E7D4" style="padding: 16px 8px; background-color: #F3E7D4; border: 2px solid #201E1D; border-radius: 12px; font-family: 'Figtree', Arial, Helvetica, sans-serif; font-size: 38px; line-height: 1; font-weight: 800; letter-spacing: 8px; color: #201E1D;">
+                      {{ .Token }}
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 20px 24px 28px; font-family: 'Figtree', Arial, Helvetica, sans-serif; font-size: 14px; line-height: 1.5; color: #5E534A;">
+                It works once and expires in an hour. If you did not ask for it, you can ignore this email.
+              </td>
+            </tr>
+          </table>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 440px;">
+            <tr>
+              <td align="center" style="padding: 16px 8px 0; font-family: 'Figtree', Arial, Helvetica, sans-serif; font-size: 12px; line-height: 1.5; color: #5E534A;">
+                Christ in Sports &middot; St. Antonious Coptic Orthodox Church, Hayward
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
