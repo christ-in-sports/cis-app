@@ -48,7 +48,7 @@ export function BoardHeader({
   return (
     <header className="flex items-center justify-between gap-2.5 px-6 pb-2 pt-3">
       <div>
-        {kicker ? <div className="text-cis-sm font-bold text-cis-orange-text">{kicker}</div> : null}
+        {kicker ? <div className="text-cis-sm font-bold text-cis-orange-deep">{kicker}</div> : null}
         <h1 className="mt-0.5 font-cis-display text-cis-display-md font-normal leading-[1.1]">{title}</h1>
       </div>
       {action ?? (meta ? <div className="text-right text-cis-xs font-bold leading-[1.5] text-cis-ink-muted">{meta}</div> : null)}

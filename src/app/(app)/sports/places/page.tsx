@@ -27,7 +27,7 @@ export default async function PlacesPage({
   const back = (
     <Link
       href={sportsHref('/sports', { division, block: block?.id })}
-      className="flex min-h-cis-tap-min items-center gap-1 text-cis-sm font-bold text-cis-orange-text"
+      className="flex min-h-cis-tap-min items-center gap-1 text-cis-sm font-bold text-cis-orange-deep"
     >
       <Icon name="chevron-left" size={16} strokeWidth={3} />
       Standings
