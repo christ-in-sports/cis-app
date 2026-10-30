@@ -1,13 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-import { timingSafeEqual } from 'crypto';
-
-function codeMatches(input: string, expected: string) {
-  const a = Buffer.from(input);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(a, b);
-}
+import { codeMatches } from '@/lib/auth/join-code';
 
 /**
  * Servant signup. One shared code (SERVANT_SIGNUP_CODE, passed around the

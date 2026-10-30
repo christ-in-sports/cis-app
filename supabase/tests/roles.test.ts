@@ -157,6 +157,21 @@ describe('RLS on user_roles', () => {
     });
   });
 
+  // The parent join link grants Parent with the service role (ENG-31). That is
+  // the only path: a signed-in user's own session cannot give itself Parent, or
+  // anyone else, so the role cannot be self-granted from the browser.
+  it.each(['parent', 'kid'])('a non-admin cannot grant themselves the %s role', async (role) => {
+    await withTx(pool, async (client) => {
+      const userId = await createProfile(client, { email: `self-grant-${role}@test.local` });
+
+      const attempt = asUser(client, userId, async () => {
+        await client.query(`insert into user_roles (user_id, role) values ($1, $2)`, [userId, role]);
+      });
+
+      await expect(attempt).rejects.toThrow(/row-level security/i);
+    });
+  });
+
   it('a non-admin cannot grant a role to someone else', async () => {
     await withTx(pool, async (client) => {
       const userId = await createProfile(client, { email: 'non-admin-granter@test.local' });

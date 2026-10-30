@@ -400,6 +400,10 @@ export default function RegisterClient({
               : `is registered for ${season.name}.`}{' '}
             You can come back to this page to change their details until they are placed on a team.
           </p>
+          <p className="m-0 text-cis-sm font-semibold leading-[1.4] text-cis-ink-muted">
+            To find this again, save the link from the parent group chat or add this app to your Home Screen. You
+            stay signed in on this phone, so you will not need a new code unless you sign out or switch phones.
+          </p>
           <SectionBreak />
           <PrimaryButton block onClick={() => openForm(null)}>
             Register another kid

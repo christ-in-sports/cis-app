@@ -18,9 +18,12 @@
  *  - "Send a new code" waits 60 seconds, the shortest gap hosted Supabase
  *    allows, instead of letting a tap fail with a rate-limit error;
  *  - a mistyped email is one tap back.
+ *
+ * `extraFields` and `validateExtra` let a page add fields to the first step (the
+ * join link's name) without the form knowing what they are.
  */
 
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 
 import { PrimaryButton, SecondaryButton } from '@/components/cis/button';
 import { Field, TextInput } from '@/components/cis/form';
@@ -39,6 +42,8 @@ export function EmailCodeForm({
   sendCode,
   verifyCode,
   onVerified,
+  extraFields,
+  validateExtra,
 }: {
   /** Emails a code to this address (already trimmed and lower-cased). */
   sendCode: (email: string) => Promise<CodeResult>;
@@ -46,6 +51,17 @@ export function EmailCodeForm({
   verifyCode: (email: string, code: string) => Promise<CodeResult>;
   /** Called once the code is accepted. */
   onVerified: () => void;
+  /**
+   * More fields for the first step, shown above the email: the parent join link
+   * asks for a name. The page owns their state and their error messages.
+   */
+  extraFields?: ReactNode;
+  /**
+   * Called before a code is requested. Return false to stop (after showing the
+   * problem beside the field it belongs to), so a missing name is not reported
+   * under the email box.
+   */
+  validateExtra?: () => boolean;
 }) {
   const [step, setStep] = useState<'email' | 'code'>('email');
   const [email, setEmail] = useState('');
@@ -81,6 +97,7 @@ export function EmailCodeForm({
   }
 
   async function requestCode(): Promise<boolean> {
+    if (validateExtra && !validateExtra()) return false;
     const parsed = emailSchema.safeParse(email);
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message);
@@ -141,6 +158,7 @@ export function EmailCodeForm({
   if (step === 'email') {
     return (
       <form onSubmit={submitEmail} noValidate className="flex flex-col gap-cis-4">
+        {extraFields}
         <Field label="Email" error={error}>
           {(props) => (
             <TextInput
