@@ -57,7 +57,7 @@ export default async function ScorePage({
         <Link
           href={backHref}
           aria-label="Close"
-          className="flex size-11 items-center justify-center rounded-cis-pill border-[3px] border-cis-ink-on-dark text-cis-ink-on-dark"
+          className="flex size-11 items-center justify-center rounded-cis-pill border-[3px] border-cis-ink text-cis-ink"
         >
           <Icon name="close" />
         </Link>

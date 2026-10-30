@@ -23,7 +23,7 @@ export function SectionTabs({ label, items }: { label: string; items: readonly S
   if (items.length < 2) return null;
 
   return (
-    <nav aria-label={label} className="overflow-x-auto px-3.5 pb-1 print:hidden">
+    <nav aria-label={label} className="overflow-x-auto px-3.5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden print:hidden">
       <ul className="flex min-w-max gap-2">
         {items.map((item) => {
           const on = isNavItemOn(item, pathname);

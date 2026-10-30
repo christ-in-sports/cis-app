@@ -98,7 +98,7 @@ export default function LoginPage() {
               className="rounded-2xl"
             />
           </div>
-          <CardTitle className="text-2xl">Welcome Back</CardTitle>
+          <CardTitle className="font-cis-display text-2xl font-normal leading-[1.1]">Welcome Back</CardTitle>
           <CardDescription>Sign in to CIS</CardDescription>
         </CardHeader>
         <CardContent>
@@ -145,7 +145,7 @@ export default function LoginPage() {
                   <Label htmlFor="password">Password</Label>
                   <Link
                     href="/forgot-password"
-                    className="text-xs text-primary hover:underline"
+                    className="text-cis-sm font-bold text-cis-orange-text underline underline-offset-2 hover:text-cis-orange-deep"
                   >
                     Forgot password?
                   </Link>
