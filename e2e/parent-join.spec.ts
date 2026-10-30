@@ -162,6 +162,26 @@ test.beforeEach(async () => {
   await clearMail();
 });
 
+// The hosted project has "Allow new users to sign up" off, so accounts only ever
+// come from the server (servant signup, this link). The local stack is set the
+// same way (`[auth] enable_signup = false`); if that drifts, the join flow would
+// pass here and fail in production, which is how ENG-31 first broke.
+test('Auth itself refuses signups, so an account can only come from the server', async () => {
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '';
+  const res = await fetch(`${AUTH_URL}/auth/v1/otp`, {
+    method: 'POST',
+    headers: { apikey: anon, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'e2e-join-direct@local.test', create_user: true }),
+  });
+
+  expect(res.status).toBe(422);
+  expect(((await res.json()) as { error_code: string }).error_code).toBe('signup_disabled');
+  const made = await withDb((client) =>
+    client.query('select 1 from auth.users where email = $1', ['e2e-join-direct@local.test']),
+  );
+  expect(made.rowCount).toBe(0);
+});
+
 test('a wrong or missing code shows a notice and no way to join', async ({ page }) => {
   for (const path of ['/join?code=not-the-code', '/join']) {
     await page.goto(path);
