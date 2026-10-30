@@ -7,7 +7,7 @@
  * A square with the 12px chip radius. Not a circle: the full pill is reserved
  * for buttons (§6), and a square crops a face with less guesswork. No border and
  * no tint that could be read as state: the initials tile is plain paper with ink
- * text, because colour here would suggest orange (present), ember (a score) or
+ * text, because colour here would suggest slate (selected), orange (a score) or
  * sage (a verse), and a missing photo is none of those.
  *
  * The photo is decorative (`alt=""`): the kid's name is always next to it, and a

@@ -71,14 +71,14 @@ Stripe (payments, v1.0)    Claude API (AI team generation, v1.0)
 
 Full spec lives in [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md) — **read it before building or modifying any UI.** Summary for quick reference:
 
-**Direction:** Analog sports-clipboard, not SaaS dashboard. Dark hardboard shell, cream paper sheets, heavy rules instead of card borders, a display face used sparingly for scores/headings, large tap targets for sideline/on-court use.
+**Direction:** Analog sports-clipboard, not SaaS dashboard. Warm off-white page, paper sheets, a slate bottom dock, heavy rules instead of card borders, a display face used sparingly for scores/headings, large tap targets for sideline/on-court use.
 
 **Color system — three colors, each with exactly one job:**
-- `--cis-orange` (`#EE6B2D`) — primary actions, active nav, present state
-- `--cis-ember` (`#C4341C`) — sport/results (scores, "Game"/"Final" chips)
-- `--cis-sage` (`#6F8457`) — spiritual content (verse/psalm points)
+- `--cis-action` (`#24313D`, slate) — primary actions, selected tabs/chips, ticked boxes, present state, links, focus
+- `--cis-sport` (`#EE6B2D`, the logo orange) — sport/results (score badges, "Final" stamps, the leader row)
+- `--cis-sage` (`#5F7A4B`) — spiritual content (verse/psalm points)
 
-This mapping must hold on every screen — a user should be able to tell "this is a score" vs. "this is a verse point" from color alone. Never use `#EE6B2D` for small text (use `#C2531B` instead); text on orange fill is ink `#201E1D`, never white.
+This mapping must hold on every screen — a user should be able to tell "this is a button" vs. "this is a score" vs. "this is a verse point" from color alone. **Nothing pressable is orange.** Never use `#EE6B2D` for text (use `--cis-sport-text` `#B5481A`); text on an orange fill is dark `--cis-ink-on-sport`, never white; text on slate is `--cis-ink-on-action`. Palette "Home and away v2" (ENG-32).
 
 **Typography:** Caprasimo (display — scores, headings, team names only, never body copy) + Figtree (UI/body). Full scale in `DESIGN_SYSTEM.md` §5.
 
@@ -115,7 +115,7 @@ These are hard rules, not preferences. If a task conflicts with one of these, st
 - **Migrations only.** Schema changes go through Supabase CLI migrations committed to the repo. Never make schema changes directly in the Supabase dashboard beyond throwaway local prototyping.
 - **Minor data is sensitive.** Kid records (DOB, allergies, etc.) are treated as sensitive data. Don't log them, don't expose them in client bundles beyond what the current user's role permits, and don't relax RLS on `Kid`-related tables to "make something work quicker."
 - **No offline mode assumed for MVP/v1.0.** Don't add offline-first patterns (e.g., local-first sync) unless explicitly asked — it's scoped for a future version.
-- **Design system rules are not optional polish.** The color-to-meaning mapping (orange/ember/sage), radii scale, and anti-pattern list in `DESIGN_SYSTEM.md` are deliberate decisions, not omissions. Don't invent a new color role, use a status dot, or wrap standings in cards because it seemed convenient — flag it instead.
+- **Design system rules are not optional polish.** The color-to-meaning mapping (slate/orange/sage), radii scale, and anti-pattern list in `DESIGN_SYSTEM.md` are deliberate decisions, not omissions. Don't invent a new color role, use a status dot, or wrap standings in cards because it seemed convenient — flag it instead.
 
 ---
 
@@ -248,4 +248,4 @@ Every PR that touches the items in the "non-negotiable" list must include or upd
 ---
 
 *Last updated: keep this line current — if you edit this file, update the date below.*
-**Last updated:** 2026-10-25
+**Last updated:** 2026-10-30

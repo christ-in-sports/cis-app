@@ -38,7 +38,7 @@ describe('Chip', () => {
     for (const text of ['Final', 'Next up', 'Upcoming', 'Waiting', 'League']) {
       expect(screen.getByText(text)).toBeInTheDocument();
     }
-    expect(screen.getByText('Final')).toHaveClass('bg-cis-ember');
+    expect(screen.getByText('Final')).toHaveClass('bg-cis-sport');
     expect(screen.getByText('Waiting')).toHaveClass('border-dashed');
     // Only buttons are pills; a chip never is (design system section 3).
     expect(screen.getByText('Final')).not.toHaveClass('rounded-cis-pill');
@@ -186,6 +186,10 @@ describe('ScheduleTable', () => {
     expect(within(table).getByText('Winner of Quarter-final 1')).toBeInTheDocument();
     expect(within(table).getAllByText('Soccer · Round 1')).toHaveLength(2);
     expect(within(table).getByText('3')).toBeInTheDocument(); // the winning score
+    // Orange is the game: each score sits on a logo-orange badge with dark digits,
+    // and the game's "Final" is the pale result chip so the two don't double up.
+    expect(within(table).getByText('3')).toHaveClass('bg-cis-sport', 'text-cis-ink-on-sport');
+    expect(within(table).getByText('Final')).toHaveClass('bg-cis-sport-tint');
   });
 
   it('shows a dash for a missing court and TBD for a missing time', () => {

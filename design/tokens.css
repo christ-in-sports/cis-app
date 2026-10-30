@@ -1,61 +1,63 @@
 /* Christ In Sports — design tokens
-   Derived from the CIS logo (orange fish mark) on the Organic design system.
+   Palette "Home and away v2" (ENG-32): slate actions, logo-orange sport, sage faith.
    Fonts: Caprasimo (display) + Figtree (UI/body), both Google Fonts. */
 
 :root {
-  /* Brand */
-  --cis-orange: #EE6B2D;        /* primary: buttons, active nav, progress */
-  --cis-orange-hover: #F98244;
-  --cis-orange-press: #DC5D22;
-  --cis-orange-shadow: #B14E1C; /* 4px offset "stamp" shadow under buttons; 3px on the clip pill */
-  --cis-orange-text: #C2531B;   /* orange for text on light grounds (>=4.5:1) */
-  --cis-orange-deep: #9C3E12;   /* text-on-tint, link hover */
+  /* Colour has three jobs, one hue each (DESIGN_SYSTEM.md §4, "Home and away v2"):
+     slate is anything you press or select, orange is the game, sage is faith.
+     Nothing you can press is orange. */
 
-  /* Sport / competition */
-  --cis-ember: #C4341C;         /* scores, game chips, live + final states */
-  --cis-ember-tint: #FDF0DC;    /* leader row wash */
+  /* Action — buttons, selected tabs and chips, ticked boxes, focus */
+  --cis-action: #24313D;          /* 13.2:1 with --cis-ink-on-action */
+  --cis-action-hover: #33414E;
+  --cis-action-press: #1A242D;
+  --cis-action-shadow: #0F161C;   /* 4px offset "stamp" shadow under buttons */
+  --cis-ink-on-action: #FFFEFA;
 
-  /* Destructive — deliberately a DIFFERENT red from ember, and separated by
-     usage as well as hue: danger only ever appears on an action (delete,
-     remove), ember never does. See DESIGN_SYSTEM.md §4. */
-  --cis-danger: #8E1F17;        /* 8.7:1 as text on paper-light */
+  /* Sport — the logo orange is the game: scores, results, the leader row */
+  --cis-logo-orange: #EE6B2D;     /* the logo's colour; also the sport fill */
+  --cis-sport: #EE6B2D;           /* score badges, results; always dark text on it */
+  --cis-sport-text: #B5481A;      /* sport-coloured text on light grounds (5.3:1) */
+  --cis-sport-deep: #8F3912;      /* text on --cis-sport-tint (6.6:1) */
+  --cis-sport-tint: #FDEBDD;      /* leader row wash, sport chips */
+  --cis-ink-on-sport: #1A232B;    /* text on a --cis-sport fill (5.0:1) */
+
+  /* Destructive — a dark red kept apart from sport orange by hue and by usage:
+     danger only ever appears on an action (delete, remove). See §4. */
+  --cis-danger: #8E1F17;          /* 8.8:1 as text on paper-light */
   --cis-danger-hover: #A3231A;
   --cis-danger-press: #761A13;
-  --cis-danger-tint: #F7E4E0;   /* hover wash behind an outlined danger action */
-  --cis-ink-on-danger: #FFF6EE; /* text on a danger fill — 8.3:1 */
+  --cis-danger-tint: #F7E4E0;     /* hover wash behind an outlined danger action */
+  --cis-ink-on-danger: #FFF6EE;   /* text on a danger fill — 8.3:1 */
 
-  /* Spiritual */
-  --cis-sage: #6F8457;          /* verse + psalm-point actions */
-  --cis-sage-hover: #7C946A;
-  --cis-sage-press: #5E7149;
-  --cis-sage-tint: #E4EAD8;
-  --cis-sage-text: #4C5C3B;     /* sage-coloured copy on light grounds */
-  --cis-sage-ink: #3F4C31;      /* headings inside sage tints */
+  /* Faith — verse and psalm points */
+  --cis-sage: #5F7A4B;            /* faith fills; --cis-ink-on-action text (4.8:1) */
+  --cis-sage-hover: #6B8756;
+  --cis-sage-press: #52693F;
+  --cis-sage-tint: #E6EEDD;
+  --cis-sage-text: #46603A;       /* sage-coloured copy on light grounds (7.0:1) */
+  --cis-sage-ink: #3A4F30;        /* headings inside sage tints */
 
-  /* Warm neutrals */
-  --cis-apricot: #FFC98E;       /* highlights on dark grounds */
-  --cis-apricot-tint: #FFE3C4;  /* chip fill, pairs with --cis-orange-deep text */
-  --cis-page: #E9DCC6;          /* app backdrop */
-  --cis-paper: #F3E7D4;         /* secondary sheet */
-  --cis-paper-light: #FFFCF6;   /* primary sheet / card */
-  --cis-rule: #E3D4B8;          /* 1px row rules on paper */
-  --cis-rule-soft: #DFCFAF;     /* ruled-paper gradient line */
-  --cis-rule-dash: #D6C4A6;     /* 2px dashed section break inside a sheet */
-  --cis-track: #E0D2B8;         /* progress track */
-  --cis-box-empty: #C9B49A;     /* unticked attendance box border */
+  /* Chrome — the bottom dock and inactive tabs */
+  --cis-chrome: #24313D;          /* the dock */
+  --cis-chrome-tab: #DFE3E7;      /* inactive tab on the page; --cis-action text */
+
+  /* Neutrals */
+  --cis-page: #EEEDE8;            /* app backdrop */
+  --cis-paper: #F4F3EE;           /* hover wash, things nested in a sheet */
+  --cis-paper-light: #FFFEFA;     /* every sheet */
+  --cis-rule: #E0DED6;            /* 1px row rules */
+  --cis-rule-soft: #D9D6CC;       /* ruled-paper line */
+  --cis-rule-dash: #CFCCC2;       /* 2px dashed section break inside a sheet */
+  --cis-track: #E2E0D8;           /* progress track, disabled fill */
+  --cis-box-empty: #8A9097;       /* unticked attendance box border (3.2:1) */
 
   /* Ink */
-  --cis-ink: #241F1C;           /* body text */
-  --cis-ink-dark: #201E1D;      /* dark surfaces, heavy rules, text on an orange fill */
-  --cis-ink-muted: #5E534A;     /* secondary text (5.9:1 on --cis-paper-light) */
-  --cis-ink-on-dark: #F3E7D4;   /* text on ink/board */
-  --cis-ink-on-dark-muted: #C9B9A0;
-  --cis-ink-on-ember: #FFF6EE;  /* text on an ember fill — warmer than --cis-ink-on-dark */
-
-  /* Clipboard direction only */
-  --cis-board: #6F5133;         /* hardboard backdrop */
-  --cis-board-tab: #7A5C3C;     /* inactive tab on board */
-  --cis-board-hole: #41301E;
+  --cis-ink: #1F2A33;             /* body text (14.5:1 on paper-light) */
+  --cis-ink-dark: #1A232B;        /* heavy rules, ink fills */
+  --cis-ink-muted: #545C64;       /* secondary text (6.7:1 on paper-light, 5.8:1 on page) */
+  --cis-ink-on-dark: #E9EDF0;     /* text on the dock */
+  --cis-ink-on-dark-muted: #B6BEC6;
 
   /* Type */
   --cis-font-display: "Caprasimo", cursive;
@@ -91,9 +93,9 @@
   --cis-space-6: 26px;
 
   /* Elevation */
-  --cis-shadow-sheet: 0 6px 14px rgba(40,22,8,.25);
-  --cis-shadow-shell: 0 18px 44px rgba(60,35,15,.26);
-  --cis-shadow-press: 0 4px 0 var(--cis-orange-shadow);
+  --cis-shadow-sheet: 0 6px 14px rgba(26,35,43,.16);
+  --cis-shadow-shell: 0 18px 44px rgba(26,35,43,.22);
+  --cis-shadow-press: 0 4px 0 var(--cis-action-shadow);
 
   /* Rule weights — heavy ink rules stand in for card borders */
   --cis-rule-heavy: 5px;  /* region divide inside a sheet */

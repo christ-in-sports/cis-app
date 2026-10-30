@@ -74,8 +74,7 @@ export default function ResetPasswordPage() {
       <div className="min-h-screen flex items-center justify-center p-4 safe-top safe-bottom">
         <Card className="w-full max-w-sm">
           <CardHeader className="text-center">
-            <div className="text-4xl mb-2">⚠️</div>
-            <CardTitle>Link Expired</CardTitle>
+            <CardTitle className="font-cis-display text-2xl font-normal leading-[1.1]">Link Expired</CardTitle>
             <CardDescription>
               This reset link is invalid, expired, or has already been used.
               Reset links are valid for 1 hour and can only be used once.
@@ -96,8 +95,7 @@ export default function ResetPasswordPage() {
       <div className="min-h-screen flex items-center justify-center p-4 safe-top safe-bottom">
         <Card className="w-full max-w-sm">
           <CardHeader className="text-center">
-            <div className="text-4xl mb-2">✅</div>
-            <CardTitle>Password Updated</CardTitle>
+            <CardTitle className="font-cis-display text-2xl font-normal leading-[1.1]">Password Updated</CardTitle>
             <CardDescription>
               You&apos;re signed in on this device. Other devices have been signed out.
             </CardDescription>
@@ -119,14 +117,13 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen flex items-center justify-center p-4 safe-top safe-bottom">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <div className="text-4xl mb-2">🔒</div>
-          <CardTitle className="text-2xl">Set New Password</CardTitle>
+          <CardTitle className="font-cis-display text-2xl font-normal leading-[1.1]">Set New Password</CardTitle>
           <CardDescription>Choose a password you haven&apos;t used before</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleUpdate} className="space-y-4">
             {error && (
-              <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3 text-sm text-red-400">
+              <div role="alert" className="rounded-cis-chip bg-cis-danger-tint p-3 text-sm font-bold text-cis-danger">
                 {error}
               </div>
             )}

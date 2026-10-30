@@ -26,7 +26,7 @@ export function LinkRow({
         <span className="block text-cis-md font-extrabold">{title}</span>
         {children ? <span className="block text-cis-sm font-bold text-cis-ink-muted">{children}</span> : null}
       </span>
-      <span className="text-cis-orange-text">
+      <span className="text-cis-action">
         <Icon name="chevron-right" />
       </span>
     </Link>

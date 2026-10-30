@@ -45,8 +45,7 @@ export default function ForgotPasswordPage() {
       <div className="min-h-screen flex items-center justify-center p-4 safe-top safe-bottom">
         <Card className="w-full max-w-sm">
           <CardHeader className="text-center">
-            <div className="text-4xl mb-2">✉️</div>
-            <CardTitle>Check Your Email</CardTitle>
+            <CardTitle className="font-cis-display text-2xl font-normal leading-[1.1]">Check Your Email</CardTitle>
             <CardDescription>
               If an account exists for <strong>{email}</strong>, we&apos;ve sent a password
               reset link. It expires in 1 hour. Check your spam folder too.
@@ -76,8 +75,7 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen flex items-center justify-center p-4 safe-top safe-bottom">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <div className="text-4xl mb-2">🔑</div>
-          <CardTitle className="text-2xl">Forgot Password</CardTitle>
+          <CardTitle className="font-cis-display text-2xl font-normal leading-[1.1]">Forgot Password</CardTitle>
           <CardDescription>
             Enter your email and we&apos;ll send you a reset link
           </CardDescription>
@@ -85,7 +83,7 @@ export default function ForgotPasswordPage() {
         <CardContent>
           <form onSubmit={handleReset} className="space-y-4">
             {error && (
-              <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3 text-sm text-red-400">
+              <div role="alert" className="rounded-cis-chip bg-cis-danger-tint p-3 text-sm font-bold text-cis-danger">
                 {error}
               </div>
             )}
@@ -108,7 +106,7 @@ export default function ForgotPasswordPage() {
           </form>
           <div className="mt-4 text-center text-sm text-muted-foreground">
             Remembered it?{' '}
-            <Link href="/login" className="text-primary hover:underline">
+            <Link href="/login" className="font-bold text-cis-action underline underline-offset-2 hover:text-cis-action-hover">
               Sign in
             </Link>
           </div>

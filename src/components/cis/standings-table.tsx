@@ -10,8 +10,8 @@
  *
  * The last two columns are named for the sport: GD/GF for soccer, PD/PF for
  * basketball, SD/SW for volleyball, RD/RW for dodgeball. The leader's row takes
- * the ember wash, and a team the viewer cares about is flagged with an apricot
- * "Your team" chip under its name, since the leader wash is taken.
+ * the pale orange sport wash, and a team the viewer cares about is flagged with a
+ * pale slate "Your team" chip under its name, since the leader wash is taken.
  *
  * Before a game is played there is nothing to rank: ranks show a dash and the
  * headers are plain text, because a sort would have nothing to say.
@@ -105,7 +105,7 @@ export function StandingsTable({
                       // design system lists as an open item (section 10).
                       'min-h-[34px] w-full p-0 text-cis-xs font-bold',
                       align[c.align],
-                      active ? 'text-cis-orange-text' : 'text-cis-ink-muted',
+                      active ? 'text-cis-action' : 'text-cis-ink-muted',
                     )}
                   >
                     {c.label}
@@ -124,11 +124,11 @@ export function StandingsTable({
           const leader = started && row.rank === 1;
           const yours = yourTeamIds.includes(row.teamId);
           return (
-            <tr key={row.teamId} className={cn('border-b border-cis-rule', leader && 'bg-cis-ember-tint')}>
+            <tr key={row.teamId} className={cn('border-b border-cis-rule', leader && 'bg-cis-sport-tint')}>
               <td
                 className={cn(
                   'py-[9px] text-center font-cis-display text-cis-md font-normal',
-                  leader ? 'text-cis-ember' : 'text-cis-ink-muted',
+                  leader ? 'text-cis-sport-text' : 'text-cis-ink-muted',
                 )}
               >
                 {started ? row.rank : '–'}

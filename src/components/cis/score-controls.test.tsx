@@ -12,7 +12,7 @@ import { PickButton, ScoreInput, QuickPoints, RoundWinnerPicker, ScoreNumber, Sc
 describe('ScoreNumber', () => {
   it.each(['lg', 'md', 'sm'] as const)('is ember at size %s', (size) => {
     render(<ScoreNumber value={7} size={size} />);
-    expect(screen.getByText('7')).toHaveClass('text-cis-ember');
+    expect(screen.getByText('7')).toHaveClass('text-cis-sport-text');
   });
 });
 
@@ -55,7 +55,7 @@ describe('ScoreInput', () => {
 
   it('is ember at every size, like the numbers it replaces', () => {
     render(<ScoreInput value={3} label="Goals" onSet={() => {}} size="md" />);
-    expect(screen.getByRole('textbox')).toHaveClass('text-cis-ember');
+    expect(screen.getByRole('textbox')).toHaveClass('text-cis-sport-text');
   });
 
   it('is typeable from a stepper too', () => {

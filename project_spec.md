@@ -122,7 +122,7 @@ Full user stories with acceptance criteria live in the PRD (see `/docs/PRD.md` i
 - **No offline mode required** for MVP/v1.0 — assume connectivity
 - **Minor data handling** — kids' data (DOB, allergies, etc.) must be treated as sensitive; parental consent required for registration
 - **Accessibility** — WCAG 2.1 AA minimum
-- **Design system** — see `DESIGN_SYSTEM.md`. Analog sports-clipboard direction (not SaaS dashboard); three colors each with exactly one job — orange for primary actions, ember for sport/results, sage for spiritual content. Read it before building or modifying any UI.
+- **Design system** — see `DESIGN_SYSTEM.md`. Analog sports-clipboard direction (not SaaS dashboard); three colors each with exactly one job — slate for actions, the logo orange for sport/results, sage for spiritual content (ENG-32). Read it before building or modifying any UI.
 
 ---
 
@@ -132,7 +132,7 @@ Full user stories with acceptance criteria live in the PRD (see `/docs/PRD.md` i
 
 Full spec: `DESIGN_SYSTEM.md` (companion to this file). Key rules that affect how components get built:
 
-- **Color has meaning, not decoration.** `--cis-orange` = primary actions, `--cis-ember` = sport/scores, `--cis-sage` = spiritual content. This mapping must hold on every screen.
+- **Color has meaning, not decoration.** `--cis-action` (slate) = actions, `--cis-sport` (logo orange) = sport/scores, `--cis-sage` = spiritual content; nothing pressable is orange. This mapping must hold on every screen.
 - **Tables for tabular data** — standings is a real `<table>`, not a card grid.
 - **No status dots** — state is carried by a label, chip, or tick box (also a WCAG requirement).
 - **Pill radius (`999px`) is reserved for buttons only** — sheets/chips/tick boxes use their own fixed radii (see `DESIGN_SYSTEM.md` §6).

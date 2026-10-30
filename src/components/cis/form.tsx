@@ -9,16 +9,16 @@
  *  - Controls are 48px tall (>= the 44px tap minimum), 12px radius (the chip
  *    step -- no new radius), and sit on paper-light with a 2px ink outline, the
  *    same treatment as the roster's search box.
- *  - Focus is the system-wide 2px orange outline at a 3px offset (§6), never
+ *  - Focus is the system-wide 2px slate outline at a 3px offset (§6), never
  *    the browser default.
  *  - Errors are bold danger-red text with a warning icon under the field
  *    (`FieldError`), with `role="alert"`, and the invalid control gets a
  *    heavier danger outline, so the error is not carried by colour alone. This
- *    is the Sports screens' treatment (see `score-form.tsx`): ember stays
+ *    is the Sports screens' treatment (see `score-form.tsx`): sport orange stays
  *    "this is a score", so it never marks an error.
  *  - Labels are sentence case, weight 700, 15px. No all-caps, no label above a
  *    label (§3, §5).
- *  - A ticked box is filled orange with an ink tick -- state is a filled tick
+ *  - A ticked box is filled slate with a light tick -- state is a filled tick
  *    box, never a colour-only dot (§3).
  *  - `ChoiceGroup` is real radio inputs styled as 12px chips. The chip is a
  *    label, so the whole chip is the tap target, and keyboard and screen-reader
@@ -43,7 +43,7 @@ export interface FieldControlProps {
 }
 
 const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-cis-orange';
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-cis-action';
 
 /**
  * iOS Safari sizes a date or time input from its own intrinsic width and ignores
@@ -70,7 +70,7 @@ const controlBase =
  * The same treatment as the Sports score form (`score-form.tsx`), so an error
  * looks the same wherever it appears. `--cis-danger` is otherwise for
  * destructive actions (`DESIGN_SYSTEM.md` §4); errors are the one other place it
- * is used, and ember is kept out of it so ember always means "this is a score".
+ * is used, and orange is kept out of it so orange always means "this is the game".
  * Danger on 13px bold text is 8.7:1 on paper-light, well over the 4.5:1 AA floor.
  * The icon and the text carry the meaning, not the hue alone.
  */
@@ -208,7 +208,7 @@ export function ChoiceGroup<T extends string>({
                 'peer-checked:bg-cis-ink peer-checked:text-cis-paper-light',
                 'peer-disabled:cursor-not-allowed peer-disabled:opacity-60',
                 'peer-focus-visible:outline peer-focus-visible:outline-2',
-                'peer-focus-visible:outline-offset-[3px] peer-focus-visible:outline-cis-orange',
+                'peer-focus-visible:outline-offset-[3px] peer-focus-visible:outline-cis-action',
                 'active:scale-[.94]',
                 error && 'border-[3px] border-cis-danger',
               )}
@@ -228,7 +228,7 @@ export function ChoiceGroup<T extends string>({
 /**
  * A checkbox row where the whole row is the tap target -- the attendance row's
  * behaviour (§7), so a phone thumb does not have to find a 20px square. The box
- * is the 14px-radius tick box, filled orange with an ink tick when set.
+ * is the 14px-radius tick box, filled slate with a light tick when set.
  */
 export function TickRow({
   checked,
@@ -269,19 +269,18 @@ export function TickRow({
           aria-hidden="true"
           className={cn(
             'flex h-cis-tap-min w-cis-tap-min shrink-0 items-center justify-center rounded-cis-box',
-            'border-[3px] bg-cis-paper-light text-cis-lg font-extrabold text-cis-ink-dark',
+            'border-[3px] bg-cis-paper-light text-cis-lg font-extrabold',
             // The press feedback shrinks the drawn box, not the row. Scaling the
             // whole label shrinks its hit area while a finger is down, and a tap
             // that lands near an edge then ends outside it and never becomes a
             // click: the box visibly "moves" and nothing is ticked.
             !disabled && 'group-active:scale-[.94]',
-            // Ink, not the attendance box's `--cis-box-empty`: that tan is ~1.9:1
-            // on paper-light, under the 3:1 WCAG asks of a control's boundary,
-            // and this box records a legal agreement.
-            checked ? 'border-cis-orange bg-cis-orange' : 'border-cis-ink',
+            // Ink, not the attendance box's lighter `--cis-box-empty`: this box
+            // records a legal agreement, so its boundary is as strong as text.
+            checked ? 'border-cis-action bg-cis-action text-cis-ink-on-action' : 'border-cis-ink',
             error && !checked && 'border-cis-danger',
             'peer-focus-visible:outline peer-focus-visible:outline-2',
-            'peer-focus-visible:outline-offset-[3px] peer-focus-visible:outline-cis-orange',
+            'peer-focus-visible:outline-offset-[3px] peer-focus-visible:outline-cis-action',
           )}
         >
           {checked ? '✓' : ''}

@@ -123,7 +123,7 @@ export default function LoginPage() {
             <>
             <form onSubmit={handleLogin} className="space-y-4">
               {error && (
-                <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3 text-sm text-red-400">
+                <div role="alert" className="rounded-cis-chip bg-cis-danger-tint p-3 text-sm font-bold text-cis-danger">
                   {error}
                 </div>
               )}
@@ -145,7 +145,7 @@ export default function LoginPage() {
                   <Label htmlFor="password">Password</Label>
                   <Link
                     href="/forgot-password"
-                    className="text-cis-sm font-bold text-cis-orange-text underline underline-offset-2 hover:text-cis-orange-deep"
+                    className="text-cis-sm font-bold text-cis-action underline underline-offset-2 hover:text-cis-action-hover"
                   >
                     Forgot password?
                   </Link>

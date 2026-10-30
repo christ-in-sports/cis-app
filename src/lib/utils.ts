@@ -9,16 +9,15 @@ const twMerge = extendTailwindMerge({
   extend: {
     theme: {
       color: [
-        "cis-orange", "cis-orange-hover", "cis-orange-press", "cis-orange-shadow", "cis-orange-text", "cis-orange-deep",
-        "cis-ember", "cis-ember-tint",
+        "cis-action", "cis-action-hover", "cis-action-press", "cis-action-shadow",
+        "cis-sport", "cis-sport-text", "cis-sport-deep", "cis-sport-tint",
+        "cis-chrome", "cis-chrome-tab",
         "cis-sage", "cis-sage-hover", "cis-sage-press", "cis-sage-tint", "cis-sage-text", "cis-sage-ink",
-        "cis-apricot", "cis-apricot-tint",
         "cis-page",
         "cis-paper", "cis-paper-light",
         "cis-rule", "cis-rule-soft",
         "cis-track",
-        "cis-ink", "cis-ink-dark", "cis-ink-muted", "cis-ink-on-dark", "cis-ink-on-dark-muted",
-        "cis-board", "cis-board-tab", "cis-board-hole",
+        "cis-ink", "cis-ink-dark", "cis-ink-muted", "cis-ink-on-dark", "cis-ink-on-dark-muted", "cis-ink-on-danger", "cis-ink-on-action", "cis-ink-on-sport",
       ],
       radius: ["cis-chip", "cis-box", "cis-sheet", "cis-shell", "cis-pill"],
       text: ["cis-xs", "cis-sm", "cis-base", "cis-md", "cis-lg", "cis-xl", "cis-display-md", "cis-display-lg", "cis-score", "cis-score-md", "cis-score-sm"],

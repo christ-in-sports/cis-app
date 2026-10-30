@@ -107,7 +107,7 @@ export default async function ScorePage({
         {header('Score saved')}
         <PlainSheet>
           <div className="flex items-center gap-3 pb-3.5">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-[14px] border-[3px] border-cis-ink bg-cis-orange text-cis-ink-dark">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-[14px] border-[3px] border-cis-ink bg-cis-action text-cis-ink-on-action">
               <Icon name="check" size={24} strokeWidth={3.4} />
             </div>
             <div>
@@ -126,7 +126,7 @@ export default async function ScorePage({
                 >
                   {name(id)}
                 </span>
-                <ScoreNumber value={i === 0 ? saved.home_total : saved.away_total} size="sm" />
+                <ScoreNumber value={i === 0 ? saved.home_total : saved.away_total} size="sm" badge />
               </div>
             ))}
           </div>

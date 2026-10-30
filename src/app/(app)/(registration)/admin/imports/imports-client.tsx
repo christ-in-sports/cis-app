@@ -6,7 +6,7 @@
  *
  * Status is plain text in its own column -- no colour, no chip. That is
  * deliberate: the design system gives each of its three colours exactly one job
- * (orange = primary action, ember = sport, sage = spiritual), and an import row
+ * (slate = action, orange = sport, sage = spiritual), and an import row
  * is none of those. Rather than invent a fourth colour role, problems earn
  * their emphasis from type weight, the summary count, and the filter.
  * `DESIGN_SYSTEM.md` §3 also rules out a status dot, which is the usual
@@ -356,8 +356,8 @@ export default function ImportsClient({
             }}
           />
           <span
-            className={`flex min-h-cis-tap-primary flex-1 cursor-pointer items-center justify-center rounded-cis-pill bg-cis-orange text-cis-lg font-extrabold text-cis-ink-dark shadow-cis-press ${
-              uploading ? 'opacity-60' : 'hover:bg-cis-orange-hover'
+            className={`flex min-h-cis-tap-primary flex-1 cursor-pointer items-center justify-center rounded-cis-pill bg-cis-action text-cis-lg font-extrabold text-cis-ink-on-action shadow-cis-press ${
+              uploading ? 'opacity-60' : 'hover:bg-cis-action-hover'
             }`}
           >
             {uploading ? 'Reading…' : 'Choose CSV file'}

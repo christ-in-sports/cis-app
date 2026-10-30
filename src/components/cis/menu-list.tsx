@@ -29,7 +29,7 @@ export function MenuRow({ href, title, note }: { href: string; title: string; no
           <span className="block text-cis-md font-extrabold">{title}</span>
           {note ? <span className="block text-cis-sm font-bold text-cis-ink-muted">{note}</span> : null}
         </span>
-        <span className="shrink-0 text-cis-orange-text">
+        <span className="shrink-0 text-cis-action">
           <Icon name="chevron-right" />
         </span>
       </Link>

@@ -38,7 +38,7 @@ export function AttendanceRow({ record, kid, teamName, disabled, save, qrHref }:
         <div className="min-w-0"><p className="text-cis-md font-bold">{kid.first_name} {kid.last_name}</p>
           <p className="text-cis-sm text-cis-ink-muted">Grade {kid.grade} · {teamName}</p></div>
       </div>
-      <span className={record.status === 'present' ? 'rounded-cis-chip bg-cis-orange px-3 py-2 font-bold text-cis-ink-dark' : 'py-2 font-bold'}>{ATTENDANCE_LABELS[record.status]}</span>
+      <span className={record.status === 'present' ? 'rounded-cis-chip bg-cis-action px-3 py-2 font-bold text-cis-ink-on-action' : 'py-2 font-bold'}>{ATTENDANCE_LABELS[record.status]}</span>
     </div>
     <Field label={`Attendance for ${kid.first_name} ${kid.last_name}`}>{(props) => <SelectInput {...props} value={record.status} disabled={disabled || pending}
       onChange={(e) => mark(e.target.value as AttStatus)}>

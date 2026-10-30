@@ -11,9 +11,8 @@
  * above and below the icons; the chips inside use the sheet radius so the
  * corners stay concentric. Eleven-pixel labels, 56 x 52px minimum targets,
  * opaque board ground: a translucent bar fails in direct sun (§3). Every item
- * is cream; the current one sits on a darker orange chip and carries
- * `aria-current`. Cream on the bright `--cis-orange` is only 3.0:1, so the chip
- * uses the 4.5:1 orange that links use.
+ * is pale on the slate dock; the current one sits on a paper-light chip with
+ * slate text and carries `aria-current`. Nothing here is orange: orange is the game.
  */
 
 import Link from 'next/link';
@@ -65,7 +64,7 @@ export function SectionNav({ label, items }: { label: string; items: readonly Se
       aria-label={label}
       className="pointer-events-none fixed inset-x-0 bottom-0 z-10 px-3.5 pb-[calc(env(safe-area-inset-bottom)+0.625rem)] print:hidden"
     >
-      <div className="pointer-events-auto mx-auto max-w-[560px] overflow-x-auto rounded-cis-shell bg-cis-board text-cis-ink-on-dark shadow-cis-sheet">
+      <div className="pointer-events-auto mx-auto max-w-[560px] cis-on-chrome overflow-x-auto rounded-cis-shell bg-cis-chrome text-cis-ink-on-dark shadow-cis-sheet">
         <ul className="flex w-full min-w-max items-stretch gap-1 p-2">
           {items.map((item) => {
             const on = isNavItemOn(item, pathname);
@@ -76,7 +75,7 @@ export function SectionNav({ label, items }: { label: string; items: readonly Se
                   aria-current={on ? 'page' : undefined}
                   className={cn(
                     'flex min-h-[52px] min-w-[56px] flex-col items-center justify-center gap-1 rounded-cis-sheet text-[11px] font-bold',
-                    on && 'bg-cis-orange-text font-extrabold text-cis-paper-light',
+                    on && 'bg-cis-paper-light font-extrabold text-cis-action',
                   )}
                 >
                   {item.icon ? <Icon name={item.icon} /> : null}

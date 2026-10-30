@@ -9,7 +9,7 @@
  * section of the form is its own sheet, 14px apart; the 5px rule under a
  * heading, and the 2px dashed break between the guardian and emergency-contact
  * blocks, are the only dividers. Nothing on it is colour-coded: a registration
- * is neither a score (ember) nor a verse (sage), so orange marks the one action
+ * is neither a score (orange) nor a verse (sage), so slate marks the one action
  * and ticked state, and everything else is ink.
  *
  * Validation runs here with the same `parentRegistrationSchema` the Server
@@ -429,7 +429,7 @@ export default function RegisterClient({
                 <button
                   type="button"
                   onClick={() => openForm(kid.id)}
-                  className="flex min-h-cis-tap-primary w-full items-center justify-between gap-cis-3 py-cis-2 text-left active:scale-[.94] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-cis-orange"
+                  className="flex min-h-cis-tap-primary w-full items-center justify-between gap-cis-3 py-cis-2 text-left active:scale-[.94] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-cis-action"
                 >
                   <span className="flex min-w-0 items-center gap-cis-3">
                     <KidAvatar
@@ -445,7 +445,7 @@ export default function RegisterClient({
                       </span>
                     </span>
                   </span>
-                  <span className="text-cis-base font-bold text-cis-orange-text">
+                  <span className="text-cis-base font-bold text-cis-action">
                     {rowAction(kid, photoOf(kid) !== null)}
                   </span>
                 </button>
@@ -836,10 +836,10 @@ export default function RegisterClient({
   );
 }
 
-/** An orange text link to a page outside the app, with the system focus ring. */
+/** A slate text link to a page outside the app, with the system focus ring. */
 const externalLink =
-  'font-bold text-cis-orange-text underline underline-offset-2 hover:text-cis-orange-deep ' +
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-cis-orange';
+  'font-bold text-cis-action underline underline-offset-2 hover:text-cis-action-hover ' +
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-cis-action';
 
 /**
  * How to pay (ENG-9). Information only: there is no payment integration yet, so

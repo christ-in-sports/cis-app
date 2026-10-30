@@ -9,7 +9,7 @@
  * and loser into later games. A correction that would swap a team in a game that
  * has already been played is refused up front with the game named, as the
  * database would refuse it anyway; clearing a result asks first and lists what it
- * undoes. Errors use the danger colour and a warning icon, never ember, which is
+ * undoes. Errors use the danger colour and a warning icon, never sport orange, which is
  * kept for scores.
  */
 

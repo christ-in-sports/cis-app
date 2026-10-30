@@ -436,7 +436,7 @@ describe('submitting a new kid', () => {
     // so they stand out on a long form and ember keeps meaning "a score".
     for (const alert of screen.getAllByRole('alert')) {
       expect(alert).toHaveClass('text-cis-danger');
-      expect(alert).not.toHaveClass('text-cis-ember');
+      expect(alert).not.toHaveClass('text-cis-sport-text');
       expect(alert.querySelector('svg')).not.toBeNull();
     }
     expect(field('First name')).toHaveAttribute('aria-invalid', 'true');
