@@ -543,6 +543,131 @@ describe('a parent only sees their own kids', () => {
   });
 });
 
+// ENG-30: an Admin gives a CSV-imported kid to the parent who has since joined.
+// The Server Action writes `kids.parent_user_id` under the Admin's own session, so
+// the boundary is the `"admin manage kids"` policy. What matters here is that no
+// one else can do it, and that once attached, the parent sees that kid and no one
+// else does.
+describe('attaching an imported kid to a parent (Admin only)', () => {
+  const attach = (client: PoolClient, userId: string, kidId: string, parentId: string) =>
+    asUser(client, userId, async () => {
+      const r = await client.query(
+        'update kids set parent_user_id = $1 where id = $2 and parent_user_id is null returning id',
+        [parentId, kidId]
+      );
+      return r.rowCount ?? 0;
+    });
+
+  const ownerOf = async (client: PoolClient, kidId: string) =>
+    (await client.query('select parent_user_id from kids where id = $1', [kidId])).rows[0].parent_user_id;
+
+  async function makeAdmin(client: PoolClient, email: string) {
+    const id = await createProfile(client, { email });
+    await grantRole(client, id, 'admin');
+    return id;
+  }
+
+  it('lets an Admin attach a kid who has no parent', async () => {
+    await withTx(pool, async (client) => {
+      const admin = await makeAdmin(client, 'att-admin@test.local');
+      const parentId = await makeParent(client, 'att-parent@test.local');
+      const kid = await importedKid(client, { lastName: 'Attach' });
+
+      expect(await attach(client, admin, kid, parentId)).toBe(1);
+      expect(await ownerOf(client, kid)).toBe(parentId);
+    });
+  });
+
+  it.each(['parent', 'coach', 'program', 'prayer', 'kid'])('does not let a %s attach a kid', async (role) => {
+    await withTx(pool, async (client) => {
+      const actor = await createProfile(client, { email: `att-${role}@test.local` });
+      await grantRole(client, actor, role);
+      const parentId = await makeParent(client, `att-target-${role}@test.local`);
+      const kid = await importedKid(client, { lastName: 'Guarded' });
+
+      // RLS filters the row out (0 rows) or the write is refused outright; either way nothing changes.
+      await attach(client, actor, kid, parentId).catch(() => 0);
+
+      expect(await ownerOf(client, kid)).toBeNull();
+    });
+  });
+
+  it('does not let a parent hand their own kid to someone else', async () => {
+    await withTx(pool, async (client) => {
+      const owner = await makeParent(client, 'att-owner@test.local');
+      const other = await makeParent(client, 'att-other@test.local');
+      const kid = await importedKid(client, { lastName: 'Mine', parentUserId: owner });
+
+      const changed = await asUser(client, owner, async () => {
+        try {
+          const r = await client.query('update kids set parent_user_id = $1 where id = $2', [other, kid]);
+          return r.rowCount ?? 0;
+        } catch {
+          return 0;
+        }
+      });
+
+      expect(changed).toBe(0);
+      expect(await ownerOf(client, kid)).toBe(owner);
+    });
+  });
+
+  it('never moves a kid who already has a parent', async () => {
+    await withTx(pool, async (client) => {
+      const admin = await makeAdmin(client, 'att-admin2@test.local');
+      const owner = await makeParent(client, 'att-owner2@test.local');
+      const other = await makeParent(client, 'att-other2@test.local');
+      const kid = await importedKid(client, { lastName: 'Taken', parentUserId: owner });
+
+      expect(await attach(client, admin, kid, other)).toBe(0);
+      expect(await ownerOf(client, kid)).toBe(owner);
+    });
+  });
+
+  it('lets the attached parent read and re-register the kid, and no one else', async () => {
+    await withTx(pool, async (client) => {
+      const admin = await makeAdmin(client, 'att-admin3@test.local');
+      const parentId = await makeParent(client, 'att-parent3@test.local');
+      const stranger = await makeParent(client, 'att-stranger3@test.local');
+      const kid = await importedKid(client, { guardianEmail: 'att-parent3@test.local', lastName: 'Visible' });
+      await importedRegistration(client, kid);
+
+      const seenBefore = await asUser(client, parentId, async () => (await client.query('select id from kids')).rowCount);
+      expect(seenBefore).toBe(0);
+
+      await attach(client, admin, kid, parentId);
+
+      const seen = await asUser(client, parentId, async () =>
+        (await client.query('select id from kids')).rows.map((r) => r.id)
+      );
+      expect(seen).toEqual([kid]);
+      const strangerSees = await asUser(client, stranger, async () => (await client.query('select id from kids')).rowCount);
+      expect(strangerSees).toBe(0);
+
+      const { kid_id } = await registerAs(client, parentId, { kidId: kid, reg: regPayload() });
+      expect(kid_id).toBe(kid);
+    });
+  });
+
+  // The Server Action finds the parent by email under the Admin's own session.
+  it('lets an Admin, and no one else, look an account up by email', async () => {
+    await withTx(pool, async (client) => {
+      const admin = await makeAdmin(client, 'att-admin4@test.local');
+      const target = await makeParent(client, 'att-target4@test.local');
+      const snoop = await makeParent(client, 'att-snoop4@test.local');
+
+      const find = (userId: string) =>
+        asUser(client, userId, async () => ({
+          profile: (await client.query('select id from profiles where email = $1', ['att-target4@test.local'])).rowCount,
+          role: (await client.query('select 1 from user_roles where user_id = $1', [target])).rowCount,
+        }));
+
+      expect(await find(admin)).toEqual({ profile: 1, role: 1 });
+      expect(await find(snoop)).toEqual({ profile: 0, role: 0 });
+    });
+  });
+});
+
 describe('seasons -- signed-in users read the current season only', () => {
   it('shows a parent the current season and not past ones', async () => {
     await withTx(pool, async (client) => {
