@@ -16,7 +16,14 @@ import { useToast } from '@/components/ui/toast';
 import { Sheet, SheetHeading, SheetRule } from '@/components/cis/sheet';
 import { BoardHeader } from '@/components/cis/board-shell';
 import { RegistrationColumn } from '@/components/cis/registration-frame';
-import { deletePayment, recordPayments, setRegistrationsConsent } from './actions';
+import {
+  attachKidToParent,
+  deletePayment,
+  findParentByEmail,
+  recordPayments,
+  setRegistrationsConsent,
+} from './actions';
+import { AttachParent } from './attach-parent';
 import {
   PaymentFields,
   PaymentsPanel,
@@ -61,6 +68,11 @@ export interface Kid {
   guardian_name: string;
   guardian_phone: string;
   guardian_email: string;
+  /**
+   * Whether a parent account is attached. A boolean, not the parent's id: the id
+   * is not needed here, and Program Team and coaches read this page too.
+   */
+  has_parent: boolean;
 }
 
 /** A kid plus their registration for the active season. */
@@ -126,13 +138,13 @@ const nullIfBlank = (v: string) => (v.trim() === '' ? null : v.trim());
  * photo it already had, which a write to the other columns does not change.
  */
 function kidWithPhoto<T extends object>(
-  row: T & { photo_path?: unknown; photo_updated_at?: unknown },
+  row: T & { photo_path?: unknown; photo_updated_at?: unknown; parent_user_id?: string | null },
   photo: KidPhoto | null
 ): Kid {
-  const { photo_path: _path, photo_updated_at: _at, ...rest } = row;
+  const { photo_path: _path, photo_updated_at: _at, parent_user_id, ...rest } = row;
   void _path;
   void _at;
-  return { ...(rest as unknown as Kid), photo };
+  return { ...(rest as unknown as Kid), has_parent: parent_user_id != null, photo };
 }
 
 /**
@@ -969,6 +981,31 @@ export default function RegistrationsClient({
                               </button>
                             )}
                           </div>
+
+                          {isAdmin && (
+                            <AttachParent
+                              kidName={`${r.kid.first_name} ${r.kid.last_name}`}
+                              hasParent={r.kid.has_parent}
+                              suggestedEmail={r.kid.guardian_email}
+                              onFind={findParentByEmail}
+                              onAttach={async (email) => {
+                                const result = await attachKidToParent({ kidId: r.kid.id, email });
+                                if (result.ok) {
+                                  // The roster keeps its rows in state, so the row is marked here.
+                                  setRows((p) =>
+                                    p.map((x) =>
+                                      x.kid.id === r.kid.id ? { ...x, kid: { ...x.kid, has_parent: true } } : x
+                                    )
+                                  );
+                                  toast({
+                                    title: 'Kid attached',
+                                    description: `${r.kid.first_name} is now on ${result.parent?.name ?? 'the parent'}'s account.`,
+                                  });
+                                }
+                                return result;
+                              }}
+                            />
+                          )}
 
                           {isAdmin && (
                             <PaymentsPanel

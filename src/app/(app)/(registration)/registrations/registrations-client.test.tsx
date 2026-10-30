@@ -14,7 +14,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import '@testing-library/jest-dom';
 
 import RegistrationsClient, { type RosterEntry } from './registrations-client';
-import { deletePayment, recordPayments } from './actions';
+import { attachKidToParent, deletePayment, findParentByEmail, recordPayments } from './actions';
 import { PhotoError, preparePhoto } from '@/lib/photo/prepare';
 import { uploadKidPhoto } from '@/lib/photo/upload';
 import { replaceKidPhoto } from '../kid-photo-actions';
@@ -51,6 +51,8 @@ jest.mock('./actions', () => ({
   setRegistrationsConsent: jest.fn(),
   recordPayments: jest.fn(),
   deletePayment: jest.fn(),
+  findParentByEmail: jest.fn(),
+  attachKidToParent: jest.fn(),
 }));
 
 const recordPaymentsMock = recordPayments as jest.MockedFunction<typeof recordPayments>;
@@ -88,6 +90,7 @@ function entry(overrides: Partial<RosterEntry> = {}): RosterEntry {
       guardian_name: 'Mariam Guirguis',
       guardian_phone: '(510) 555-0111',
       guardian_email: 'mariam@example.com',
+      has_parent: true,
     },
     ...overrides,
   };
@@ -550,5 +553,53 @@ describe('roster row -- photos', () => {
 
       expect(screen.getByRole('button', { name: 'Zaky, Marina' })).toBeInTheDocument();
     });
+  });
+});
+
+
+describe('roster row -- attaching a kid to a parent account (ENG-30)', () => {
+  const findMock = findParentByEmail as jest.MockedFunction<typeof findParentByEmail>;
+  const attachMock = attachKidToParent as jest.MockedFunction<typeof attachKidToParent>;
+
+  const unattached = () => entry({ kid: { ...entry().kid, has_parent: false } });
+
+  it('offers it to an Admin on a kid with no parent', () => {
+    renderRoster({ rows: [unattached()] });
+    fireEvent.click(nameToggle());
+
+    expect(screen.getByText('Not attached')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Attach to parent' })).toBeInTheDocument();
+  });
+
+  it('shows a kid who has a parent as attached, with nothing to do', () => {
+    renderRoster();
+    fireEvent.click(nameToggle());
+
+    expect(screen.getByText('Attached')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Attach to parent' })).not.toBeInTheDocument();
+  });
+
+  it('is not reachable by anyone but an Admin: the roster is staff-only', () => {
+    renderRoster({ isAdmin: false, rows: [unattached()] });
+
+    expect(screen.getByText('Staff only')).toBeInTheDocument();
+    expect(screen.queryByText('Parent account')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Attach to parent' })).not.toBeInTheDocument();
+  });
+
+  it('marks the row attached once the parent is confirmed, and says who', async () => {
+    findMock.mockResolvedValue({ ok: true, parent: { name: 'Mariam Guirguis', email: 'mariam@example.com' } });
+    attachMock.mockResolvedValue({ ok: true, parent: { name: 'Mariam Guirguis', email: 'mariam@example.com' } });
+    renderRoster({ rows: [unattached()] });
+    fireEvent.click(nameToggle());
+
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Attach to parent' })));
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Find parent' })));
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Attach' })));
+
+    expect(attachMock).toHaveBeenCalledWith({ kidId: 'kid-1', email: 'mariam@example.com' });
+    expect(screen.getByText('Attached')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Attach' })).not.toBeInTheDocument();
+    expect(toast).toHaveBeenCalledWith(expect.objectContaining({ title: 'Kid attached' }));
   });
 });
