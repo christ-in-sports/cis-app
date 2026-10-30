@@ -172,7 +172,10 @@ enable_refresh_token_rotation = true
 # Requires enable_refresh_token_rotation = true.
 refresh_token_reuse_interval = 10
 # Allow/disallow new user signups to your project.
-enable_signup = true
+# Off, like the hosted project: accounts are created on the server, by servant
+# signup (the servant code) and by the parent join link (the join code), never by
+# someone calling Supabase Auth directly. Keeps local tests honest about it (ENG-31).
+enable_signup = false
 # Allow/disallow anonymous sign-ins to your project.
 enable_anonymous_sign_ins = false
 # Allow/disallow testing manual linking of accounts
@@ -217,7 +220,8 @@ web3 = 30
 # secret = ""
 
 [auth.email]
-# Allow/disallow new user signups via email to your project.
+# Allow/disallow new user signups via email to your project. This is the email
+# provider switch, not the signup switch above: it has to stay on for email codes.
 enable_signup = true
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
@@ -243,9 +247,10 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
-# Sign-in code emails (ENG-28). An existing user asking for a code gets the
-# magic_link template; a new account made by the parent join link (ENG-31) gets
-# confirmation. Both show the 6-digit code, never a link.
+# Sign-in code emails (ENG-28). Every account asking for a code gets the
+# magic_link template, including a new parent: the parent join link (ENG-31)
+# creates the account on the server first. The confirmation template is only used
+# if public signups are ever turned on. Both show the 6-digit code, never a link.
 [auth.email.template.magic_link]
 subject = "Your Christ in Sports code"
 content_path = "./supabase/templates/magic-link.html"

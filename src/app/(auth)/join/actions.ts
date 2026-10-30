@@ -14,6 +14,13 @@
  *   - it grants `parent` and nothing else, with the service role, and a repeat is
  *     treated as success.
  *
+ * Accounts are created here on the server, never by Supabase's own signup: the
+ * hosted project has "Allow new users to sign up" off, so that nobody can make an
+ * account by calling Auth directly with the public key. `signInWithOtp` with
+ * `shouldCreateUser: true` is refused there (`signup_disabled`), which is why a new
+ * parent is created with the admin API first and then sent a code like any
+ * existing account. Only someone holding the join code gets this far.
+ *
  * `user_roles` stays writable by Admins only. RLS is still what limits a Parent:
  * they read only the kids linked to their account and write only through
  * `register_kid()`.
@@ -33,6 +40,7 @@ export interface JoinResult {
 const WRONG_LINK = 'This link has changed. Use the latest link from the parent group chat.';
 const UNAVAILABLE = 'Joining is not available right now. Please ask an Admin for help.';
 const UNIQUE_VIOLATION = '23505';
+const EMAIL_EXISTS = 'email_exists';
 
 /** Refuses a missing or wrong join code, slowing down guessing. Null means it is fine. */
 async function refuseBadCode(code: unknown): Promise<JoinResult | null> {
@@ -59,7 +67,7 @@ async function grantParent(userId: string): Promise<JoinResult> {
 const isRateLimited = (error: { status?: number; code?: string }) =>
   error.status === 429 || Boolean(error.code?.startsWith('over_'));
 
-/** Emails a 6-digit code, creating the account if this is a new parent. */
+/** Creates the account if this is a new parent, then emails a 6-digit code. */
 export async function sendJoinCode(input: unknown): Promise<JoinResult> {
   const parsed = sendJoinCodeSchema.safeParse(input);
   if (!parsed.success) {
@@ -69,10 +77,26 @@ export async function sendJoinCode(input: unknown): Promise<JoinResult> {
   const refused = await refuseBadCode(parsed.data.code);
   if (refused) return refused;
 
+  // A new parent gets an account here, with their name for the profile. Someone
+  // who already has one (a returning parent, or a servant) is left as they are.
+  // The email is marked confirmed, as servant signup does, because owning the
+  // address is proved by the code below, and nothing links kids by email.
+  const service = createServiceClient();
+  if (!service) return { ok: false, error: UNAVAILABLE };
+  const { error: createError } = await service.auth.admin.createUser({
+    email: parsed.data.email,
+    email_confirm: true,
+    user_metadata: { display_name: parsed.data.name },
+  });
+  if (createError && createError.code !== EMAIL_EXISTS) {
+    console.error('sendJoinCode createUser failed:', createError.code);
+    return { ok: false, error: 'We could not send a code. Please try again.' };
+  }
+
   const supabase = await createServerSupabaseClient();
   const { error } = await supabase.auth.signInWithOtp({
     email: parsed.data.email,
-    options: { shouldCreateUser: true, data: { display_name: parsed.data.name } },
+    options: { shouldCreateUser: false },
   });
 
   if (error) {
