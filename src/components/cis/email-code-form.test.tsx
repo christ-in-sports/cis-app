@@ -69,6 +69,32 @@ describe('asking for a code', () => {
   });
 });
 
+describe('extra fields on the first step', () => {
+  it('shows them above the email and does not ask for a code until they pass', async () => {
+    let ok = false;
+    render(
+      <EmailCodeForm
+        sendCode={sendCode}
+        verifyCode={verifyCode}
+        onVerified={onVerified}
+        extraFields={<label>Your name<input /></label>}
+        validateExtra={() => ok}
+      />,
+    );
+
+    await askForCode();
+    expect(sendCode).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText('6-digit code')).not.toBeInTheDocument();
+
+    ok = true;
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Email me a code' }));
+    });
+    expect(sendCode).toHaveBeenCalledWith('maria@example.com');
+    expect(codeBox()).toBeInTheDocument();
+  });
+});
+
 describe('entering the code', () => {
   it('asks the phone for the number pad and the emailed code', async () => {
     renderForm();

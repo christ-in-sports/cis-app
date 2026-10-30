@@ -391,6 +391,16 @@ export default function ServantClient({
         }
       />
       <RegistrationColumn>
+        {/* Someone with no role lands here, including a parent who signed in some
+            other way than the parent link (ENG-31). */}
+        {!hasRole && (
+          <Sheet tone="paper" className="flex flex-col gap-cis-2 px-cis-5 pb-cis-5 pt-cis-5">
+            <SheetHeading className="text-cis-xl">Here to register your kids?</SheetHeading>
+            <p className="m-0 text-cis-base leading-[1.5]">
+              This form is for servants. Open the link from the parent group chat to register your kids.
+            </p>
+          </Sheet>
+        )}
         <Sheet tone="paper" className="flex flex-col gap-cis-2 px-cis-5 pb-cis-5 pt-cis-5">
           <SheetHeading className="text-cis-xl">{season.name}</SheetHeading>
           <p className="m-0 text-cis-base leading-[1.5]">

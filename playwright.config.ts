@@ -21,8 +21,11 @@ export default defineConfig({
     command: 'npm run build && npm run start',
     url: 'http://127.0.0.1:3000',
     reuseExistingServer: !process.env.CI,
-    // The servant signup spec signs up with this code; a real one is never needed locally.
-    env: { SERVANT_SIGNUP_CODE: process.env.SERVANT_SIGNUP_CODE ?? 'e2e-servant-code' },
+    // The servant signup and parent join specs use these codes; real ones are never needed locally.
+    env: {
+      SERVANT_SIGNUP_CODE: process.env.SERVANT_SIGNUP_CODE ?? 'e2e-servant-code',
+      PARENT_JOIN_CODE: process.env.PARENT_JOIN_CODE ?? 'e2e-parent-code',
+    },
     timeout: 120_000,
   },
 });
