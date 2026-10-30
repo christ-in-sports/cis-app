@@ -1,0 +1,21 @@
+-- Retire link_my_kids() (ENG-29, decision ENG-27: docs/arch_decisions.md, 2026-10-25).
+--
+-- link_my_kids() attached CSV-imported kids to whichever Parent's confirmed auth
+-- email matched the kid's guardian_email. That was safe while Parent was an
+-- Admin-granted role and signup needed the servant code. It is not safe once
+-- parents join through one shared link and the Parent role is granted by it:
+-- anyone with the link could sign in as another family's guardian email (or
+-- guess one) and be handed that family's kids, with their address, emergency
+-- contact, photo and payments.
+--
+-- A parent now sees only kids they registered themselves through register_kid(),
+-- which sets parent_user_id = auth.uid(), and kids an Admin attached by hand.
+-- Nothing else sets kids.parent_user_id: the "admin manage kids" policy lets an
+-- Admin do it, and no function does it by matching an email.
+--
+-- No policy or other function depends on it, so there is nothing to rewrite. The
+-- kids that were already linked stay linked. Reversing this means re-creating the
+-- function from 20260928120000_parent_registration.sql, which we should not do
+-- without a verified-email check first.
+
+DROP FUNCTION IF EXISTS public.link_my_kids();

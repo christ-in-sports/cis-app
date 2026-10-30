@@ -57,11 +57,6 @@ export async function loadParentRegistrationContext(): Promise<ParentContext> {
   if (userId === null) return { status: 'signed-out' };
   if (!hasRole) return { status: 'forbidden' };
 
-  // Attach kids that CSV import left unlinked, before reading "my kids".
-  // Best-effort: a failure here must not stop a parent registering a new kid.
-  const { error: linkError } = await supabase.rpc('link_my_kids');
-  if (linkError) console.error('link_my_kids failed:', linkError.message);
-
   const { data: season } = await supabase
     .from('seasons')
     .select('id, name')

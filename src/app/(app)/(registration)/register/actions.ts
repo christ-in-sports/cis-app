@@ -28,6 +28,7 @@ const WAIVER = '22023';
 const NO_SEASON = '55000';
 const ON_TEAM = '55006';
 const DUPLICATE = '23505';
+const ALREADY_ON_FILE = '55007';
 const PHOTO_REQUIRED = '22004';
 const UPLOAD_NOT_FOUND = '02000';
 const CHECK_FAILED = '23514';
@@ -98,6 +99,15 @@ export async function registerKid(input: unknown): Promise<RegisterKidResult> {
         return {
           ok: false,
           error: 'You have already added a kid with that name and date of birth.',
+        };
+      case ALREADY_ON_FILE:
+        // Imported from the Google Form backup and not attached to a parent. The
+        // database does not adopt it, so a stranger's typed name and birthday
+        // cannot open a kid's records; an Admin attaches it (ENG-30).
+        return {
+          ok: false,
+          error:
+            'This kid is already on file from an earlier registration. Ask an Admin to attach them to your account.',
         };
       case CHECK_FAILED:
         return {
