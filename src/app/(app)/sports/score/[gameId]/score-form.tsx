@@ -389,7 +389,7 @@ export function ScoreForm(props: ScoreFormProps) {
         </div>
       ) : null}
 
-      <div className="-mx-[18px] -mb-[22px] mt-5 flex gap-2.5 border-t-[5px] border-cis-ink-dark px-3.5 pb-5 pt-3.5">
+      <div className="-mx-[18px] -mb-[22px] mt-5 flex gap-2.5 border-t-[5px] border-cis-heavy px-3.5 pb-5 pt-3.5">
         <Link
           href={props.backHref}
           aria-disabled={pending}

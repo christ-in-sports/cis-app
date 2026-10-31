@@ -127,7 +127,7 @@ export default async function ScorePage({
                 >
                   {name(id)}
                 </span>
-                <ScoreNumber value={i === 0 ? saved.home_total : saved.away_total} size="sm" badge />
+                <ScoreNumber value={i === 0 ? saved.home_total : saved.away_total} size="sm" />
               </div>
             ))}
           </div>

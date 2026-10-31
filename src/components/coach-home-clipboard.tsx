@@ -189,7 +189,7 @@ export default function CoachHomeClipboard() {
                   {item.kind === 'game' && (
                     <>
                       <p className="font-cis-display text-cis-lg">{item.title}</p>
-                      <Badge className="rounded-cis-chip bg-cis-sport px-2.5 py-1.5 text-cis-sm font-bold text-cis-paper-light hover:bg-cis-sport">
+                      <Badge className="rounded-cis-chip bg-cis-sport-tint px-2.5 py-1.5 text-cis-sm font-bold text-cis-sport-deep hover:bg-cis-sport-tint">
                         {item.tag}
                       </Badge>
                     </>

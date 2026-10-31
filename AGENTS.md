@@ -75,10 +75,10 @@ Full spec lives in [`DESIGN_SYSTEM.md`](./DESIGN_SYSTEM.md) — **read it before
 
 **Color system — three colors, each with exactly one job:**
 - `--cis-action` (`#24313D`, slate) — primary actions, selected tabs/chips, ticked boxes, present state, links, focus
-- `--cis-sport` (`#EE6B2D`, the logo orange) — sport/results (score badges, "Final" stamps, the leader row)
+- `--cis-sport` (`#EE6B2D`, the logo orange) — sport/results (orange scores and points, "Final" chips, the leader row, orange heavy rules in Sports)
 - `--cis-sage` (`#5F7A4B`) — spiritual content (verse/psalm points)
 
-This mapping must hold on every screen — a user should be able to tell "this is a button" vs. "this is a score" vs. "this is a verse point" from color alone. **Nothing pressable is orange.** Never use `#EE6B2D` for text (use `--cis-sport-text` `#B5481A`); text on an orange fill is dark `--cis-ink-on-sport`, never white; text on slate is `--cis-ink-on-action`. Palette "Home and away v2" (ENG-32).
+This mapping must hold on every screen — a user should be able to tell "this is a button" vs. "this is a score" vs. "this is a verse point" from color alone. **Nothing pressable is orange.** Never use `#EE6B2D` for text (use `--cis-sport-text` `#B5481A`); nothing sits on an orange fill (orange is text, a tint or a rule; Sports heavy rules are orange via `.cis-sport-scope`); text on slate is `--cis-ink-on-action`. Palette "Home and away v2" (ENG-32).
 
 **Typography:** Caprasimo (display — scores, headings, team names only, never body copy) + Figtree (UI/body). Full scale in `DESIGN_SYSTEM.md` §5.
 

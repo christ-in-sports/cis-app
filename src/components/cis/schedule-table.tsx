@@ -40,7 +40,7 @@ export function ScheduleTable({ slots, caption }: { slots: readonly ScheduleSlot
         <col />
       </colgroup>
       <thead>
-        <tr className="border-b-4 border-cis-ink-dark text-left">
+        <tr className="border-b-4 border-cis-heavy text-left">
           <th scope="col" className="pb-2 text-cis-xs font-bold text-cis-ink-muted">
             Time
           </th>

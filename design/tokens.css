@@ -16,11 +16,10 @@
 
   /* Sport — the logo orange is the game: scores, results, the leader row */
   --cis-logo-orange: #EE6B2D;     /* the logo's colour; also the sport fill */
-  --cis-sport: #EE6B2D;           /* score badges, results; always dark text on it */
-  --cis-sport-text: #B5481A;      /* sport-coloured text on light grounds (5.3:1) */
+  --cis-sport: #EE6B2D;           /* orange as a surface: heavy rules in Sports, the Next up outline. Never text */
+  --cis-sport-text: #B5481A;      /* scores and every orange word on light grounds (5.3:1) */
   --cis-sport-deep: #8F3912;      /* text on --cis-sport-tint (6.6:1) */
   --cis-sport-tint: #FDEBDD;      /* leader row wash, sport chips */
-  --cis-ink-on-sport: #1A232B;    /* text on a --cis-sport fill (5.0:1) */
 
   /* Destructive — a dark red kept apart from sport orange by hue and by usage:
      danger only ever appears on an action (delete, remove). See §4. */
@@ -51,6 +50,7 @@
   --cis-rule-dash: #D8CFBE;       /* 2px dashed section break inside a sheet */
   --cis-track: #E9E3D7;           /* progress track, disabled fill */
   --cis-box-empty: #8A9097;       /* unticked attendance box border (3.2:1) */
+  --cis-heavy: var(--cis-ink-dark); /* heavy rules; logo orange inside .cis-sport-scope */
 
   /* Ink */
   --cis-ink: #1F2A33;             /* body text (14.5:1 on paper-light) */

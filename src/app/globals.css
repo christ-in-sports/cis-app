@@ -92,6 +92,13 @@
   }
 }
 
+/* The Sports section, and any sheet about the game: heavy rules turn logo
+   orange, so the whole section reads as the game (DESIGN_SYSTEM.md §4). A rule
+   is never pressable, so this keeps "nothing pressable is orange". */
+.cis-sport-scope {
+  --cis-heavy: var(--cis-sport);
+}
+
 /* Mobile app feel */
 html, body {
   overscroll-behavior: none;

@@ -83,7 +83,7 @@ export function StandingsTable({
         ))}
       </colgroup>
       <thead>
-        <tr className="border-b-4 border-cis-ink-dark">
+        <tr className="border-b-4 border-cis-heavy">
           <th scope="col" className="pb-2 text-center text-cis-xs font-bold text-cis-ink-muted">
             <span aria-hidden>#</span>
             <span className="sr-only">Rank</span>

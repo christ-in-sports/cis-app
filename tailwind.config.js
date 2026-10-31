@@ -91,6 +91,7 @@ module.exports = {
   					dash: 'var(--cis-rule-dash)'
   				},
   				track: 'var(--cis-track)',
+  				heavy: 'var(--cis-heavy)',
   				'box-empty': 'var(--cis-box-empty)',
   				ink: {
   					DEFAULT: 'var(--cis-ink)',
@@ -99,8 +100,7 @@ module.exports = {
   					'on-dark': 'var(--cis-ink-on-dark)',
   					'on-dark-muted': 'var(--cis-ink-on-dark-muted)',
   					'on-danger': 'var(--cis-ink-on-danger)',
-  					'on-action': 'var(--cis-ink-on-action)',
-  					'on-sport': 'var(--cis-ink-on-sport)'
+  					'on-action': 'var(--cis-ink-on-action)'
   				}
   			}
   		},

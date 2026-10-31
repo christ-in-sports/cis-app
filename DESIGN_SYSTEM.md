@@ -74,10 +74,9 @@ screens, and flag it if a new screen seems to need breaking one.
 |---|---|---|
 | `--cis-action` / hover / press | `#24313D` / `#33414E` / `#1A242D` | **Action.** Primary buttons, selected tabs and chips, ticked boxes, present state, the current stage, links, focus |
 | `--cis-action-shadow` / `--cis-ink-on-action` | `#0F161C` / `#FFFEFA` | The 4px stamp shadow under a primary button; text on a slate fill (13.2:1) |
-| `--cis-sport` (`--cis-logo-orange`) | `#EE6B2D` | **Sport.** The logo orange as a fill: score badges, "Final" stamps. Always dark text on it, never on anything pressable |
-| `--cis-ink-on-sport` | `#1A232B` | Text on an orange fill (5.0:1). White on this orange is about 3:1 and fails |
-| `--cis-sport-text` / `--cis-sport-deep` | `#B5481A` / `#8F3912` | Orange as *text*: score digits being set, the leader's rank (5.3:1 on paper-light); deep is text on the sport tint (6.6:1) |
-| `--cis-sport-tint` | `#FDEBDD` | Leader row wash, the pale "Final" chip beside a game's score badges |
+| `--cis-sport` (`--cis-logo-orange`) | `#EE6B2D` | **Sport.** The logo orange as a *surface*, never under text: heavy rules across the Sports section (`--cis-heavy` in `.cis-sport-scope`), the "Next up" outline, the current stage's border. Never on anything pressable |
+| `--cis-sport-text` / `--cis-sport-deep` | `#B5481A` / `#8F3912` | Orange as *text*: every score, the leader's rank, standings points, the Next game time, the Sports label (5.3:1 on paper-light); deep is text on the sport tint (6.6:1) |
+| `--cis-sport-tint` | `#FDEBDD` | Leader row wash, "Final" chips, the current stage box, sport icon tiles |
 | `--cis-danger` / hover / press | `#8E1F17` / `#A3231A` / `#761A13` | **Destructive actions only** — delete, remove. Never a status, never a chip |
 | `--cis-danger-tint` / `--cis-ink-on-danger` | `#F7E4E0` / `#FFF6EE` | Hover wash behind an outlined danger action and behind an auth error; text on a danger fill |
 | `--cis-sage` / hover / press | `#5F7A4B` / `#6B8756` / `#52693F` | **Faith.** Psalm-point button, verse-huddle rules, verse chips; light text on it (4.8:1) |
@@ -108,9 +107,9 @@ new screen needs orange or red for anything that is neither, stop and flag it.
 
 **Contrast rules — non-negotiable:**
 - Never use `#EE6B2D` for text — use `--cis-sport-text` (`#B5481A`) instead. The large score
-  numerals are no exception: a score shown at rest sits on an orange badge with dark digits.
+  numerals are no exception: a score is always `--cis-sport-text`.
 - `#5F5850` is the minimum-safe muted ink on the page and on sheets.
-- Text on an orange fill is dark (`--cis-ink-on-sport`), never white: white is about 3:1.
+- Nothing sits on an orange fill: dark text on orange was retired (2026-10-30), and white on it is about 3:1. Orange is text, a tint behind orange text, or a rule.
 - Text on a slate fill is `--cis-ink-on-action`.
 - All body/small text must be ≥ 4.5:1 contrast; large display type ≥ 3:1 (WCAG 2.1 AA, per
   `project_spec.md` §1.8).
@@ -180,7 +179,7 @@ one-off markup per screen.
 |---|---|---|
 | `PhoneShell` | Global | The hardboard frame: 390px, 40px radius, board brown, plus the status bar. `ShellClip` adds the two holes and the orange team pill. |
 | `Sheet` | Global | The cream paper card. `tone="light"` is the primary sheet, `tone="paper"` the secondary, with the same fill on the cream page. `joined` squares the top corners under `DivisionTabs`. Ships with `SheetHeading` (Caprasimo 18px, sentence case) and `SheetRule` (the 5px ink rule). |
-| `Chip` | Global | The 12px label the three named chips share. Variants: `sport` (logo-orange fill, dark text), `result` (pale orange, for a game's "Final" beside its score badges), `active` (slate fill, "Next up"), `faith` (sage outline), `tint` (pale slate, neutral labels), `stamp` (rotated -5deg double rule). |
+| `Chip` | Global | The 12px label the three named chips share. Variants: `sport` and `result` (pale orange, orange text: "Final"), `next` (2px orange outline, orange text: "Next up"), `active` (slate fill, a non-game selection), `faith` (sage outline), `tint` (pale slate, neutral labels), `stamp` (rotated -5deg double rule). |
 | `Icon` | Global | Wrapper over the Lucide glyph set so stroke-width 2.75 lives in one place. |
 | `PrimaryButton` / `SecondaryButton` | Global | Pill radius, light text on slate; `tone="sage"` for spiritual actions; secondary is a 3px ink outline. The shadcn `Button` used by the auth screens maps `default` to slate and `outline` to the same 3px ink outline. |
 
@@ -223,11 +222,11 @@ one-off markup per screen.
 |---|---|---|
 | `BlockSwitcher` | `blocks[]`, `value` | `ChoiceGroup`-style chips (ink-filled when selected) that switch the sport block under a `DivisionTabs`. |
 | `StandingsTable` (extended) | `sport`, `groups[]`, `rows`, `yourTeamId` | Last two columns are labelled per sport: GD/GF, PD/PF, SD/SW, RD/RW. One table or two groups. Rank never changes on re-sort. P and W–D–L are centered, not right-aligned, so they don't touch. "Your team" is a pale slate `tint` chip under the name (the leader's orange wash is taken). |
-| `GameRow` + `GameState` | `game`, `state` (final / next up / upcoming / waiting), `canScore` | Real `<table>`: time, court, game. Each score sits on a logo-orange badge with dark digits; Final = pale orange `result` chip, Next up = slate `active` chip, Upcoming = outlined chip, Waiting = dashed chip. Waiting teams read "Winner of Semi-final 1". Writers get an "Enter score" / "Edit score" button. |
+| `GameRow` + `GameState` | `game`, `state` (final / next up / upcoming / waiting), `canScore` | Real `<table>`: time, court, game. Each score is sport-orange text; Final = pale orange `result` chip, Next up = orange-outline `next` chip, Upcoming = outlined chip, Waiting = dashed chip. Waiting teams read "Winner of Semi-final 1". Writers get an "Enter score" / "Edit score" button. |
 | `BracketGame`, `RoundJumpChips` | `label`, `home`, `away` (seed, name or source, score), `winner`, `tiebreak`, `feedsInto` | **Bracket on a phone = rounds stacked vertically**, with jump chips and a "Winner plays …" line instead of connector lines. Byes are a labelled row. A level game shows both scores plus "won on penalties". |
 | `ScoreSheet` | `game`, `sport` | Full-screen sheet with a `StickyActionBar` (opaque paper, 5px ink rule on top). No dimming overlay, since transparency is banned. |
 | `ScoreStepper`, `SetTable`, `RoundWinnerPicker`, `TiebreakPrompt` | `value`, `quick[]`; `sets[]`; `rounds[]`; `sport` | Per-sport entry. Tiebreak shows only for a level knockout game; league games may draw. |
-| `StageTracker` | `format`, `stage` | Boxes joined by a rule: done = ink with a tick, now = slate with a numeral, later = outlined; each also has a Done / Now / Later label. Never a dot. |
+| `StageTracker` | `format`, `stage` | Boxes joined by a rule: done = ink with a tick, now = pale orange with an orange border and its numeral, later = outlined; each also has a Done / Now / Later label. Never a dot. |
 | `BlockAction`, `ResultStrip` | `label`, `disabledReason`; `text` | A disabled action always shows its reason ("3 league games still need a result"). Results read "6 placed, 3 left to schedule". |
 | `ConfirmSheet`, `LockedField` | `title`, `deletes[]`, `keeps[]`, `requireTick`; `value`, `reason` | Destructive confirmations use `--cis-danger` and name exactly what goes. Locked fields say why. |
 | `AppNav` | `roles` | The one bottom bar, the same on every screen in the app shell (`app/(app)/layout.tsx`): Today · Sports · More for everyone with a role, plus attendance for Admin, Program Team and Coaches ("Attendance" for managers, "My team" for a Coach alone). Faith joins before More when the spiritual module ships. Screens reached from More (roster, servants, roles, import, the parent form) keep More lit. |
@@ -360,3 +359,5 @@ Cream page (2026-10-29): after a critique of the brown shell (muddy against the 
 Home and away v2 palette (2026-10-30, ENG-32): orange stops being the button colour. After comparing ten palette prototypes, actions and selection (primary buttons, selected tabs, ticked boxes, the present state, the current stage, links, focus) are slate `#24313D`; the logo orange is the sport colour (score badges with dark digits, "Final" stamps, the leader row); sage stays faith; ember, apricot and the brown board are retired. It fixes the old palette's real flaw: ember sat 11° of hue from orange, so a score and a button were hard to tell apart, and now nothing pressable is orange. The page is `#EEEDE8` with `#FFFEFA` sheets, the dock is slate with a paper-light current chip, and inactive tabs are pale slate. Auth screens (login, signup, forgot and reset password, join) share the display-face heading, slate buttons, 3px ink outline secondaries and danger-tint error boxes. Earlier dated notes above that mention orange buttons, ember or the brown board describe the old palette.
 
 Colour by domain (2026-10-30, ENG-32): content-only colour left most screens slate and grey, because most screens hold no score or verse. Three changes spread orange and sage without making anything pressable orange: (1) every Today and More row carries a domain icon tile (orange for anything about the game, sage for faith, warm pale slate for people and admin); Sports screens' `BoardHeader` takes `sport`, which turns the kicker sport orange with a trophy; standings points are sport orange like the leader's rank. (2) Today leads with `NextGameCard`: the next scheduled game (the viewer's own team's when they have one, from `nextGame()`), teams in the display face and the time on a logo-orange badge, with the logo at 120px in the header, replacing the "Hi, name" note. (3) The neutrals warm up: page `#F5F1E8`, sheets `#FFFDF8`, rules `#E8E1D3`, muted ink `#5F5850`, pale tab `#E6E1D7`. A "This week's verse" card for Today is designed but waits on verse data.
+
+More orange in Sports, no dark text on orange (2026-10-30, ENG-32): the score badges (dark digits on a logo-orange fill) are retired, and so is `--cis-ink-on-sport`. Scores, the Next game time and every other orange word are `--cis-sport-text`. To give the Sports section more orange, heavy rules there (the 5px `SheetRule`, table-head rules, the action bar's top rule) take `--cis-heavy`, which is ink by default and the logo orange inside `.cis-sport-scope` (the Sports layout and the Next game card). "Final" is a pale orange chip, "Next up" an orange outline, and Manage's current stage a pale orange box with an orange border. Buttons, tabs and the block switcher stay slate: nothing pressable is orange.

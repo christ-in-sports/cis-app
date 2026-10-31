@@ -1,7 +1,8 @@
 /**
  * `StageTracker`, from the Sports components (`DESIGN_SYSTEM.md` §7): the life of
- * a block as boxes joined by a rule. Done is ink with a tick, now is slate with
- * its number, later is outlined and dashed. Each box also carries a word (Done /
+ * a block as boxes joined by a rule. Done is ink with a tick, now is pale orange
+ * with an orange border and its number (the game's current stage), later is
+ * outlined and dashed. Each box also carries a word (Done /
  * Now / Later), so the state never rests on colour or shape alone, and there is
  * never a dot.
  */
@@ -27,7 +28,7 @@ export function StageTracker({ steps, completedOn }: { steps: readonly Step[]; c
                 className={cn(
                   'box-border flex size-9 shrink-0 items-center justify-center rounded-cis-box border-[3px] text-cis-base font-extrabold',
                   step.state === 'done' && 'border-cis-ink bg-cis-ink text-cis-paper-light',
-                  step.state === 'now' && 'border-cis-ink bg-cis-action text-cis-ink-on-action',
+                  step.state === 'now' && 'border-cis-sport bg-cis-sport-tint text-cis-sport-deep',
                   step.state === 'later' && 'border-cis-ink-muted text-cis-ink-muted',
                 )}
               >

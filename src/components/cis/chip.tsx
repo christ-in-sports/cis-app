@@ -4,9 +4,10 @@
  * The 12px label. State is carried by the label and the chip's own shape, never
  * by a bare colour dot (§3), so each variant reads without its colour:
  *
- *  - `sport`    logo-orange fill, dark text: a finished block or final places ("Final").
- *  - `result`   pale orange: a played game's "Final", beside its orange score badges.
- *  - `active`   slate fill: the next game to start.
+ *  - `sport`    pale orange, orange text: "Final" on a game, a block or final places.
+ *  - `result`   the same as `sport`; kept for game rows.
+ *  - `next`     2px orange outline, orange text: the next game to start.
+ *  - `active`   slate fill: a current selection that is not the game.
  *  - `outline`  2px ink outline: teams known, not started.
  *  - `dashed`   2px dashed muted outline: waiting on an earlier game.
  *  - `tint`     pale slate: a neutral label ("League · round 3 of 7", "Your team").
@@ -22,8 +23,9 @@ import { cn } from '@/lib/utils';
 const chip = cva('inline-block whitespace-nowrap rounded-cis-chip font-cis-body font-bold', {
   variants: {
     variant: {
-      sport: 'bg-cis-sport text-cis-ink-on-sport',
+      sport: 'bg-cis-sport-tint text-cis-sport-deep',
       result: 'bg-cis-sport-tint text-cis-sport-deep',
+      next: 'border-2 border-cis-sport text-cis-sport-deep',
       active: 'bg-cis-action text-cis-ink-on-action',
       outline: 'border-2 border-cis-ink text-cis-ink',
       dashed: 'border-2 border-dashed border-cis-ink-muted text-cis-ink-muted',
@@ -39,8 +41,8 @@ const chip = cva('inline-block whitespace-nowrap rounded-cis-chip font-cis-body 
     // same size as a filled one.
     { variant: ['sport', 'result', 'active', 'tint'], size: 'm', className: 'px-[11px] py-[6px]' },
     { variant: ['sport', 'result', 'active', 'tint'], size: 's', className: 'px-2 py-0.5' },
-    { variant: ['outline', 'dashed'], size: 'm', className: 'px-[9px] py-1' },
-    { variant: ['outline', 'dashed'], size: 's', className: 'px-1.5 py-0' },
+    { variant: ['outline', 'dashed', 'next'], size: 'm', className: 'px-[9px] py-1' },
+    { variant: ['outline', 'dashed', 'next'], size: 's', className: 'px-1.5 py-0' },
   ],
   defaultVariants: { variant: 'tint', size: 'm' },
 });

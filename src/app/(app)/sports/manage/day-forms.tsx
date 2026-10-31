@@ -188,7 +188,7 @@ export function ResetForm({
       onSubmit={submit}
     >
       <h2 className="pb-3 font-cis-display text-cis-xl font-normal leading-[1.15]">Reset {title}?</h2>
-      <div className="h-[5px] rounded-[3px] bg-cis-ink-dark" />
+      <div className="h-[5px] rounded-[3px] bg-cis-heavy" />
       <div className="py-3.5">
         <div className="text-cis-xs font-bold text-cis-ink-muted">This will be deleted</div>
         <dl className="m-0 mt-1">

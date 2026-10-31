@@ -24,27 +24,20 @@ const PLUS =
   'active:translate-y-[3px] active:shadow-[0_1px_0_var(--cis-action-shadow)] ' +
   'disabled:shadow-none disabled:active:translate-y-0';
 
-/**
- * A score in the display face. While it is being set it is sport-orange text; a
- * saved result (`badge`) sits on a logo-orange badge with dark numbers.
- * `size` picks one of the three score tokens.
- */
+/** A score: the display face in sport orange. `size` picks one of the three score tokens. */
 export function ScoreNumber({
   value,
   size = 'lg',
-  badge,
   className,
 }: {
   value: number | string;
   size?: 'lg' | 'md' | 'sm';
-  badge?: boolean;
   className?: string;
 }) {
   return (
     <span
       className={cn(
-        'font-cis-display font-normal tabular-nums',
-        badge ? 'rounded-cis-chip bg-cis-sport px-3 pt-1 text-cis-ink-on-sport' : 'text-cis-sport-text',
+        'font-cis-display font-normal tabular-nums text-cis-sport-text',
         size === 'lg' && 'text-cis-score',
         size === 'md' && 'text-cis-score-md',
         size === 'sm' && 'text-cis-score-sm',
@@ -267,7 +260,7 @@ export function RoundWinnerPicker({
     return tally.home >= tally.away ? 'home' : 'away';
   })();
   return (
-    <div className="border-t-4 border-cis-ink-dark">
+    <div className="border-t-4 border-cis-heavy">
       {rounds.map((round, i) => {
         const isNeeded = i < needed;
         return (
@@ -321,7 +314,7 @@ export function SetTable({
         <col />
       </colgroup>
       <thead>
-        <tr className="border-b-4 border-cis-ink-dark">
+        <tr className="border-b-4 border-cis-heavy">
           <th scope="col" className="pb-2 text-left text-cis-xs font-bold text-cis-ink-muted">
             Set
           </th>

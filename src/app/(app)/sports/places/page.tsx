@@ -107,7 +107,7 @@ export default async function PlacesPage({
             <col />
           </colgroup>
           <thead>
-            <tr className="border-b-4 border-cis-ink-dark text-left">
+            <tr className="border-b-4 border-cis-heavy text-left">
               <th scope="col" className="pb-2 text-center text-cis-xs font-bold text-cis-ink-muted">
                 Place
               </th>

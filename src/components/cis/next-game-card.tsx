@@ -1,9 +1,9 @@
 /**
  * `NextGameCard`: the game Today leads with (`nextGame` picks it).
  *
- * The teams in the display face, and the time on a logo-orange badge with dark
- * text: orange is the game (`DESIGN_SYSTEM.md` §4). The badge is a label, not a
- * button; the one link is "Full schedule". Shown only when there is a game.
+ * The teams in the display face and the time in sport orange: orange is the game
+ * (`DESIGN_SYSTEM.md` §4), so its heavy rule is orange too. The one link is
+ * "Full schedule". Shown only when there is a game.
  */
 
 import Link from 'next/link';
@@ -28,7 +28,7 @@ export function NextGameCard({
   const [h] = (game.scheduled_time ?? '').split(':').map(Number);
 
   return (
-    <Sheet className="px-cis-5 pb-cis-4 pt-cis-4">
+    <Sheet className="cis-sport-scope px-cis-5 pb-cis-4 pt-cis-4">
       <div className="flex items-center justify-between gap-cis-2">
         <SheetHeading>{mine ? 'Your next game' : 'Next game'}</SheetHeading>
         <span className="text-cis-xs font-bold text-cis-ink-muted">{day}</span>
@@ -40,11 +40,11 @@ export function NextGameCard({
           <div className="font-cis-body text-cis-xs font-bold leading-[1.7] text-cis-ink-muted">vs.</div>
           <div className="break-words">{away}</div>
         </div>
-        <div className="shrink-0 rounded-cis-chip bg-cis-sport px-cis-3 pb-1.5 pt-2 text-center text-cis-ink-on-sport">
-          <div className="font-cis-display text-cis-display-md leading-none">
+        <div className="shrink-0 text-right">
+          <div className="font-cis-display text-cis-display-lg leading-none text-cis-sport-text">
             {game.scheduled_time ? formatClock(game.scheduled_time) : 'TBD'}
           </div>
-          <div className="mt-0.5 text-cis-xs font-extrabold">
+          <div className="mt-1 text-cis-xs font-extrabold text-cis-ink-muted">
             {[game.scheduled_time ? (h < 12 ? 'AM' : 'PM') : null, game.court ? `Court ${game.court}` : null]
               .filter(Boolean)
               .join(' · ') || 'Time to come'}
