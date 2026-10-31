@@ -10,8 +10,9 @@
  *
  * The last two columns are named for the sport: GD/GF for soccer, PD/PF for
  * basketball, SD/SW for volleyball, RD/RW for dodgeball. The leader's row takes
- * the pale orange sport wash, and a team the viewer cares about is flagged with a
- * pale slate "Your team" chip under its name, since the leader wash is taken.
+ * the pale orange sport wash, points are sport orange like the leader's rank,
+ * and a team the viewer cares about is flagged with a pale slate "Your team"
+ * chip under its name, since the leader wash is taken.
  *
  * Before a game is played there is nothing to rank: ranks show a dash and the
  * headers are plain text, because a sort would have nothing to say.
@@ -145,7 +146,7 @@ export function StandingsTable({
               <td className="py-[9px] text-center text-cis-base font-extrabold">{record(row)}</td>
               <td className="py-[9px] text-right text-cis-base font-extrabold">{signed(row.difference)}</td>
               <td className="py-[9px] text-right text-cis-base font-extrabold">{row.scored}</td>
-              <td className="py-[9px] text-right text-cis-base font-extrabold">{row.points}</td>
+              <td className="py-[9px] text-right text-cis-base font-extrabold text-cis-sport-text">{row.points}</td>
             </tr>
           );
         })}

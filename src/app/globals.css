@@ -15,24 +15,24 @@
     /* CIS design system — these back the shadcn semantic tokens
        (bg-background, text-foreground, bg-primary, etc.) so every
        component using them gets the CIS look by default. */
-    --background: 50 15% 92.2%;           /* cis-page */
+    --background: 41.5 39.4% 93.5%;  /* cis-page */
     --foreground: 207 24.4% 16.1%;        /* cis-ink */
-    --card: 48 100% 99%;                  /* cis-paper-light */
+    --card: 42.9 100.0% 98.6%;  /* cis-paper-light */
     --card-foreground: 207 24.4% 16.1%;   /* cis-ink */
-    --popover: 48 100% 99%;               /* cis-paper-light */
+    --popover: 42.9 100.0% 98.6%;  /* cis-paper-light */
     --popover-foreground: 207 24.4% 16.1%; /* cis-ink */
     --primary: 208.8 25.8% 19%;           /* cis-action */
     --primary-foreground: 48 100% 99%;    /* cis-ink-on-action */
-    --secondary: 50 21.4% 94.5%;          /* cis-paper */
+    --secondary: 41.5 44.8% 94.3%;  /* cis-paper */
     --secondary-foreground: 207 24.4% 16.1%; /* cis-ink */
-    --muted: 50 21.4% 94.5%;              /* cis-paper */
-    --muted-foreground: 210 8.7% 36.1%;   /* cis-ink-muted */
-    --accent: 210 14.3% 89%;              /* cis-chrome-tab */
+    --muted: 41.5 44.8% 94.3%;  /* cis-paper */
+    --muted-foreground: 32.0 8.6% 34.3%;  /* cis-ink-muted */
+    --accent: 40.0 23.1% 87.3%;  /* cis-chrome-tab */
     --accent-foreground: 208.8 25.8% 19%; /* cis-action */
     --destructive: 4 72.1% 32.4%;         /* cis-danger */
-    --destructive-foreground: 48 100% 99%; /* cis-paper-light */
-    --border: 48 13.9% 85.9%;             /* cis-rule */
-    --input: 48 13.9% 85.9%;              /* cis-rule */
+    --destructive-foreground: 42.9 100.0% 98.6%;  /* cis-paper-light */
+    --border: 40.0 31.3% 86.9%;  /* cis-rule */
+    --input: 40.0 31.3% 86.9%;  /* cis-rule */
     --ring: 208.8 25.8% 19%;              /* cis-action */
     --radius: var(--cis-radius-sheet);
     --chart-1: 12 76% 61%;

@@ -40,22 +40,22 @@
 
   /* Chrome — the bottom dock and inactive tabs */
   --cis-chrome: #24313D;          /* the dock */
-  --cis-chrome-tab: #DFE3E7;      /* inactive tab on the page; --cis-action text */
+  --cis-chrome-tab: #E6E1D7;      /* inactive tab, people/admin icon tile; --cis-action text */
 
   /* Neutrals */
-  --cis-page: #EEEDE8;            /* app backdrop */
-  --cis-paper: #F4F3EE;           /* hover wash, things nested in a sheet */
-  --cis-paper-light: #FFFEFA;     /* every sheet */
-  --cis-rule: #E0DED6;            /* 1px row rules */
-  --cis-rule-soft: #D9D6CC;       /* ruled-paper line */
-  --cis-rule-dash: #CFCCC2;       /* 2px dashed section break inside a sheet */
-  --cis-track: #E2E0D8;           /* progress track, disabled fill */
+  --cis-page: #F5F1E8;            /* app backdrop */
+  --cis-paper: #F7F3EA;           /* hover wash, things nested in a sheet */
+  --cis-paper-light: #FFFDF8;     /* every sheet */
+  --cis-rule: #E8E1D3;            /* 1px row rules */
+  --cis-rule-soft: #E0D8C8;       /* ruled-paper line */
+  --cis-rule-dash: #D8CFBE;       /* 2px dashed section break inside a sheet */
+  --cis-track: #E9E3D7;           /* progress track, disabled fill */
   --cis-box-empty: #8A9097;       /* unticked attendance box border (3.2:1) */
 
   /* Ink */
   --cis-ink: #1F2A33;             /* body text (14.5:1 on paper-light) */
   --cis-ink-dark: #1A232B;        /* heavy rules, ink fills */
-  --cis-ink-muted: #545C64;       /* secondary text (6.7:1 on paper-light, 5.8:1 on page) */
+  --cis-ink-muted: #5F5850;       /* secondary text (6.9:1 on paper-light, 6.2:1 on page) */
   --cis-ink-on-dark: #E9EDF0;     /* text on the dock */
   --cis-ink-on-dark-muted: #B6BEC6;
 

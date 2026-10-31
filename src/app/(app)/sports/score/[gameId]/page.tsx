@@ -51,6 +51,7 @@ export default async function ScorePage({
   const backHref = sportsHref('/sports/schedule', { division, block: block.id });
   const header = (title: string, kicker?: string) => (
     <BoardHeader
+      sport
       kicker={kicker ?? gameKicker(game)}
       title={title}
       action={
