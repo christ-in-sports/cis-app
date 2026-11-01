@@ -51,6 +51,10 @@
   --cis-track: #E9E3D7;           /* progress track, disabled fill */
   --cis-box-empty: #8A9097;       /* unticked attendance box border (3.2:1) */
   --cis-heavy: var(--cis-ink-dark); /* heavy rules; logo orange inside .cis-sport-scope */
+  --cis-heavy-fill: var(--cis-ink-dark); /* a heavy rule drawn as a fill; the logo gradient inside .cis-sport-scope */
+  /* The one gradient in the system (DESIGN_SYSTEM.md §3): sampled from the fish mark,
+     deep tail orange to golden head. Only ever on orange heavy rules, never under text. */
+  --cis-logo-gradient: linear-gradient(90deg, #E3602A 0%, #EE6B2D 40%, #F48344 72%, #F9A14F 100%);
 
   /* Ink */
   --cis-ink: #1F2A33;             /* body text (14.5:1 on paper-light) */

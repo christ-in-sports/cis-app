@@ -97,6 +97,18 @@
    is never pressable, so this keeps "nothing pressable is orange". */
 .cis-sport-scope {
   --cis-heavy: var(--cis-sport);
+  --cis-heavy-fill: var(--cis-logo-gradient);
+}
+/* Rules drawn as borders take the same gradient through border-image. */
+.cis-sport-scope .border-cis-heavy {
+  border-image: var(--cis-logo-gradient) 1;
+}
+/* A table-head row is an internal table element, which border-image skips in a
+   collapsed table, so the row paints the gradient behind a transparent border. */
+.cis-sport-scope tr.border-cis-heavy {
+  border-image: none;
+  border-bottom-color: transparent;
+  background: var(--cis-logo-gradient) left bottom / 100% 4px no-repeat;
 }
 
 /* Mobile app feel */
