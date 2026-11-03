@@ -37,11 +37,11 @@ export function DivisionTabs({
             aria-current={on ? 'page' : undefined}
             className={cn(
               'flex min-h-[60px] flex-1 flex-col items-center justify-center gap-0.5 rounded-t-cis-tab px-2 pb-3 pt-[11px] text-center text-[14px] font-extrabold',
-              on ? 'bg-cis-paper-light text-cis-ink' : 'bg-cis-board-tab text-cis-paper-light',
+              on ? 'bg-cis-paper-light text-cis-ink' : 'bg-cis-chrome-tab text-cis-action',
             )}
           >
             {tab.name}
-            <small className={cn('text-cis-xs font-bold', on ? 'text-cis-ink-muted' : 'text-cis-ink-on-dark')}>
+            <small className={cn('text-cis-xs font-bold', 'text-cis-ink-muted')}>
               {tab.ages}
             </small>
           </Link>

@@ -51,6 +51,7 @@ export default async function ScorePage({
   const backHref = sportsHref('/sports/schedule', { division, block: block.id });
   const header = (title: string, kicker?: string) => (
     <BoardHeader
+      sport
       kicker={kicker ?? gameKicker(game)}
       title={title}
       action={
@@ -107,7 +108,7 @@ export default async function ScorePage({
         {header('Score saved')}
         <PlainSheet>
           <div className="flex items-center gap-3 pb-3.5">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-[14px] border-[3px] border-cis-ink bg-cis-orange text-cis-ink-dark">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-[14px] border-[3px] border-cis-ink bg-cis-action text-cis-ink-on-action">
               <Icon name="check" size={24} strokeWidth={3.4} />
             </div>
             <div>

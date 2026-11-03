@@ -85,7 +85,7 @@ export function AttachParent({
           <button
             type="button"
             onClick={() => setStep({ name: 'asking' })}
-            className="rounded-cis-chip border-2 border-cis-ink px-3 py-[5px] text-cis-sm font-bold hover:bg-[rgba(36,31,28,.07)]"
+            className="rounded-cis-chip border-2 border-cis-ink px-3 py-[5px] text-cis-sm font-bold hover:bg-[rgba(31,42,51,.07)]"
           >
             Attach to parent
           </button>

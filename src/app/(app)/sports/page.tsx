@@ -35,7 +35,7 @@ export default async function StandingsPage({
   const sel = await selectSports(await searchParams);
   const { data, division, block, choices } = sel;
 
-  const header = <BoardHeader kicker="Sports" title="Standings" meta={<UpdatedAt iso={data.readAt} />} />;
+  const header = <BoardHeader sport kicker="Sports" title="Standings" meta={<UpdatedAt iso={data.readAt} />} />;
   const tabs = <DivisionTabs value={division} hrefFor={(d) => sportsHref('/sports', { division: d })} />;
 
   if (!data.season) {

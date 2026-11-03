@@ -29,7 +29,7 @@ export default async function BracketPage({
   const sel = await selectSports(await searchParams, { only: (b) => b.format !== 'league' });
   const { data, division, block, choices } = sel;
 
-  const header = <BoardHeader kicker="Sports" title="Bracket" meta={<UpdatedAt iso={data.readAt} />} />;
+  const header = <BoardHeader sport kicker="Sports" title="Bracket" meta={<UpdatedAt iso={data.readAt} />} />;
   const tabs = <DivisionTabs value={division} hrefFor={(d) => sportsHref('/sports/bracket', { division: d })} />;
 
   if (!data.season || !block) {

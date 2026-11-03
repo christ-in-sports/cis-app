@@ -36,7 +36,7 @@ type RunOfDayItem =
 
 const RUN_OF_DAY: RunOfDayItem[] = [
   { time: '9:45', kind: 'plain', label: 'Warm-up, Court 3' },
-  { time: '10:30', timeClassName: 'text-cis-ember', kind: 'game', title: 'Lions vs. Eagles', tag: 'Game' },
+  { time: '10:30', timeClassName: 'text-cis-sport-text', kind: 'game', title: 'Lions vs. Eagles', tag: 'Game' },
   {
     time: '11:40',
     timeClassName: 'text-cis-sage-ink',
@@ -69,14 +69,14 @@ export default function CoachHomeClipboard() {
 
   return (
     <div className="flex min-h-screen justify-center bg-cis-page px-4 py-7 font-cis-body text-cis-ink">
-      <div className="flex w-full max-w-[390px] flex-col overflow-hidden rounded-cis-shell bg-cis-board shadow-cis-shell">
+      <div className="flex w-full max-w-[390px] flex-col overflow-hidden rounded-cis-shell bg-cis-chrome shadow-cis-shell">
         {/* Team header */}
         <div className="flex items-center justify-center gap-2.5 px-4 pt-4">
-          <span className="h-[22px] w-[22px] rounded-full bg-cis-board-hole shadow-[inset_0_2px_3px_rgba(0,0,0,0.35)]" />
-          <Badge className="rounded-cis-pill bg-cis-orange px-5 py-2 text-cis-sm font-extrabold text-cis-ink-dark shadow-[0_3px_0_var(--cis-orange-shadow)] hover:bg-cis-orange">
+          <span className="h-[22px] w-[22px] rounded-full bg-cis-action-press shadow-[inset_0_2px_3px_rgba(0,0,0,0.35)]" />
+          <Badge className="rounded-cis-pill bg-cis-action px-5 py-2 text-cis-sm font-extrabold text-cis-ink-on-action shadow-[0_3px_0_var(--cis-action-shadow)] hover:bg-cis-action">
             Lions · 12U
           </Badge>
-          <span className="h-[22px] w-[22px] rounded-full bg-cis-board-hole shadow-[inset_0_2px_3px_rgba(0,0,0,0.35)]" />
+          <span className="h-[22px] w-[22px] rounded-full bg-cis-action-press shadow-[inset_0_2px_3px_rgba(0,0,0,0.35)]" />
         </div>
 
         {/* Game day sheet */}
@@ -89,7 +89,7 @@ export default function CoachHomeClipboard() {
               </div>
               <Badge
                 variant="outline"
-                className="-rotate-3 rounded-cis-chip border-[3px] border-double border-cis-ember px-3 py-2 text-cis-sm font-bold text-cis-ember"
+                className="-rotate-3 rounded-cis-chip border-[3px] border-double border-cis-sport px-3 py-2 text-cis-sm font-bold text-cis-sport-text"
               >
                 Week 4 · home
               </Badge>
@@ -104,7 +104,7 @@ export default function CoachHomeClipboard() {
                 <p className="font-cis-display text-cis-display-lg leading-none text-cis-ink-muted">Eagles</p>
               </div>
               <div className="text-right">
-                <p className="font-cis-display text-cis-display-md leading-none text-cis-ember">10:30</p>
+                <p className="font-cis-display text-cis-display-md leading-none text-cis-sport-text">10:30</p>
                 <p className="mt-1 text-cis-sm font-bold">AM · Court 3</p>
                 <p className="mt-0.5 text-cis-sm font-bold text-cis-ink-muted">tip-off in 1h 20m</p>
               </div>
@@ -113,7 +113,7 @@ export default function CoachHomeClipboard() {
             <div className="flex items-center justify-between gap-2.5 py-4">
               <p className="font-cis-display text-cis-lg">Attendance</p>
               <p className="flex items-baseline gap-1.5">
-                <span className="font-cis-display text-cis-display-md leading-none text-cis-orange-text">
+                <span className="font-cis-display text-cis-display-md leading-none text-cis-action">
                   {checkedCount}
                 </span>
                 <span className="text-cis-base font-extrabold text-cis-ink-muted">/ {ROSTER.length} present</span>
@@ -128,7 +128,7 @@ export default function CoachHomeClipboard() {
                     <button
                       type="button"
                       onClick={() => togglePlayer(i)}
-                      className="flex min-h-[54px] w-full items-center gap-3 border-b border-cis-rule py-1.5 text-left transition-colors hover:bg-cis-apricot-tint/40"
+                      className="flex min-h-[54px] w-full items-center gap-3 border-b border-cis-rule py-1.5 text-left transition-colors hover:bg-cis-sport-tint/40"
                     >
                       <span className="w-[30px] text-right text-cis-base font-extrabold text-cis-ink-muted">
                         {player.num}
@@ -147,7 +147,7 @@ export default function CoachHomeClipboard() {
                       <span
                         className={cn(
                           'flex h-11 w-11 items-center justify-center rounded-cis-box border-[3px] transition-transform active:scale-95',
-                          here ? 'border-cis-orange bg-cis-orange' : 'border-cis-track bg-transparent'
+                          here ? 'border-cis-action bg-cis-action' : 'border-cis-track bg-transparent'
                         )}
                       >
                         <Check
@@ -166,7 +166,7 @@ export default function CoachHomeClipboard() {
             </div>
 
             <Button
-              className="mt-4 min-h-[var(--cis-tap-primary)] rounded-cis-pill bg-cis-orange text-cis-lg font-extrabold tracking-[0.02em] text-cis-ink-dark shadow-cis-press hover:bg-cis-orange-hover hover:shadow-cis-press active:translate-y-[3px] active:bg-cis-orange-press active:shadow-[0_1px_0_var(--cis-orange-shadow)]"
+              className="mt-4 min-h-[var(--cis-tap-primary)] rounded-cis-pill bg-cis-action text-cis-lg font-extrabold tracking-[0.02em] text-cis-ink-on-action shadow-cis-press hover:bg-cis-action-hover hover:shadow-cis-press active:translate-y-[3px] active:bg-cis-action-press active:shadow-[0_1px_0_var(--cis-action-shadow)]"
             >
               Submit line-up
             </Button>
@@ -189,7 +189,7 @@ export default function CoachHomeClipboard() {
                   {item.kind === 'game' && (
                     <>
                       <p className="font-cis-display text-cis-lg">{item.title}</p>
-                      <Badge className="rounded-cis-chip bg-cis-ember px-2.5 py-1.5 text-cis-sm font-bold text-cis-paper-light hover:bg-cis-ember">
+                      <Badge className="rounded-cis-chip bg-cis-sport-tint px-2.5 py-1.5 text-cis-sm font-bold text-cis-sport-deep hover:bg-cis-sport-tint">
                         {item.tag}
                       </Badge>
                     </>
@@ -238,7 +238,7 @@ export default function CoachHomeClipboard() {
                 onClick={() => setActiveTab(key)}
                 className={cn(
                   'flex min-h-[48px] min-w-[56px] flex-col items-center justify-center gap-1 text-cis-xs font-bold transition-colors',
-                  active ? 'text-cis-apricot' : 'text-cis-ink-on-dark hover:text-cis-apricot'
+                  active ? 'text-cis-paper-light' : 'text-cis-ink-on-dark-muted hover:text-cis-paper-light'
                 )}
               >
                 <Icon className="h-6 w-6" strokeWidth={2.75} />

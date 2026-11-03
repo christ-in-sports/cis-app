@@ -42,7 +42,7 @@ export default async function SchedulePage({
   const sel = await selectSports(sp);
   const { data, division, inDivision } = sel;
 
-  const header = <BoardHeader kicker="Sports" title="Schedule" meta={<UpdatedAt iso={data.readAt} />} />;
+  const header = <BoardHeader sport kicker="Sports" title="Schedule" meta={<UpdatedAt iso={data.readAt} />} />;
   const tabs = <DivisionTabs value={division} hrefFor={(d) => sportsHref('/sports/schedule', { division: d })} />;
 
   if (!data.season) {

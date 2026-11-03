@@ -1,10 +1,10 @@
 /**
- * The cream page the screens sit on, and the header that sits on it. The brown
- * hardboard survives only as an accent: the tabs, the bottom bar and the clip.
+ * The page the screens sit on, and the header that sits on it. The slate dock
+ * and tabs are the only dark surfaces.
  *
  * `PhoneShell` in the design system is the 390px board frame with a status bar;
  * on a real phone the device is the frame and the status bar is the device's own,
- * so what is left is the board colour behind everything and the heading on it.
+ * so what is left is the page colour behind everything and the heading on it.
  * Content is held to a phone-width column so it does not stretch on a desktop.
  *
  * The bottom padding leaves room for the fixed `SportsNav` so the last sheet is
@@ -12,6 +12,8 @@
  */
 
 import type { ReactNode } from 'react';
+
+import { Icon } from '@/components/cis/icon';
 import { cn } from '@/lib/utils';
 
 export function BoardShell({ className, children }: { className?: string; children: ReactNode }) {
@@ -32,23 +34,40 @@ export function BoardShell({ className, children }: { className?: string; childr
  * Kicker, title and an optional note at the right ("Updated 2:41 PM").
  * The title is the display face; there is no all-caps eyebrow (§3), the kicker
  * is sentence case.
+ *
+ * `sport` marks a screen about the game: the kicker turns sport orange with a
+ * small trophy, so the Sports section reads as the game at a glance (§4). It is
+ * a label, never a control.
  */
 export function BoardHeader({
   kicker,
   title,
   meta,
   action,
+  sport,
 }: {
   kicker?: ReactNode;
   title: ReactNode;
   meta?: ReactNode;
   /** A control at the right instead of `meta`, such as a back link. */
   action?: ReactNode;
+  /** A Sports screen: the kicker is sport orange with a trophy. */
+  sport?: boolean;
 }) {
   return (
     <header className="flex items-center justify-between gap-2.5 px-6 pb-2 pt-3">
       <div>
-        {kicker ? <div className="text-cis-sm font-bold text-cis-orange-deep">{kicker}</div> : null}
+        {kicker ? (
+          <div
+            className={cn(
+              'flex items-center gap-1 text-cis-sm font-bold',
+              sport ? 'text-cis-sport-text' : 'text-cis-ink-muted',
+            )}
+          >
+            {sport ? <Icon name="sports" size={15} strokeWidth={3} /> : null}
+            {kicker}
+          </div>
+        ) : null}
         <h1 className="mt-0.5 font-cis-display text-cis-display-md font-normal leading-[1.1]">{title}</h1>
       </div>
       {action ?? (meta ? <div className="text-right text-cis-xs font-bold leading-[1.5] text-cis-ink-muted">{meta}</div> : null)}

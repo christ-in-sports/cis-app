@@ -72,5 +72,5 @@ export function SheetHeading({
 
 /** The 5px ink region divide inside a sheet (§6's rule-weight table). */
 export function SheetRule({ className }: { className?: string }) {
-  return <div className={cn('h-[5px] rounded-[3px] bg-cis-ink-dark', className)} />;
+  return <div className={cn('h-[5px] rounded-[3px] [background:var(--cis-heavy-fill)]', className)} />;
 }

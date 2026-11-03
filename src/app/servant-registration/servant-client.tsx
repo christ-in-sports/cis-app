@@ -6,8 +6,8 @@
  * Built from the design system's rules and the parent registration screen, not
  * from a Claude Design prototype -- none exists (`DESIGN_SYSTEM.md` §10), so
  * treat the layout as provisional. Each section is its own sheet, 14px apart.
- * Nothing on it is colour-coded: a registration is neither a score (ember) nor a
- * verse (sage), so orange marks the one action and ticked state.
+ * Nothing on it is colour-coded: a registration is neither a score (orange) nor a
+ * verse (sage), so slate marks the one action and ticked state.
  *
  * Validation runs here with the same `servantRegistrationSchema` the Server
  * Action uses, so errors appear without a round trip. The action re-validates
@@ -309,7 +309,7 @@ export default function ServantClient({
             <div role="status" className="flex flex-col gap-cis-3">
               <span
                 aria-hidden="true"
-                className="flex h-14 w-14 items-center justify-center rounded-cis-box border-[3px] border-cis-orange bg-cis-orange text-cis-display-md font-extrabold text-cis-ink-dark"
+                className="flex h-14 w-14 items-center justify-center rounded-cis-box border-[3px] border-cis-action bg-cis-action text-cis-display-md font-extrabold text-cis-ink-on-action"
               >
                 ✓
               </span>
@@ -384,7 +384,7 @@ export default function ServantClient({
         meta={season.name}
         action={
           hasRole ? (
-            <Link href="/" className="text-cis-sm font-bold text-cis-orange-deep underline">
+            <Link href="/" className="text-cis-sm font-bold text-cis-action underline">
               Home
             </Link>
           ) : undefined

@@ -9,7 +9,7 @@
  * and loser into later games. A correction that would swap a team in a game that
  * has already been played is refused up front with the game named, as the
  * database would refuse it anyway; clearing a result asks first and lists what it
- * undoes. Errors use the danger colour and a warning icon, never ember, which is
+ * undoes. Errors use the danger colour and a warning icon, never sport orange, which is
  * kept for scores.
  */
 
@@ -389,7 +389,7 @@ export function ScoreForm(props: ScoreFormProps) {
         </div>
       ) : null}
 
-      <div className="-mx-[18px] -mb-[22px] mt-5 flex gap-2.5 border-t-[5px] border-cis-ink-dark px-3.5 pb-5 pt-3.5">
+      <div className="-mx-[18px] -mb-[22px] mt-5 flex gap-2.5 border-t-[5px] border-cis-heavy px-3.5 pb-5 pt-3.5">
         <Link
           href={props.backHref}
           aria-disabled={pending}

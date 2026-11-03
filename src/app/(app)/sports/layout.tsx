@@ -11,6 +11,9 @@ import { LiveRefresh } from './live';
  * What every Sports screen shares inside the app shell: the section tabs above
  * it and the live refresh. "Manage" joins the tabs for Admin and Program Team
  * only; the Manage pages check the role again, and RLS is the boundary.
+ *
+ * `cis-sport-scope` turns the section's heavy rules logo orange: this whole
+ * section is the game.
  */
 export default async function SportsLayout({ children }: { children: ReactNode }) {
   await redirectIfRoleless();
@@ -19,7 +22,7 @@ export default async function SportsLayout({ children }: { children: ReactNode }
     <>
       <LiveRefresh />
       <SportsNav canManage={hasRole} />
-      {children}
+      <div className="cis-sport-scope">{children}</div>
     </>
   );
 }

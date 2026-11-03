@@ -83,7 +83,7 @@ export function BracketSectionView({
     <section
       id={`round-${section.id}`}
       aria-labelledby={`round-${section.id}-title`}
-      className={first ? 'scroll-mt-4' : 'mt-3.5 scroll-mt-4 border-t-[5px] border-cis-ink-dark'}
+      className={first ? 'scroll-mt-4' : 'mt-3.5 scroll-mt-4 border-t-[5px] border-cis-heavy'}
     >
       <div className={`flex items-baseline justify-between gap-2.5 pb-1.5 ${first ? 'pt-1.5' : 'pt-[18px]'}`}>
         <h2 id={`round-${section.id}-title`} className="font-cis-display text-cis-lg font-normal leading-[1.15]">

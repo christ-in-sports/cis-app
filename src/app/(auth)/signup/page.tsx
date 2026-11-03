@@ -82,13 +82,13 @@ export default function SignupPage() {
               className="rounded-2xl"
             />
           </div>
-          <CardTitle className="text-2xl">Create Account</CardTitle>
+          <CardTitle className="font-cis-display text-2xl font-normal leading-[1.1]">Create Account</CardTitle>
           <CardDescription>Invite-only... use the servant signup code</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignup} className="space-y-4">
             {error && (
-              <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3 text-sm text-red-400">
+              <div role="alert" className="rounded-cis-chip bg-cis-danger-tint p-3 text-sm font-bold text-cis-danger">
                 {error}
               </div>
             )}
@@ -165,7 +165,7 @@ export default function SignupPage() {
           </form>
           <div className="mt-4 text-center text-sm text-muted-foreground">
             Already have an account?{' '}
-            <Link href="/login" className="text-primary hover:underline">
+            <Link href="/login" className="font-bold text-cis-action underline underline-offset-2 hover:text-cis-action-hover">
               Sign in
             </Link>
           </div>

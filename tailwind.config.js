@@ -50,17 +50,21 @@ module.exports = {
   				'5': 'hsl(var(--chart-5))'
   			},
   			cis: {
-  				orange: {
-  					DEFAULT: 'var(--cis-orange)',
-  					hover: 'var(--cis-orange-hover)',
-  					press: 'var(--cis-orange-press)',
-  					shadow: 'var(--cis-orange-shadow)',
-  					text: 'var(--cis-orange-text)',
-  					deep: 'var(--cis-orange-deep)'
+  				action: {
+  					DEFAULT: 'var(--cis-action)',
+  					hover: 'var(--cis-action-hover)',
+  					press: 'var(--cis-action-press)',
+  					shadow: 'var(--cis-action-shadow)'
   				},
-  				ember: {
-  					DEFAULT: 'var(--cis-ember)',
-  					tint: 'var(--cis-ember-tint)'
+  				sport: {
+  					DEFAULT: 'var(--cis-sport)',
+  					text: 'var(--cis-sport-text)',
+  					deep: 'var(--cis-sport-deep)',
+  					tint: 'var(--cis-sport-tint)'
+  				},
+  				chrome: {
+  					DEFAULT: 'var(--cis-chrome)',
+  					tab: 'var(--cis-chrome-tab)'
   				},
   				danger: {
   					DEFAULT: 'var(--cis-danger)',
@@ -76,10 +80,6 @@ module.exports = {
   					text: 'var(--cis-sage-text)',
   					ink: 'var(--cis-sage-ink)'
   				},
-  				apricot: {
-  					DEFAULT: 'var(--cis-apricot)',
-  					tint: 'var(--cis-apricot-tint)'
-  				},
   				page: 'var(--cis-page)',
   				paper: {
   					DEFAULT: 'var(--cis-paper)',
@@ -91,6 +91,7 @@ module.exports = {
   					dash: 'var(--cis-rule-dash)'
   				},
   				track: 'var(--cis-track)',
+  				heavy: 'var(--cis-heavy)',
   				'box-empty': 'var(--cis-box-empty)',
   				ink: {
   					DEFAULT: 'var(--cis-ink)',
@@ -99,12 +100,7 @@ module.exports = {
   					'on-dark': 'var(--cis-ink-on-dark)',
   					'on-dark-muted': 'var(--cis-ink-on-dark-muted)',
   					'on-danger': 'var(--cis-ink-on-danger)',
-  					'on-ember': 'var(--cis-ink-on-ember)'
-  				},
-  				board: {
-  					DEFAULT: 'var(--cis-board)',
-  					tab: 'var(--cis-board-tab)',
-  					hole: 'var(--cis-board-hole)'
+  					'on-action': 'var(--cis-ink-on-action)'
   				}
   			}
   		},

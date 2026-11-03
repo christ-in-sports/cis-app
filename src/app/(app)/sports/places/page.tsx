@@ -27,7 +27,7 @@ export default async function PlacesPage({
   const back = (
     <Link
       href={sportsHref('/sports', { division, block: block?.id })}
-      className="flex min-h-cis-tap-min items-center gap-1 text-cis-sm font-bold text-cis-orange-deep"
+      className="flex min-h-cis-tap-min items-center gap-1 text-cis-sm font-bold text-cis-action"
     >
       <Icon name="chevron-left" size={16} strokeWidth={3} />
       Standings
@@ -107,7 +107,7 @@ export default async function PlacesPage({
             <col />
           </colgroup>
           <thead>
-            <tr className="border-b-4 border-cis-ink-dark text-left">
+            <tr className="border-b-4 border-cis-heavy text-left">
               <th scope="col" className="pb-2 text-center text-cis-xs font-bold text-cis-ink-muted">
                 Place
               </th>
@@ -120,12 +120,12 @@ export default async function PlacesPage({
             {rows.map((row) => {
               const { value, suffix } = ordinalParts(row.place);
               return (
-                <tr key={row.place} className={cn('border-b border-cis-rule', row.place === 1 && 'bg-cis-ember-tint')}>
+                <tr key={row.place} className={cn('border-b border-cis-rule', row.place === 1 && 'bg-cis-sport-tint')}>
                   <th
                     scope="row"
                     className={cn(
                       'py-3 text-center align-middle font-cis-display text-[34px] font-normal leading-none',
-                      row.place === 1 ? 'text-cis-ember' : 'text-cis-ink',
+                      row.place === 1 ? 'text-cis-sport-text' : 'text-cis-ink',
                     )}
                   >
                     {value}

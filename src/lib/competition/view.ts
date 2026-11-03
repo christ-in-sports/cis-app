@@ -26,8 +26,8 @@ import type {
 // ---------------------------------------------------------------------------
 
 /**
- * `final`    played (ember chip).
- * `next`     the next slot to start (orange chip).
+ * `final`    played (pale orange "Final" chip beside orange score badges).
+ * `next`     the next slot to start (slate chip).
  * `upcoming` both teams known, not started (outlined chip).
  * `waiting`  a team comes from an earlier game (dashed chip).
  */

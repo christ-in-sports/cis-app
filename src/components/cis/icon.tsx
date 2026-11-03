@@ -14,6 +14,7 @@
 import {
   Archive,
   ArrowRight,
+  BookOpen,
   Calendar,
   Camera,
   ChartNoAxesColumn,
@@ -36,6 +37,7 @@ import {
   Trophy,
   TriangleAlert,
   Upload,
+  User,
   UserPlus,
   Users,
   X,
@@ -98,6 +100,8 @@ const GLYPHS = {
   trash: Trash2,
   warning: TriangleAlert,
   arrow: ArrowRight,
+  user: User,
+  verse: BookOpen,
   'chevron-left': ChevronLeft,
   'chevron-right': ChevronRight,
 } satisfies Record<string, ComponentType<GlyphProps>>;

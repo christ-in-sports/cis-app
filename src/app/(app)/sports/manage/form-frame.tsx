@@ -48,7 +48,7 @@ export function FormFrame({
             <FieldError>{error}</FieldError>
           </div>
         ) : null}
-        <div className="-mx-[18px] -mb-[22px] mt-5 flex gap-2.5 border-t-[5px] border-cis-ink-dark px-3.5 pb-5 pt-3.5">
+        <div className="-mx-[18px] -mb-[22px] mt-5 flex gap-2.5 border-t-[5px] border-cis-heavy px-3.5 pb-5 pt-3.5">
           <Link
             href={backHref}
             aria-disabled={pending}
@@ -68,7 +68,7 @@ export function FormFrame({
 export function FormSection({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="mt-5 first:mt-0">
-      <h2 className="border-b-[5px] border-cis-ink-dark pb-2 font-cis-display text-cis-lg font-normal leading-[1.15]">{title}</h2>
+      <h2 className="border-b-[5px] border-cis-heavy pb-2 font-cis-display text-cis-lg font-normal leading-[1.15]">{title}</h2>
       <div className="flex flex-col gap-4 pt-3.5">{children}</div>
     </section>
   );

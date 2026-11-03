@@ -657,7 +657,7 @@ export default function RegistrationsClient({
       )}
 
       {/* Everything that narrows the roster sits in one sheet. These controls
-          would otherwise be loose on the dark board, where ink text and orange
+          would otherwise be loose on the page, where ink text and orange
           links are unreadable. */}
       <Sheet className="flex flex-col gap-cis-3 px-cis-4 pb-cis-4 pt-cis-4">
         <p className="m-0 text-cis-sm font-semibold text-cis-ink-muted">
@@ -717,7 +717,7 @@ export default function RegistrationsClient({
               <button
                 type="button"
                 onClick={() => setSelected(allSelected ? new Set() : new Set(selectableIds))}
-                className="text-cis-sm font-bold text-cis-orange-text underline underline-offset-2 hover:text-cis-orange-deep"
+                className="text-cis-sm font-bold text-cis-action underline underline-offset-2 hover:text-cis-action-hover"
               >
                 {allSelected ? 'Clear selection' : `Tick all ${selectableIds.length} shown`}
               </button>
@@ -797,7 +797,7 @@ export default function RegistrationsClient({
               Registering a whole season?{' '}
               <Link
                 href="/admin/imports"
-                className="font-bold text-cis-orange-text underline underline-offset-2 hover:text-cis-orange-deep"
+                className="font-bold text-cis-action underline underline-offset-2 hover:text-cis-action-hover"
               >
                 Import this year&apos;s roster from a CSV
               </Link>
@@ -853,7 +853,7 @@ export default function RegistrationsClient({
                       onClick={() => setExpanded(open ? null : r.registration_id)}
                       className={[
                         'group cursor-pointer align-top',
-                        'hover:bg-[rgba(36,31,28,.05)] active:bg-[rgba(36,31,28,.08)]',
+                        'hover:bg-[rgba(31,42,51,.05)] active:bg-[rgba(31,42,51,.08)]',
                         open ? '' : 'border-b border-cis-rule',
                       ].join(' ')}
                     >
@@ -873,7 +873,7 @@ export default function RegistrationsClient({
                               }
                               checked={selected.has(r.registration_id)}
                               onChange={() => toggleSelected(r.registration_id)}
-                              className="h-5 w-5 accent-[color:var(--cis-orange)]"
+                              className="h-5 w-5 accent-[color:var(--cis-action)]"
                             />
                           </label>
                         </td>
@@ -975,7 +975,7 @@ export default function RegistrationsClient({
                                   applyConsent([r.registration_id], r.consent_given_at === null)
                                 }
                                 disabled={consentBusy}
-                                className="rounded-cis-chip border-2 border-cis-ink px-3 py-[5px] text-cis-sm font-bold hover:bg-[rgba(36,31,28,.07)] disabled:opacity-50"
+                                className="rounded-cis-chip border-2 border-cis-ink px-3 py-[5px] text-cis-sm font-bold hover:bg-[rgba(31,42,51,.07)] disabled:opacity-50"
                               >
                                 {consentBusy ? 'Saving…' : r.consent_given_at ? 'Clear' : 'Mark received'}
                               </button>

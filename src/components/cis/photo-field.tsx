@@ -22,7 +22,7 @@
  * "on a team" screen attach it at once with `replaceKidPhoto`.
  *
  * `PhotoField` is the labelled field for a form. Nothing here is colour-coded: a
- * photo is neither a score nor a verse, so the only orange is the focus ring.
+ * photo is neither a score nor a verse, so the only colour is the slate focus ring.
  */
 
 import { useEffect, useId, useRef, useState } from 'react';
@@ -53,7 +53,7 @@ const PHASE_LABEL: Record<Exclude<Phase, 'idle'>, string> = {
 };
 
 const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-cis-orange';
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-cis-action';
 
 export function PhotoPicker({
   firstName,
@@ -155,7 +155,7 @@ export function PhotoPicker({
             'flex h-28 w-28 shrink-0 flex-col items-center justify-center gap-1 px-2',
             'rounded-cis-chip border-2 border-cis-ink bg-cis-paper-light text-cis-ink',
             'data-[invalid=true]:border-[3px] data-[invalid=true]:border-cis-danger',
-            'enabled:hover:bg-[rgba(36,31,28,.07)] disabled:opacity-60',
+            'enabled:hover:bg-[rgba(31,42,51,.07)] disabled:opacity-60',
             focusRing,
           )}
         >

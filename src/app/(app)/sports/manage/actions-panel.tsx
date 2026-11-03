@@ -162,7 +162,7 @@ export function ActionsPanel({
       ) : null}
 
       {actions.reset.shown ? (
-        <div className="mt-4 border-t-[5px] border-cis-ink-dark pt-4">
+        <div className="mt-4 border-t-[5px] border-cis-heavy pt-4">
           <Link
             href={`/sports/manage/${blockId}/reset`}
             className={`${dangerButtonClasses} w-full`}

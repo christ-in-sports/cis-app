@@ -29,7 +29,7 @@ describe('Chip', () => {
     render(
       <>
         <Chip variant="sport">Final</Chip>
-        <Chip variant="active">Next up</Chip>
+        <Chip variant="next">Next up</Chip>
         <Chip variant="outline">Upcoming</Chip>
         <Chip variant="dashed">Waiting</Chip>
         <Chip>League</Chip>
@@ -38,7 +38,9 @@ describe('Chip', () => {
     for (const text of ['Final', 'Next up', 'Upcoming', 'Waiting', 'League']) {
       expect(screen.getByText(text)).toBeInTheDocument();
     }
-    expect(screen.getByText('Final')).toHaveClass('bg-cis-ember');
+    // Orange is never under dark text: Final is orange text on a pale orange tint.
+    expect(screen.getByText('Final')).toHaveClass('bg-cis-sport-tint', 'text-cis-sport-deep');
+    expect(screen.getByText('Next up')).toHaveClass('border-cis-sport', 'text-cis-sport-deep');
     expect(screen.getByText('Waiting')).toHaveClass('border-dashed');
     // Only buttons are pills; a chip never is (design system section 3).
     expect(screen.getByText('Final')).not.toHaveClass('rounded-cis-pill');
@@ -186,6 +188,10 @@ describe('ScheduleTable', () => {
     expect(within(table).getByText('Winner of Quarter-final 1')).toBeInTheDocument();
     expect(within(table).getAllByText('Soccer · Round 1')).toHaveLength(2);
     expect(within(table).getByText('3')).toBeInTheDocument(); // the winning score
+    // Orange is the game: each score is sport-orange text, never dark text on orange.
+    expect(within(table).getByText('3')).toHaveClass('text-cis-sport-text');
+    expect(within(table).getByText('3')).not.toHaveClass('bg-cis-sport');
+    expect(within(table).getByText('Final')).toHaveClass('bg-cis-sport-tint');
   });
 
   it('shows a dash for a missing court and TBD for a missing time', () => {

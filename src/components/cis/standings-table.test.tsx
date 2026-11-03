@@ -110,15 +110,15 @@ describe('StandingsTable', () => {
     it('washes the leader row only', () => {
       renderTable();
       const dataRows = within(screen.getByRole('table')).getAllByRole('row').slice(1);
-      expect(dataRows[0]).toHaveClass('bg-cis-ember-tint');
-      expect(dataRows[1]).not.toHaveClass('bg-cis-ember-tint');
+      expect(dataRows[0]).toHaveClass('bg-cis-sport-tint');
+      expect(dataRows[1]).not.toHaveClass('bg-cis-sport-tint');
     });
 
     it('keeps the wash on the leader when sorted away from the top', () => {
       renderTable();
       fireEvent.click(screen.getByRole('button', { name: 'Team' }));
       const lions = within(screen.getByRole('table')).getByText('Lions').closest('tr')!;
-      expect(lions).toHaveClass('bg-cis-ember-tint');
+      expect(lions).toHaveClass('bg-cis-sport-tint');
     });
 
     it('flags your team with a chip, and only that team', () => {
@@ -138,7 +138,7 @@ describe('StandingsTable', () => {
       renderTable({ started: false });
       expect(ranks()).toEqual(['–', '–', '–', '–']);
       const dataRows = within(screen.getByRole('table')).getAllByRole('row').slice(1);
-      expect(dataRows.some((r) => r.className.includes('bg-cis-ember-tint'))).toBe(false);
+      expect(dataRows.some((r) => r.className.includes('bg-cis-sport-tint'))).toBe(false);
       expect(screen.queryByRole('button')).not.toBeInTheDocument();
       expect(screen.getByRole('columnheader', { name: 'Team' })).toBeInTheDocument();
     });

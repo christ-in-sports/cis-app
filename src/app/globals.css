@@ -15,25 +15,25 @@
     /* CIS design system — these back the shadcn semantic tokens
        (bg-background, text-foreground, bg-primary, etc.) so every
        component using them gets the CIS look by default. */
-    --background: 37.7 44.3% 84.5%;       /* cis-page */
-    --foreground: 22.5 12.5% 12.5%;       /* cis-ink */
-    --card: 40 100% 98.2%;                /* cis-paper-light */
-    --card-foreground: 22.5 12.5% 12.5%;  /* cis-ink */
-    --popover: 40 100% 98.2%;             /* cis-paper-light */
-    --popover-foreground: 22.5 12.5% 12.5%; /* cis-ink */
-    --primary: 19.3 85% 55.5%;            /* cis-orange */
-    --primary-foreground: 20 4.9% 12%;    /* cis-ink-dark */
-    --secondary: 36.8 56.4% 89.2%;        /* cis-paper */
-    --secondary-foreground: 22.5 12.5% 12.5%; /* cis-ink */
-    --muted: 36.8 56.4% 89.2%;            /* cis-paper */
-    --muted-foreground: 27 11.9% 32.9%;   /* cis-ink-muted */
-    --accent: 31.5 100% 88.4%;            /* cis-apricot-tint */
-    --accent-foreground: 19.1 79.3% 34.1%; /* cis-orange-deep */
-    --destructive: 8.6 75% 43.9%;         /* cis-ember */
-    --destructive-foreground: 40 100% 98.2%; /* cis-paper-light */
-    --border: 39.1 43.4% 80.6%;           /* cis-rule */
-    --input: 39.1 43.4% 80.6%;            /* cis-rule */
-    --ring: 19.3 85% 55.5%;               /* cis-orange */
+    --background: 41.5 39.4% 93.5%;  /* cis-page */
+    --foreground: 207 24.4% 16.1%;        /* cis-ink */
+    --card: 42.9 100.0% 98.6%;  /* cis-paper-light */
+    --card-foreground: 207 24.4% 16.1%;   /* cis-ink */
+    --popover: 42.9 100.0% 98.6%;  /* cis-paper-light */
+    --popover-foreground: 207 24.4% 16.1%; /* cis-ink */
+    --primary: 208.8 25.8% 19%;           /* cis-action */
+    --primary-foreground: 48 100% 99%;    /* cis-ink-on-action */
+    --secondary: 41.5 44.8% 94.3%;  /* cis-paper */
+    --secondary-foreground: 207 24.4% 16.1%; /* cis-ink */
+    --muted: 41.5 44.8% 94.3%;  /* cis-paper */
+    --muted-foreground: 32.0 8.6% 34.3%;  /* cis-ink-muted */
+    --accent: 40.0 23.1% 87.3%;  /* cis-chrome-tab */
+    --accent-foreground: 208.8 25.8% 19%; /* cis-action */
+    --destructive: 4 72.1% 32.4%;         /* cis-danger */
+    --destructive-foreground: 42.9 100.0% 98.6%;  /* cis-paper-light */
+    --border: 40.0 31.3% 86.9%;  /* cis-rule */
+    --input: 40.0 31.3% 86.9%;  /* cis-rule */
+    --ring: 208.8 25.8% 19%;              /* cis-action */
     --radius: var(--cis-radius-sheet);
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
@@ -83,9 +83,32 @@
    screen by putting `cis-focus-scope` on its container (BoardShell does). */
 @layer components {
   .cis-focus-scope :is(a, button, input, select, textarea, summary, [role='button']):focus-visible {
-    outline: 2px solid var(--cis-orange);
+    outline: 2px solid var(--cis-action);
     outline-offset: 3px;
   }
+  /* On the dark dock a slate ring would vanish, so it turns pale there. */
+  .cis-focus-scope .cis-on-chrome :is(a, button):focus-visible {
+    outline-color: var(--cis-ink-on-dark);
+  }
+}
+
+/* The Sports section, and any sheet about the game: heavy rules turn logo
+   orange, so the whole section reads as the game (DESIGN_SYSTEM.md §4). A rule
+   is never pressable, so this keeps "nothing pressable is orange". */
+.cis-sport-scope {
+  --cis-heavy: var(--cis-sport);
+  --cis-heavy-fill: var(--cis-logo-gradient);
+}
+/* Rules drawn as borders take the same gradient through border-image. */
+.cis-sport-scope .border-cis-heavy {
+  border-image: var(--cis-logo-gradient) 1;
+}
+/* A table-head row is an internal table element, which border-image skips in a
+   collapsed table, so the row paints the gradient behind a transparent border. */
+.cis-sport-scope tr.border-cis-heavy {
+  border-image: none;
+  border-bottom-color: transparent;
+  background: var(--cis-logo-gradient) left bottom / 100% 4px no-repeat;
 }
 
 /* Mobile app feel */

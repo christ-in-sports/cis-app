@@ -165,7 +165,7 @@ export function embeddedOne<T>(value: T | T[] | null | undefined): T | null {
 
 export const STATUS_STYLE: Record<AttStatus, { label: string; cls: string; short: string }> = {
   unmarked: { label: '—',       short: '—', cls: 'bg-muted text-muted-foreground' },
-  present:  { label: 'Present', short: 'P', cls: 'bg-cis-orange text-cis-ink-dark border-cis-ink' },
+  present:  { label: 'Present', short: 'P', cls: 'bg-cis-action text-cis-ink-on-action border-cis-ink' },
   absent:   { label: 'Absent',  short: 'A', cls: 'bg-cis-paper text-cis-ink border-cis-ink' },
   late:     { label: 'Late',    short: 'L', cls: 'bg-cis-paper text-cis-ink border-cis-ink' },
   excused:  { label: 'Excused', short: 'E', cls: 'bg-cis-paper text-cis-ink border-cis-ink' },

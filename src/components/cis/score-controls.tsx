@@ -5,7 +5,7 @@
  * the tiebreak prompt shares with it.
  *
  * Sideline rules: every control is 56px or taller, the number being set is the
- * display face in ember (a score is the one thing ember marks), and nothing
+ * display face in sport orange (orange is the game), and nothing
  * depends on colour alone, since the picked name is also filled with ink.
  * `disabled` locks a whole control while a save is in flight.
  */
@@ -20,11 +20,11 @@ const ROUND_BUTTON =
 const MINUS =
   'border-[3px] border-cis-ink bg-transparent text-cis-ink hover:bg-cis-paper';
 const PLUS =
-  'bg-cis-orange text-cis-ink-dark shadow-cis-press hover:bg-cis-orange-hover ' +
-  'active:translate-y-[3px] active:shadow-[0_1px_0_var(--cis-orange-shadow)] ' +
+  'bg-cis-action text-cis-ink-on-action shadow-cis-press hover:bg-cis-action-hover ' +
+  'active:translate-y-[3px] active:shadow-[0_1px_0_var(--cis-action-shadow)] ' +
   'disabled:shadow-none disabled:active:translate-y-0';
 
-/** The number being set. Ember, display face; `size` picks one of the three score tokens. */
+/** A score: the display face in sport orange. `size` picks one of the three score tokens. */
 export function ScoreNumber({
   value,
   size = 'lg',
@@ -37,7 +37,7 @@ export function ScoreNumber({
   return (
     <span
       className={cn(
-        'font-cis-display font-normal tabular-nums text-cis-ember',
+        'font-cis-display font-normal tabular-nums text-cis-sport-text',
         size === 'lg' && 'text-cis-score',
         size === 'md' && 'text-cis-score-md',
         size === 'sm' && 'text-cis-score-sm',
@@ -54,7 +54,7 @@ const SCORE_SIZE = { lg: 'text-cis-score', md: 'text-cis-score-md', sm: 'text-ci
 /**
  * The number being set, which can also be typed: tap it, key in 25. A phone shows
  * the number pad, the whole value is selected on focus so typing replaces it, and
- * anything that is not a digit is dropped. Same ember display face as `ScoreNumber`,
+ * anything that is not a digit is dropped. Same sport-orange display face as `ScoreNumber`,
  * with a rule under it so it reads as a field.
  */
 export function ScoreInput({
@@ -89,8 +89,8 @@ export function ScoreInput({
       }}
       className={cn(
         'min-w-0 rounded-cis-chip border-b-[3px] border-dashed border-cis-rule bg-transparent text-center',
-        'font-cis-display font-normal tabular-nums text-cis-ember',
-        'focus-visible:border-solid focus-visible:border-cis-orange focus-visible:outline-none',
+        'font-cis-display font-normal tabular-nums text-cis-sport-text',
+        'focus-visible:border-solid focus-visible:border-cis-action focus-visible:outline-none',
         'disabled:opacity-40',
         SCORE_SIZE[size],
         className,
@@ -260,7 +260,7 @@ export function RoundWinnerPicker({
     return tally.home >= tally.away ? 'home' : 'away';
   })();
   return (
-    <div className="border-t-4 border-cis-ink-dark">
+    <div className="border-t-4 border-cis-heavy">
       {rounds.map((round, i) => {
         const isNeeded = i < needed;
         return (
@@ -314,7 +314,7 @@ export function SetTable({
         <col />
       </colgroup>
       <thead>
-        <tr className="border-b-4 border-cis-ink-dark">
+        <tr className="border-b-4 border-cis-heavy">
           <th scope="col" className="pb-2 text-left text-cis-xs font-bold text-cis-ink-muted">
             Set
           </th>

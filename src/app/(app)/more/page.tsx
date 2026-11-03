@@ -35,31 +35,31 @@ export default async function MorePage() {
       <RegistrationColumn>
         {isServant && (
           <MenuSheet heading="You">
-            <MenuRow href={SERVANT_REGISTRATION_PATH} title="My registration" note="Your season details and sub-teams" />
+            <MenuRow href={SERVANT_REGISTRATION_PATH} title="My registration" icon="user" note="Your season details and sub-teams" />
           </MenuSheet>
         )}
         {roles.has('parent') && (
           <MenuSheet heading="Your kids">
-            <MenuRow href="/register" title="Register a kid" note="New registrations and ones still in progress" />
+            <MenuRow href="/register" title="Register a kid" icon="register" note="New registrations and ones still in progress" />
           </MenuSheet>
         )}
         {isAdmin && (
           <MenuSheet heading="Season">
-            <MenuRow href="/registrations" title="CISers" note="Every registered kid, consent and payments" />
-            <MenuRow href="/servants" title="Servants" note="This season's servant registrations" />
-            <MenuRow href="/admin/imports" title="Roster import" note="Bring in the season's CSV" />
-            <MenuRow href="/admin/roles" title="Roles" note="Give servants their roles" />
+            <MenuRow href="/registrations" title="CISers" icon="roster" note="Every registered kid, consent and payments" />
+            <MenuRow href="/servants" title="Servants" icon="servants" note="This season's servant registrations" />
+            <MenuRow href="/admin/imports" title="Roster import" icon="import" note="Bring in the season's CSV" />
+            <MenuRow href="/admin/roles" title="Roles" icon="roles" note="Give servants their roles" />
           </MenuSheet>
         )}
         {manages && (
           <MenuSheet heading="Teams">
-            <MenuRow href="/teams" title="Manage teams" note="Create teams and assign coaches and registered kids" />
+            <MenuRow href="/teams" title="Manage teams" icon="roster" note="Create teams and assign coaches and registered kids" />
           </MenuSheet>
         )}
         {manages && (
           <MenuSheet heading="Archives">
-            <MenuRow href="/attendance/archive" title="Attendance archive" note="Past seasons' days and marks" />
-            <MenuRow href="/teams?view=archive" title="Team archive" note="Retired teams and their rosters" />
+            <MenuRow href="/attendance/archive" title="Attendance archive" icon="archive" note="Past seasons' days and marks" />
+            <MenuRow href="/teams?view=archive" title="Team archive" icon="archive" note="Retired teams and their rosters" />
           </MenuSheet>
         )}
         <SignOutButton />
