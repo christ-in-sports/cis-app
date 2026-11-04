@@ -28,6 +28,8 @@ export interface SectionNavItem {
    * the chosen division and sport in the query string. Defaults to `href`.
    */
   to?: string;
+  /** Explicit active state for tabs that differ by query string on one path. */
+  current?: boolean;
   label: string;
   /** Shown in the bottom bar; `SectionTabs` are text only. */
   icon?: IconName;

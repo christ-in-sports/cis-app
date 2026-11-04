@@ -28,6 +28,9 @@ beforeEach(() => {
 it('lists active current-season registrations, joining kids only for display fields', async () => {
   render(await TeamsPage({ searchParams: Promise.resolve({}) }));
   expect(screen.getByText('Current child')).toBeInTheDocument();
+  expect(screen.getByRole('navigation', { name: 'Teams' })).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Current teams' })).toHaveAttribute('aria-current', 'page');
+  expect(screen.getByRole('link', { name: 'Archived teams' })).toHaveAttribute('href', '/teams?view=archive&division=juniors');
   expect(queries.seasons.eq).toHaveBeenCalledWith('is_current', true);
   expect(queries.registrations.eq).toHaveBeenCalledWith('season_id', 'current-season');
   expect(queries.registrations.eq).toHaveBeenCalledWith('active', true);
@@ -48,6 +51,7 @@ it('keeps the current season when its registrations are empty', async () => {
 it('uses the frozen archive roster without querying live registrations', async () => {
   render(await TeamsPage({ searchParams: Promise.resolve({ view: 'archive' }) }));
   expect(screen.getByRole('heading', { name: 'Archived teams' })).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Archived teams' })).toHaveAttribute('aria-current', 'page');
   expect(rpc).toHaveBeenCalledWith('archived_attendance_team_roster');
   expect(from).not.toHaveBeenCalledWith('registrations');
 });

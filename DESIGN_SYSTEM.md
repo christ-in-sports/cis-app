@@ -368,11 +368,16 @@ Logo-gradient rules (2026-11-01, ENG-32): after a prototype comparing flat orang
 
 ### Appearance (2026-11-03)
 
-The global Appearance selector offers Light, Dark and System (default), including on auth
-screens. The choice persists on the device. Dark mode uses charcoal pages and slate sheets,
+The global Appearance control is a sun/moon switch, including on auth screens. It
+defaults to the system setting until the user chooses a side, then persists that
+choice on the device. Dark mode uses charcoal pages and slate sheets,
 light warm ink, pale slate actions with dark ink, brighter orange score text and sage faith
 colors. Semantic roles, geometry and typography stay the same. `:root.dark` in
 `design/tokens.css` and the `dark` overrides in `design/tokens.json` define the palette;
 shadcn semantic tokens follow it. The light-palette contrast examples above apply to light
 mode; both palettes must meet the same AA thresholds. Hover washes use theme tokens.
 QR cards retain black text and white backgrounds for scanning and printing.
+
+Teams page navigation (2026-11-03): Current teams and Archived teams use `SectionTabs`
+at the top of `/teams`, matching the Sports section tabs. The selected division is carried
+across both tabs; the Division control stays within the team form.

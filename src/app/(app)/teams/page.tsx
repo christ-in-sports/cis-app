@@ -4,14 +4,17 @@ import { BoardHeader } from '@/components/cis/board-shell';
 import { AttendanceSheet } from '../attendance/parts';
 import { loadKidPhotos } from '@/lib/photo/signed-urls';
 import TeamsClient from './teams-client';
+import { TeamsTabs } from './teams-tabs';
 import type { MinistryTeam, RosterKid } from '@/lib/attendance';
 
 export default async function TeamsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { supabase } = await teamsAccess();
-  const archived = (await searchParams).view === 'archive';
+  const params = await searchParams;
+  const archived = params.view === 'archive';
+  const division = params.division === 'ambassadors' ? 'ambassadors' : 'juniors';
   const season = await currentTeamSeason(supabase);
   const seasonId = season?.id;
-  if (!seasonId && !archived) return <><BoardHeader title="Teams" /><AttendanceSheet>Set up a current season before creating teams.</AttendanceSheet></>;
+  if (!seasonId && !archived) return <><TeamsTabs archived={archived} division={division} /><BoardHeader title="Teams" /><AttendanceSheet>Set up a current season before creating teams.</AttendanceSheet></>;
   const loadTeams = async (): Promise<MinistryTeam[]> => {
     let query = supabase.from('ministry_teams').select('id, name, division, active, archived_at');
     query = archived ? query.not('archived_at', 'is', null).order('archived_at', { ascending: false }) : query.eq('season_id', seasonId).eq('active', true);
@@ -39,6 +42,7 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
   ]);
   if ([coaches, links].some((r) => r.error)) throw new Error('Could not load teams and assignments.');
   return <>
+    <TeamsTabs archived={archived} division={division} />
     <BoardHeader title={archived ? 'Archived teams' : 'Teams'} />
     {!archived && <AttendanceSheet><p>{season?.name} · Teams and assignments are shared with Attendance and Sports.</p></AttendanceSheet>}
     <TeamsClient key={archived ? 'archive' : seasonId} archived={archived} teams={teams} kids={registrations} coaches={coaches.data ?? []} links={links.data ?? []} />
