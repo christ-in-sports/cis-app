@@ -162,7 +162,7 @@ export default function ServantsClient({
                           onClick={() => setExpanded(open ? null : r.id)}
                           className={[
                             'group cursor-pointer align-top',
-                            'hover:bg-[rgba(31,42,51,.05)] active:bg-[rgba(31,42,51,.08)]',
+                            'hover:bg-[var(--cis-hover-wash)] active:bg-[var(--cis-press-wash)]',
                             open ? '' : 'border-b border-cis-rule',
                           ].join(' ')}
                         >

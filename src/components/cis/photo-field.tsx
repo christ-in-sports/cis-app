@@ -155,7 +155,7 @@ export function PhotoPicker({
             'flex h-28 w-28 shrink-0 flex-col items-center justify-center gap-1 px-2',
             'rounded-cis-chip border-2 border-cis-ink bg-cis-paper-light text-cis-ink',
             'data-[invalid=true]:border-[3px] data-[invalid=true]:border-cis-danger',
-            'enabled:hover:bg-[rgba(31,42,51,.07)] disabled:opacity-60',
+            'enabled:hover:bg-[var(--cis-hover-wash)] disabled:opacity-60',
             focusRing,
           )}
         >

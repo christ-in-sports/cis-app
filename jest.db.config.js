@@ -16,6 +16,9 @@ const config = {
   coverageProvider: 'v8',
   testEnvironment: 'node',
   testMatch: ['<rootDir>/supabase/tests/**/*.test.ts'],
+  // Suites share one Postgres instance. Attendance archive takes table locks,
+  // so parallel workers can deadlock against another suite's transaction.
+  maxWorkers: 1,
   // competition-actions.test.ts imports the real Server Actions, which import
   // by the `@/` alias, and mocks two of their dependencies by the same
   // specifier (see the note in jest.config.js).

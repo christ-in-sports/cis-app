@@ -365,3 +365,14 @@ Colour by domain (2026-10-30, ENG-32): content-only colour left most screens sla
 More orange in Sports, no dark text on orange (2026-10-30, ENG-32): the score badges (dark digits on a logo-orange fill) are retired, and so is `--cis-ink-on-sport`. Scores, the Next game time and every other orange word are `--cis-sport-text`. To give the Sports section more orange, heavy rules there (the 5px `SheetRule`, table-head rules, the action bar's top rule) take `--cis-heavy`, which is ink by default and the logo orange inside `.cis-sport-scope` (the Sports layout and the Next game card). "Final" is a pale orange chip, "Next up" an orange outline, and Manage's current stage a pale orange box with an orange border. Buttons, tabs and the block switcher stay slate: nothing pressable is orange.
 
 Logo-gradient rules (2026-11-01, ENG-32): after a prototype comparing flat orange with three gradients, the orange heavy rules in Sports and on the Next game card use `--cis-logo-gradient`, left to right `#E3602A` → `#EE6B2D` → `#F48344` → `#F9A14F`, sampled from the fish mark (deep at the tail, golden at the head). Rules drawn as fills (`SheetRule`, Manage's day form) read `--cis-heavy-fill`; rules drawn as borders take it through `border-image`, and table-head rows paint it behind a transparent border because a collapsed table ignores `border-image` on rows. Outside `.cis-sport-scope` every heavy rule stays flat ink. This is the single exception to the no-gradients rule in §3.
+
+### Appearance (2026-11-03)
+
+The global Appearance selector offers Light, Dark and System (default), including on auth
+screens. The choice persists on the device. Dark mode uses charcoal pages and slate sheets,
+light warm ink, pale slate actions with dark ink, brighter orange score text and sage faith
+colors. Semantic roles, geometry and typography stay the same. `:root.dark` in
+`design/tokens.css` and the `dark` overrides in `design/tokens.json` define the palette;
+shadcn semantic tokens follow it. The light-palette contrast examples above apply to light
+mode; both palettes must meet the same AA thresholds. Hover washes use theme tokens.
+QR cards retain black text and white backgrounds for scanning and printing.
