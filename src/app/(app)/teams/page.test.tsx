@@ -5,6 +5,7 @@ import { loadKidPhotos } from '@/lib/photo/signed-urls';
 
 jest.mock('@/lib/auth/roles', () => ({ getMyRoles: jest.fn() }));
 jest.mock('@/lib/photo/signed-urls', () => ({ loadKidPhotos: jest.fn() }));
+jest.mock('next/navigation', () => ({ usePathname: () => '/teams', useSearchParams: () => new URLSearchParams() }));
 jest.mock('./teams-client', () => ({ __esModule: true, default: ({ kids }: { kids: { id: string; first_name: string }[] }) => <ul>{kids.map((kid) => <li key={kid.id}>{kid.first_name}</li>)}</ul> }));
 
 const roster = [{ id: 'registration-id', kid_id: 'kid-id', grade: 6, division: 'juniors', team_id: null, kids: { first_name: 'Current child', last_name: 'Test' } }];
@@ -28,9 +29,9 @@ beforeEach(() => {
 it('lists active current-season registrations, joining kids only for display fields', async () => {
   render(await TeamsPage({ searchParams: Promise.resolve({}) }));
   expect(screen.getByText('Current child')).toBeInTheDocument();
-  expect(screen.getByRole('navigation', { name: 'Teams' })).toBeInTheDocument();
-  expect(screen.getByRole('link', { name: 'Current teams' })).toHaveAttribute('aria-current', 'page');
-  expect(screen.getByRole('link', { name: 'Archived teams' })).toHaveAttribute('href', '/teams?view=archive&division=juniors');
+  const tabs = screen.getByRole('navigation', { name: 'Sports' });
+  expect(Array.from(tabs.querySelectorAll('a'), (link) => link.textContent)).toEqual(['Standings', 'Schedule', 'Bracket', 'Teams', 'Manage']);
+  expect(screen.getByRole('link', { name: 'Teams' })).toHaveAttribute('aria-current', 'page');
   expect(queries.seasons.eq).toHaveBeenCalledWith('is_current', true);
   expect(queries.registrations.eq).toHaveBeenCalledWith('season_id', 'current-season');
   expect(queries.registrations.eq).toHaveBeenCalledWith('active', true);
@@ -51,7 +52,6 @@ it('keeps the current season when its registrations are empty', async () => {
 it('uses the frozen archive roster without querying live registrations', async () => {
   render(await TeamsPage({ searchParams: Promise.resolve({ view: 'archive' }) }));
   expect(screen.getByRole('heading', { name: 'Archived teams' })).toBeInTheDocument();
-  expect(screen.getByRole('link', { name: 'Archived teams' })).toHaveAttribute('aria-current', 'page');
   expect(rpc).toHaveBeenCalledWith('archived_attendance_team_roster');
   expect(from).not.toHaveBeenCalledWith('registrations');
 });

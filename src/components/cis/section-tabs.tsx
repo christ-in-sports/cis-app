@@ -26,9 +26,9 @@ export function SectionTabs({ label, items }: { label: string; items: readonly S
     <nav aria-label={label} className="overflow-x-auto px-3.5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden print:hidden">
       <ul className="flex min-w-max gap-2">
         {items.map((item) => {
-          const on = item.current ?? isNavItemOn(item, pathname);
+          const on = isNavItemOn(item, pathname);
           return (
-            <li key={item.to ?? item.href}>
+            <li key={item.href}>
               <Link
                 href={item.to ?? item.href}
                 aria-current={on ? 'page' : undefined}

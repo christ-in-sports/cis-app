@@ -41,6 +41,11 @@ export default function TeamsClient({ archived, teams, kids, coaches, links }: {
   return <>
     <AttendanceSheet>
       <p>{archived ? 'Past teams, kids and coach assignments are saved here. New teams are managed in Current teams.' : 'Create teams, assign registered kids, and choose any number of coaches for each team. Only users with the Coach role appear here; an Admin grants roles.'}</p>
+      <Field label="Teams">{(props) => <SelectInput {...props} disabled={pending} value={archived ? 'archive' : 'current'} onChange={(e) => {
+        setSelected([]); setTarget(''); setMessage(''); setError('');
+        const next = new URLSearchParams(params.toString()); next.set('view', e.target.value);
+        router.replace(`${pathname}?${next}`);
+      }}><option value="current">Current teams</option><option value="archive">Archived teams</option></SelectInput>}</Field>
       <Field label="Division">{(props) => <SelectInput {...props} disabled={pending} value={division} onChange={(e) => {
         setSelected([]); setTarget(''); setSearch(''); setMessage(''); setError('');
         const next = new URLSearchParams(params.toString()); next.set('division', e.target.value);

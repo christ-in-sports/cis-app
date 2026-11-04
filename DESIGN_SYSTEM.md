@@ -378,6 +378,6 @@ shadcn semantic tokens follow it. The light-palette contrast examples above appl
 mode; both palettes must meet the same AA thresholds. Hover washes use theme tokens.
 QR cards retain black text and white backgrounds for scanning and printing.
 
-Teams page navigation (2026-11-03): Current teams and Archived teams use `SectionTabs`
-at the top of `/teams`, matching the Sports section tabs. The selected division is carried
-across both tabs; the Division control stays within the team form.
+Teams page navigation (2026-11-03): `/teams` shares the Sports section's top
+`SectionTabs` row: Standings, Schedule, Bracket, Teams and Manage. Teams is active
+on the Teams page. The Current/Archived selector stays inside the Teams sheet.
