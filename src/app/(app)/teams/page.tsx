@@ -9,7 +9,8 @@ import type { MinistryTeam, RosterKid } from '@/lib/attendance';
 
 export default async function TeamsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const { supabase } = await teamsAccess();
-  const archived = (await searchParams).view === 'archive';
+  const params = await searchParams;
+  const archived = params.view === 'archive';
   const season = await currentTeamSeason(supabase);
   const seasonId = season?.id;
   if (!seasonId && !archived) return <><SportsNav canManage /><BoardHeader title="Teams" /><AttendanceSheet>Set up a current season before creating teams.</AttendanceSheet></>;
@@ -39,10 +40,14 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
     supabase.from('team_coaches').select('team_id, user_id'),
   ]);
   if ([coaches, links].some((r) => r.error)) throw new Error('Could not load teams and assignments.');
+  const division = params.division === 'juniors' || params.division === 'ambassadors'
+    ? params.division
+    : registrations.some((kid) => kid.division === 'juniors') ? 'juniors'
+    : registrations.some((kid) => kid.division === 'ambassadors') ? 'ambassadors' : 'juniors';
   return <>
     <SportsNav canManage />
     <BoardHeader title={archived ? 'Archived teams' : 'Teams'} />
     {!archived && <AttendanceSheet><p>{season?.name} · Teams and assignments are shared with Attendance and Sports.</p></AttendanceSheet>}
-    <TeamsClient key={archived ? 'archive' : seasonId} archived={archived} teams={teams} kids={registrations} coaches={coaches.data ?? []} links={links.data ?? []} />
+    <TeamsClient key={archived ? 'archive' : seasonId} archived={archived} division={division} teams={teams} kids={registrations} coaches={coaches.data ?? []} links={links.data ?? []} />
   </>;
 }

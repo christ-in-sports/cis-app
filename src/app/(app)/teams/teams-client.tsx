@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { type RosterKid, type MinistryTeam, DIVISION_SHORT, fmtDay } from '@/lib/attendance';
+import { type RosterKid, type MinistryTeam, type Division, DIVISION_SHORT, fmtDay } from '@/lib/attendance';
 import { Field, FieldError, SelectInput, TextInput, TickRow } from '@/components/cis/form';
 import { DangerButton, PrimaryButton, SecondaryButton } from '@/components/cis/button';
 import { KidAvatar } from '@/components/cis/kid-avatar';
@@ -13,13 +13,12 @@ import { assignCoach, assignKids, createTeam, deleteTeam, renameTeam } from './a
 type Coach = { id: string; display_name: string };
 type Link = { team_id: string; user_id: string };
 
-export default function TeamsClient({ archived, teams, kids, coaches, links }: {
-  archived: boolean; teams: MinistryTeam[]; kids: RosterKid[]; coaches: Coach[]; links: Link[];
+export default function TeamsClient({ archived, division, teams, kids, coaches, links }: {
+  archived: boolean; division: Division; teams: MinistryTeam[]; kids: RosterKid[]; coaches: Coach[]; links: Link[];
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
-  const division = params.get('division') === 'ambassadors' ? 'ambassadors' : 'juniors';
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
   const [target, setTarget] = useState('');
@@ -110,7 +109,7 @@ export default function TeamsClient({ archived, teams, kids, coaches, links }: {
       <Field label="Search kids">{(props) => <TextInput {...props} type="search" value={search} onChange={(e) => setSearch(e.target.value)} />}</Field>
       <fieldset disabled={pending} className="space-y-2">
         <legend className="sr-only">Select kids to assign</legend>
-        {!shown.length && <p>No registered kids match. Registrations arrive through the parent form or Admin CSV import.</p>}
+        {!shown.length && <p>{search ? 'No kids match your search.' : kids.some((kid) => kid.division !== division) ? `No registered kids in ${division === 'juniors' ? 'Juniors' : 'Ambassadors'}. Choose the other division above.` : 'No active registrations for this season. Registrations arrive through the parent form or Admin CSV import.'}</p>}
         {shown.map((kid) => <TickRow key={kid.id} checked={selected.includes(kid.id)}
           onChange={(checked) => setSelected((prev) => checked ? [...prev, kid.id] : prev.filter((id) => id !== kid.id))}
           ><span className="flex items-center gap-3">

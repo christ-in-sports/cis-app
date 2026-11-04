@@ -6,7 +6,7 @@ import { loadKidPhotos } from '@/lib/photo/signed-urls';
 jest.mock('@/lib/auth/roles', () => ({ getMyRoles: jest.fn() }));
 jest.mock('@/lib/photo/signed-urls', () => ({ loadKidPhotos: jest.fn() }));
 jest.mock('next/navigation', () => ({ usePathname: () => '/teams', useSearchParams: () => new URLSearchParams() }));
-jest.mock('./teams-client', () => ({ __esModule: true, default: ({ kids }: { kids: { id: string; first_name: string }[] }) => <ul>{kids.map((kid) => <li key={kid.id}>{kid.first_name}</li>)}</ul> }));
+jest.mock('./teams-client', () => ({ __esModule: true, default: ({ kids, division }: { kids: { id: string; first_name: string }[]; division: string }) => <><p>Selected division: {division}</p><ul>{kids.map((kid) => <li key={kid.id}>{kid.first_name}</li>)}</ul></> }));
 
 const roster = [{ id: 'registration-id', kid_id: 'kid-id', grade: 6, division: 'juniors', team_id: null, kids: { first_name: 'Current child', last_name: 'Test' } }];
 function query(data: unknown) {
@@ -54,4 +54,12 @@ it('uses the frozen archive roster without querying live registrations', async (
   expect(screen.getByRole('heading', { name: 'Archived teams' })).toBeInTheDocument();
   expect(rpc).toHaveBeenCalledWith('archived_attendance_team_roster');
   expect(from).not.toHaveBeenCalledWith('registrations');
+});
+
+it('opens Ambassadors when it is the only populated division, while honoring an explicit Juniors selection', async () => {
+  queries.registrations = query([{ ...roster[0], division: 'ambassadors' }]);
+  render(await TeamsPage({ searchParams: Promise.resolve({}) }));
+  expect(screen.getByText('Selected division: ambassadors')).toBeInTheDocument();
+  render(await TeamsPage({ searchParams: Promise.resolve({ division: 'juniors' }) }));
+  expect(screen.getByText('Selected division: juniors')).toBeInTheDocument();
 });
