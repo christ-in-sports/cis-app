@@ -153,7 +153,7 @@ export function PaymentsPanel({
             type="button"
             onClick={() => setAdding(true)}
             disabled={busy}
-            className="rounded-cis-chip border-2 border-cis-ink px-3 py-[5px] text-cis-sm font-bold hover:bg-[rgba(31,42,51,.07)] disabled:opacity-50"
+            className="rounded-cis-chip border-2 border-cis-ink px-3 py-[5px] text-cis-sm font-bold hover:bg-[var(--cis-hover-wash)] disabled:opacity-50"
           >
             Record payment
           </button>
@@ -177,7 +177,7 @@ export function PaymentsPanel({
                 onClick={() => onRemove(p)}
                 disabled={busy}
                 aria-label={`Remove ${formatCents(p.amount_cents)} ${PAYMENT_METHOD_LABEL[p.method]} payment for ${kidName}`}
-                className="rounded-cis-chip border-2 border-cis-ink px-3 py-[3px] text-cis-sm font-bold hover:bg-[rgba(31,42,51,.07)] disabled:opacity-50"
+                className="rounded-cis-chip border-2 border-cis-ink px-3 py-[3px] text-cis-sm font-bold hover:bg-[var(--cis-hover-wash)] disabled:opacity-50"
               >
                 Remove
               </button>

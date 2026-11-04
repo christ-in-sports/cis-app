@@ -130,6 +130,12 @@ Full user stories with acceptance criteria live in the PRD (see `/docs/PRD.md` i
 
 ### 2.1 UI & Design System
 
+Appearance supports Light, Dark and System (default) across all routes. A root selector stores
+the preference locally on the device, follows OS changes in System mode, and synchronizes
+open tabs. A pre-paint script sets the root dark class; shared CIS and shadcn tokens supply
+the palette. QR cards retain white backgrounds and black text. See the 2026-11-03 ADR.
+
+
 Full spec: `DESIGN_SYSTEM.md` (companion to this file). Key rules that affect how components get built:
 
 - **Color has meaning, not decoration.** `--cis-action` (slate) = actions, `--cis-sport` (logo orange) = sport/scores, `--cis-sage` = spiritual content; nothing pressable is orange. This mapping must hold on every screen.

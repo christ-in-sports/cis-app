@@ -853,7 +853,7 @@ export default function RegistrationsClient({
                       onClick={() => setExpanded(open ? null : r.registration_id)}
                       className={[
                         'group cursor-pointer align-top',
-                        'hover:bg-[rgba(31,42,51,.05)] active:bg-[rgba(31,42,51,.08)]',
+                        'hover:bg-[var(--cis-hover-wash)] active:bg-[var(--cis-press-wash)]',
                         open ? '' : 'border-b border-cis-rule',
                       ].join(' ')}
                     >
@@ -975,7 +975,7 @@ export default function RegistrationsClient({
                                   applyConsent([r.registration_id], r.consent_given_at === null)
                                 }
                                 disabled={consentBusy}
-                                className="rounded-cis-chip border-2 border-cis-ink px-3 py-[5px] text-cis-sm font-bold hover:bg-[rgba(31,42,51,.07)] disabled:opacity-50"
+                                className="rounded-cis-chip border-2 border-cis-ink px-3 py-[5px] text-cis-sm font-bold hover:bg-[var(--cis-hover-wash)] disabled:opacity-50"
                               >
                                 {consentBusy ? 'Saving…' : r.consent_given_at ? 'Clear' : 'Mark received'}
                               </button>

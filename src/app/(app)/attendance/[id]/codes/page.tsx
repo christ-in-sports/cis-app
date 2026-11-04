@@ -41,7 +41,7 @@ export default async function AttendanceCodesPage({ params, searchParams }: {
     </div>
     <div className="attendance-codes-print grid gap-4 px-4 text-cis-ink">
       {!cards.length && <p>No kids on your accessible roster.</p>}
-      {cards.map((row) => <article key={row.kid_id} className="attendance-qr-card rounded-cis-chip bg-white p-4 text-center">
+      {cards.map((row) => <article key={row.kid_id} className="attendance-qr-card rounded-cis-chip bg-white text-black p-4 text-center">
         <p className="font-bold">Christ in Sports · Attendance</p>
         <Image src={row.image} alt={`Attendance QR code for ${row.first_name} ${row.last_name}`} width={180} height={180} unoptimized className="mx-auto" />
         <h2 className="text-cis-md font-bold">{row.first_name} {row.last_name}</h2>

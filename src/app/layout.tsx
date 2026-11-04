@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import { ThemeSelector } from '@/components/cis/theme-selector';
+import { themeScript } from '@/lib/theme';
 import { Toaster } from '@/components/ui/toaster';
 import { caprasimo, figtree } from '@/lib/fonts';
 
@@ -27,8 +29,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${caprasimo.variable} ${figtree.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${caprasimo.variable} ${figtree.variable}`}>
+      <head><script dangerouslySetInnerHTML={{ __html: themeScript }} /></head>
       <body className="min-h-screen bg-background font-cis-body text-foreground">
+        <ThemeSelector />
         <Toaster>
           {children}
         </Toaster>

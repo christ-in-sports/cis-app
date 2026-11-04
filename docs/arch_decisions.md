@@ -291,3 +291,8 @@ QR navigation refinement: `/attendance/codes` uses the existing authenticated, n
 - **Reference:** `project_spec.md` §2.4.1.
 
 Team integration after ENG-25/26: `/teams` joins `src/app/(app)/` and uses its existing shared BoardShell/AppNav. Today and More show manager-only Teams links; Attendance and Sports keep links in their section tabs. Teams belongs to More in AppNav. The old home card grid and per-section bottom bars remain removed.
+
+### 2026-11-03 — Device-local appearance preference
+- **Status:** Accepted
+- **Decision:** A root-level client selector stores Light/Dark/System in `cis-theme` localStorage, defaults to System, and follows OS changes and storage events across tabs. Storage failures fall back to a session-only choice. A small head script sets the root class before paint; hydration suppression is limited to that root element. CSS tokens theme both CIS and shadcn components without a new state library or per-user database field.
+- **Tradeoff:** The preference belongs to this browser, not the account. Native controls and browser theme color follow the resolved theme; printable QR cards stay white.

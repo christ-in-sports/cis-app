@@ -3,6 +3,8 @@
    Fonts: Caprasimo (display) + Figtree (UI/body), both Google Fonts. */
 
 :root {
+  --cis-hover-wash: rgba(31,42,51,.07);
+  --cis-press-wash: rgba(31,42,51,.08);
   /* Colour has three jobs, one hue each (DESIGN_SYSTEM.md §4, "Home and away v2"):
      slate is anything you press or select, orange is the game, sage is faith.
      Nothing you can press is orange. */
@@ -108,4 +110,44 @@
   /* Targets */
   --cis-tap-min: 44px;
   --cis-tap-primary: 58px;
+}
+
+/* Dark appearance keeps the same semantic color roles. */
+:root.dark {
+  --cis-action: #B8CCDC;
+  --cis-action-hover: #D2DFE9;
+  --cis-action-press: #9FB8CC;
+  --cis-action-shadow: #080E13;
+  --cis-ink-on-action: #15212B;
+  --cis-sport-text: #FFAB78;
+  --cis-sport-deep: #FFBD94;
+  --cis-sport-tint: #39271E;
+  --cis-danger: #FFAAA3;
+  --cis-danger-hover: #FFC5C0;
+  --cis-danger-press: #F28E87;
+  --cis-danger-tint: #402421;
+  --cis-ink-on-danger: #281411;
+  --cis-sage: #ADC892;
+  --cis-sage-hover: #C0D8AA;
+  --cis-sage-press: #97B57A;
+  --cis-sage-tint: #253021;
+  --cis-sage-text: #B9D59F;
+  --cis-sage-ink: #CEE3BC;
+  --cis-chrome: #111B23;
+  --cis-chrome-tab: #303A43;
+  --cis-page: #141B21;
+  --cis-paper: #273039;
+  --cis-paper-light: #1E272F;
+  --cis-rule: #3D4852;
+  --cis-rule-soft: #35414B;
+  --cis-rule-dash: #53616D;
+  --cis-track: #37434E;
+  --cis-box-empty: #8F9CA7;
+  --cis-ink: #F2EFE8;
+  --cis-ink-dark: #CBD3D9;
+  --cis-ink-muted: #BDB9B1;
+  --cis-hover-wash: rgba(242,239,232,.08);
+  --cis-press-wash: rgba(242,239,232,.12);
+  --cis-shadow-sheet: 0 6px 14px rgba(0,0,0,.24);
+  --cis-shadow-shell: 0 18px 44px rgba(0,0,0,.32);
 }
