@@ -1,22 +1,22 @@
 import { test, expect } from '@playwright/test';
 
-test('appearance follows the system, persists overrides and synchronizes tabs', async ({ page, context }) => {
+test('appearance switch follows the system, persists overrides and synchronizes tabs', async ({ page, context }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/login');
+  const appearance = page.getByRole('switch', { name: 'Switch to light mode' });
   await expect(page.locator('html')).toHaveClass(/dark/);
-  const appearance = page.getByLabel('Appearance', { exact: true });
-  await expect(appearance).toHaveValue('system');
-  await appearance.selectOption('light');
+  await expect(appearance).toHaveAttribute('aria-checked', 'true');
+  await appearance.click();
   await expect(page.locator('html')).not.toHaveClass(/dark/);
   await page.reload();
-  await expect(appearance).toHaveValue('light');
-  await expect(page.locator('html')).not.toHaveClass(/dark/);
+  await expect(page.getByRole('switch', { name: 'Switch to dark mode' })).toHaveAttribute('aria-checked', 'false');
   const other = await context.newPage();
   await other.goto('/login');
-  await appearance.selectOption('dark');
+  await page.getByRole('switch', { name: 'Switch to dark mode' }).click();
   await expect(other.locator('html')).toHaveClass(/dark/);
-  await expect(other.getByLabel('Appearance', { exact: true })).toHaveValue('dark');
-  await appearance.selectOption('system');
+  await expect(other.getByRole('switch', { name: 'Switch to light mode' })).toHaveAttribute('aria-checked', 'true');
+  await page.evaluate(() => localStorage.removeItem('cis-theme'));
+  await page.reload();
   await page.emulateMedia({ colorScheme: 'light' });
   await expect(page.locator('html')).not.toHaveClass(/dark/);
   await page.emulateMedia({ colorScheme: 'dark' });
@@ -24,18 +24,19 @@ test('appearance follows the system, persists overrides and synchronizes tabs', 
 });
 
 for (const failure of ['blocked', 'quota']) {
-test(`appearance still works with ${failure} storage`, async ({ page }) => {
-  await page.addInitScript((failure) => {
-    if (failure === 'blocked') {
-      Object.defineProperty(window, 'localStorage', { get() { throw new Error('Storage blocked'); } });
-    } else {
-      Storage.prototype.setItem = () => { throw new DOMException('Full', 'QuotaExceededError'); };
-    }
-  }, failure);
-  await page.goto('/login');
-  await page.getByLabel('Appearance', { exact: true }).selectOption('dark');
-  await expect(page.locator('html')).toHaveClass(/dark/);
-  await page.getByLabel('Appearance', { exact: true }).selectOption('light');
-  await expect(page.locator('html')).not.toHaveClass(/dark/);
-});
+  test(`appearance switch works with ${failure} storage`, async ({ page }) => {
+    await page.addInitScript((kind) => {
+      if (kind === 'blocked') {
+        Object.defineProperty(window, 'localStorage', { get() { throw new Error('Storage blocked'); } });
+      } else {
+        Storage.prototype.setItem = () => { throw new DOMException('Full', 'QuotaExceededError'); };
+      }
+    }, failure);
+    await page.goto('/login');
+    const appearance = page.getByRole('switch', { name: 'Switch to dark mode' });
+    await appearance.click();
+    await expect(page.locator('html')).toHaveClass(/dark/);
+    await page.getByRole('switch', { name: 'Switch to light mode' }).click();
+    await expect(page.locator('html')).not.toHaveClass(/dark/);
+  });
 }

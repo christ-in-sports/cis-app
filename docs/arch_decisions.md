@@ -296,3 +296,7 @@ Team integration after ENG-25/26: `/teams` joins `src/app/(app)/` and uses its e
 - **Status:** Accepted
 - **Decision:** A root-level client selector stores Light/Dark/System in `cis-theme` localStorage, defaults to System, and follows OS changes and storage events across tabs. Storage failures fall back to a session-only choice. A small head script sets the root class before paint; hydration suppression is limited to that root element. CSS tokens theme both CIS and shadcn components without a new state library or per-user database field.
 - **Tradeoff:** The preference belongs to this browser, not the account. Native controls and browser theme color follow the resolved theme; printable QR cards stay white.
+
+### 2026-11-03 — Sun/moon appearance switch
+- **Status:** Accepted
+- **Decision:** Replace the Appearance dropdown with a two-position sun/moon switch. Before the first manual choice, the resolved theme follows the operating system. A tap saves the opposite theme using the existing `cis-theme` preference; cross-tab updates and storage-failure fallback remain.

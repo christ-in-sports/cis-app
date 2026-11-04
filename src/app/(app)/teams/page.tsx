@@ -1,6 +1,7 @@
 import { rosterRows } from '../attendance/data';
 import { teamsAccess, currentTeamSeason } from './data';
 import { BoardHeader } from '@/components/cis/board-shell';
+import { SportsNav } from '@/components/cis/sports-nav';
 import { AttendanceSheet } from '../attendance/parts';
 import { loadKidPhotos } from '@/lib/photo/signed-urls';
 import TeamsClient from './teams-client';
@@ -11,7 +12,7 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
   const archived = (await searchParams).view === 'archive';
   const season = await currentTeamSeason(supabase);
   const seasonId = season?.id;
-  if (!seasonId && !archived) return <><BoardHeader title="Teams" /><AttendanceSheet>Set up a current season before creating teams.</AttendanceSheet></>;
+  if (!seasonId && !archived) return <><SportsNav canManage /><BoardHeader title="Teams" /><AttendanceSheet>Set up a current season before creating teams.</AttendanceSheet></>;
   const loadTeams = async (): Promise<MinistryTeam[]> => {
     let query = supabase.from('ministry_teams').select('id, name, division, active, archived_at');
     query = archived ? query.not('archived_at', 'is', null).order('archived_at', { ascending: false }) : query.eq('season_id', seasonId).eq('active', true);
@@ -39,6 +40,7 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
   ]);
   if ([coaches, links].some((r) => r.error)) throw new Error('Could not load teams and assignments.');
   return <>
+    <SportsNav canManage />
     <BoardHeader title={archived ? 'Archived teams' : 'Teams'} />
     {!archived && <AttendanceSheet><p>{season?.name} · Teams and assignments are shared with Attendance and Sports.</p></AttendanceSheet>}
     <TeamsClient key={archived ? 'archive' : seasonId} archived={archived} teams={teams} kids={registrations} coaches={coaches.data ?? []} links={links.data ?? []} />
