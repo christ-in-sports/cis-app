@@ -52,7 +52,7 @@ export function ThemeSelector() {
         aria-describedby="app-theme-label"
         aria-checked={dark}
         aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-        className="relative flex h-12 w-[86px] items-center rounded-cis-pill bg-cis-chrome-tab px-2 text-cis-action dark:bg-cis-chrome-tab dark:text-cis-ink"
+        className="relative flex h-9 w-16 items-center rounded-cis-pill bg-cis-chrome-tab px-2 text-cis-action before:absolute before:-inset-1.5 before:content-[''] dark:bg-cis-chrome-tab dark:text-cis-ink"
         onClick={() => {
           temporaryPreference = isDark() ? 'light' : 'dark';
           try {
@@ -62,9 +62,9 @@ export function ThemeSelector() {
           window.dispatchEvent(new Event('cis-theme-change'));
         }}
       >
-        <Sun size={19} strokeWidth={2.75} aria-hidden="true" className="absolute right-3 dark:hidden" />
-        <Moon size={19} strokeWidth={2.75} aria-hidden="true" className="absolute left-3 hidden dark:block" />
-        <span aria-hidden="true" className="absolute left-1.5 h-9 w-9 rounded-full bg-cis-paper-light shadow-cis-sheet dark:left-auto dark:right-1.5 dark:bg-cis-ink-on-dark" />
+        <Sun size={15} strokeWidth={2.75} aria-hidden="true" className="absolute right-2.5 dark:hidden" />
+        <Moon size={15} strokeWidth={2.75} aria-hidden="true" className="absolute left-2.5 hidden dark:block" />
+        <span aria-hidden="true" className="absolute left-1 h-7 w-7 rounded-full bg-cis-paper-light shadow-cis-sheet dark:left-auto dark:right-1 dark:bg-cis-ink-on-dark" />
       </button>
     </div>
   );
