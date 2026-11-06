@@ -251,6 +251,8 @@ otp_expiry = 3600
 # magic_link template, including a new parent: the parent join link (ENG-31)
 # creates the account on the server first. The confirmation template is only used
 # if public signups are ever turned on. Both show the 6-digit code, never a link.
+# The files are generated from src/lib/email/auth-templates.ts (`npm run
+# emails:build`); the hosted project needs them pasted into its dashboard.
 [auth.email.template.magic_link]
 subject = "Your Christ in Sports code"
 content_path = "./supabase/templates/magic-link.html"
@@ -258,6 +260,11 @@ content_path = "./supabase/templates/magic-link.html"
 [auth.email.template.confirmation]
 subject = "Your Christ in Sports code"
 content_path = "./supabase/templates/confirmation.html"
+
+# Password reset from /forgot-password: a link that opens /reset-password.
+[auth.email.template.recovery]
+subject = "Reset your Christ in Sports password"
+content_path = "./supabase/templates/recovery.html"
 
 # Uncomment to customize email template
 # [auth.email.template.invite]

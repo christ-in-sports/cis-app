@@ -1,3 +1,4 @@
+import { EMAIL_COLORS } from './layout';
 import { buildServantConfirmation, escapeHtml } from './servant-confirmation';
 
 const base = {
@@ -53,12 +54,25 @@ describe('buildServantConfirmation', () => {
     }
   });
 
+  it('builds the HTML on the shared layout, with a button back to the form', () => {
+    const { html } = buildServantConfirmation(base);
+    expect(html).toContain(EMAIL_COLORS.page);
+    expect(html).toContain(EMAIL_COLORS.action);
+    expect(html).toContain(`href="${base.formUrl}"`);
+    expect(html).toContain('Edit my answers');
+    expect(html).toContain('An Admin will review your registration and confirm your role.');
+    // The logo comes from the same site as the form.
+    expect(html).toContain('src="https://cis.example/assets/fish-mark.png"');
+  });
+
   it('escapes what a servant typed in the HTML body', () => {
     const { html } = buildServantConfirmation({
       ...base,
       fullName: '<script>x</script>',
+      registration: { ...base.registration, dates_missing: '<img src=x>' },
     });
     expect(html).not.toContain('<script>');
+    expect(html).not.toContain('<img src=x>');
     expect(escapeHtml(`a&b<"'`)).toBe('a&amp;b&lt;&quot;&#39;');
   });
 });

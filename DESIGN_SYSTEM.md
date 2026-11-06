@@ -307,6 +307,14 @@ differential, independent of sort — the rank number never changes on re-sort.
   one exists. Emoji are never used as icons; the only unicode glyphs used are the sort carets
   (▾ ▴), the attendance tick and dash (✓ —), and the en dash between scores.
 - **Fonts:** Caprasimo and Figtree, Google Fonts. No licensed binaries were supplied.
+- **Email:** every email shares one layout, `src/lib/email/layout.ts`: the cream page,
+  one paper-light sheet (26px radius) with the fish mark (`/assets/fish-mark.png`) on top,
+  a Caprasimo heading over the 5px ink rule, Figtree body, and the church footer. The
+  colours are the light tokens copied as literals (mail clients cannot read CSS variables),
+  and emails are light only. The one button is a slate pill; nothing in an email is orange
+  or sage. The Supabase Auth templates in `supabase/templates/` are generated from
+  `src/lib/email/auth-templates.ts` with `npm run emails:build`, and a test fails when they
+  drift. The hosted project needs each changed file pasted into its dashboard.
 
 ---
 
