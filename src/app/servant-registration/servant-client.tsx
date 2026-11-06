@@ -30,6 +30,7 @@ import {
 } from '@/components/cis/form';
 import { RegistrationColumn } from '@/components/cis/registration-frame';
 import { Sheet, SheetHeading, SheetRule } from '@/components/cis/sheet';
+import { SignOutButton } from '@/components/cis/sign-out-button';
 import {
   SERVANT_INTRO,
   type ServantRegistrationRecord,
@@ -132,6 +133,9 @@ function buildInput(form: FormState) {
     home_address: form.home_address,
   };
 }
+
+/** What a roleless servant is told once their registration is in. */
+const AWAITING_ROLE = 'An Admin will review your registration and assign your role.';
 
 const SESSION_LABEL: Record<ServantSession, string> = {
   juniors: 'Juniors',
@@ -319,8 +323,11 @@ export default function ServantClient({
               <p className="m-0 text-cis-base leading-[1.5]">
                 {confirmed.updated
                   ? `Your registration for ${season.name} is up to date.`
-                  : `Thank you, ${form.full_name.trim().split(/\s+/)[0]}. Your registration for ${season.name} is saved.`}
+                  : `Thank you, ${form.full_name.trim().split(/\s+/)[0]}. Your registration for ${season.name} is ${hasRole ? 'saved' : 'submitted'}.`}
               </p>
+              {!hasRole && (
+                <p className="m-0 text-cis-base font-bold leading-[1.5]">{AWAITING_ROLE}</p>
+              )}
             </div>
             <SheetRule />
             <dl className="m-0 flex flex-col gap-cis-2 text-cis-base">
@@ -354,7 +361,7 @@ export default function ServantClient({
             <p className="m-0 text-cis-base leading-[1.5]">
               {hasRole
                 ? 'Your team choices are preferences. You can change your answers any time.'
-                : 'Your team choices are preferences. An Admin will assign your role; until then this page is all you will see. You can change your answers any time.'}
+                : 'Your team choices are preferences. Until you have a role, this page is all you will see. You can change your answers any time.'}
             </p>
             <PrimaryButton
               block
@@ -365,16 +372,22 @@ export default function ServantClient({
             >
               Edit my answers
             </PrimaryButton>
-            {hasRole && (
+            {hasRole ? (
               <Link href="/" className={`${secondaryButtonClasses} w-full`}>
                 Back to home
               </Link>
+            ) : (
+              <SignOutButton />
             )}
           </Sheet>
         </RegistrationColumn>
       </BoardShell>
     );
   }
+
+  // A roleless servant coming back after registering: say it went through and
+  // what happens next, rather than showing what looks like a blank form to fill in.
+  const awaitingRole = !hasRole && registration !== null && !prefilled;
 
   return (
     <BoardShell>
@@ -387,10 +400,23 @@ export default function ServantClient({
             <Link href="/" className="text-cis-sm font-bold text-cis-action underline">
               Home
             </Link>
-          ) : undefined
+          ) : (
+            <SignOutButton variant="link" />
+          )
         }
       />
       <RegistrationColumn>
+        {awaitingRole && (
+          <Sheet className="flex flex-col gap-cis-2 px-cis-5 pb-cis-5 pt-cis-5">
+            <div role="status" className="flex flex-col gap-cis-2">
+              <SheetHeading className="text-cis-xl">Registration submitted</SheetHeading>
+              <p className="m-0 text-cis-base leading-[1.5]">{AWAITING_ROLE}</p>
+            </div>
+            <p className="m-0 text-cis-base leading-[1.5]">
+              You can still change your answers below.
+            </p>
+          </Sheet>
+        )}
         <Sheet tone="paper" className="flex flex-col gap-cis-2 px-cis-5 pb-cis-5 pt-cis-5">
           <SheetHeading className="text-cis-xl">{season.name}</SheetHeading>
           <p className="m-0 text-cis-base leading-[1.5]">
@@ -663,10 +689,12 @@ export default function ServantClient({
                 Last saved {formatSaved(lastSaved)}
               </p>
             )}
-            {hasRole && (
+            {hasRole ? (
               <Link href="/" className={`${secondaryButtonClasses} w-full`}>
                 Back to home
               </Link>
+            ) : (
+              <SignOutButton />
             )}
           </Sheet>
         </form>

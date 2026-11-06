@@ -5,7 +5,7 @@
  * one and this is the only screen they can use. That is someone with no role or
  * one holding Admin, Program, Coach or Prayer; a Parent or Kid account is sent
  * home. It has no bottom nav for the same reason; a user who does hold a role
- * gets a link back to the home page.
+ * gets a link back to the home page, and a roleless one a way to sign out.
  * Every read runs under the servant's own session and every write goes through
  * `submit_servant_registration()`, so RLS stays the boundary.
  */
@@ -17,6 +17,7 @@ import { BoardHeader, BoardShell } from '@/components/cis/board-shell';
 import { secondaryButtonClasses } from '@/components/cis/button';
 import { Sheet, SheetHeading } from '@/components/cis/sheet';
 import { RegistrationColumn } from '@/components/cis/registration-frame';
+import { SignOutButton } from '@/components/cis/sign-out-button';
 import { loadServantRegistrationContext } from '@/lib/registration/servant';
 import ServantClient from './servant-client';
 
@@ -41,10 +42,12 @@ export default async function ServantRegistrationPage() {
               There is no active season right now. An Admin needs to start the new season first.
               Check back soon.
             </p>
-            {context.hasRole && (
+            {context.hasRole ? (
               <Link href="/" className={`${secondaryButtonClasses} w-full`}>
                 Back to home
               </Link>
+            ) : (
+              <SignOutButton />
             )}
           </Sheet>
         </RegistrationColumn>
