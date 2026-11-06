@@ -15,9 +15,9 @@ describe('RegistrationLoading', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Loading…');
   });
 
-  it('keeps the section heading so the board is not blank', () => {
+  it('shows no heading, since one fallback covers every screen in the group', () => {
     render(<RegistrationLoading />);
-    expect(screen.getByRole('heading', { name: 'Registration', level: 1 })).toBeInTheDocument();
+    expect(screen.queryByRole('heading')).toBeNull();
   });
 
   it('adds no full-page background or centring of its own', () => {
