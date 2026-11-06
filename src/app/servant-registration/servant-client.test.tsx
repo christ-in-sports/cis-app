@@ -19,6 +19,16 @@ jest.mock('next/link', () => ({
   ),
 }));
 
+const push = jest.fn();
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ push, refresh: jest.fn() }),
+}));
+
+const signOut = jest.fn();
+jest.mock('@/lib/supabase/client', () => ({
+  createClient: () => ({ auth: { signOut } }),
+}));
+
 const submitServantRegistration = jest.fn();
 jest.mock('./actions', () => ({
   submitServantRegistration: (input: unknown) => submitServantRegistration(input),
@@ -64,6 +74,8 @@ function renderForm(props: Partial<React.ComponentProps<typeof ServantClient>> =
 
 beforeEach(() => {
   submitServantRegistration.mockReset();
+  signOut.mockReset().mockResolvedValue({ error: null });
+  push.mockReset();
   window.scrollTo = jest.fn();
 });
 
@@ -150,8 +162,12 @@ describe('servant registration form', () => {
     expect(screen.getByText(/Thank you, Mina/)).toBeInTheDocument();
     expect(screen.getByText('Coaches')).toBeInTheDocument();
     expect(screen.getByText(/on its way to mina@test.local/)).toBeInTheDocument();
-    // A servant with no role is told what happens next.
-    expect(screen.getByText(/An Admin will assign your role/)).toBeInTheDocument();
+    // A servant with no role is told it went through and what happens next.
+    expect(screen.getByText(/registration for CIS 2026-2027 is submitted/)).toBeInTheDocument();
+    expect(
+      screen.getByText('An Admin will review your registration and assign your role.'),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
     // The form, and what must not be repeated, is gone.
     expect(screen.queryByLabelText('Date of birth')).not.toBeInTheDocument();
     expect(screen.queryByText('1 Main St, Hayward CA')).not.toBeInTheDocument();
@@ -242,11 +258,43 @@ describe('servant registration form', () => {
     expect(screen.queryByText('You are registered')).not.toBeInTheDocument();
   });
 
-  it('links back home only for a user who has a role', () => {
+  it('links back home for a user who has a role, and offers sign out to one who has none', () => {
     const { unmount } = renderForm({ hasRole: false });
     expect(screen.queryByText('Back to home')).not.toBeInTheDocument();
+    // In the header and at the foot of the long form.
+    expect(screen.getAllByRole('button', { name: 'Sign out' })).toHaveLength(2);
     unmount();
     renderForm({ hasRole: true });
     expect(screen.getByText('Back to home')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Sign out' })).not.toBeInTheDocument();
+  });
+
+  it('signs a roleless servant out and sends them to the login page', async () => {
+    renderForm({ hasRole: false });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Sign out' })[0]);
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/login'));
+    expect(signOut).toHaveBeenCalledTimes(1);
+  });
+
+  it('tells a roleless servant who already registered that an Admin will review it', () => {
+    renderForm({ hasRole: false, registration: record() });
+    expect(screen.getByRole('heading', { name: 'Registration submitted' })).toBeInTheDocument();
+    expect(
+      screen.getByText('An Admin will review your registration and assign your role.'),
+    ).toBeInTheDocument();
+    // The form stays editable below it.
+    expect(screen.getByLabelText('Name')).toHaveValue('Mina Hanna');
+  });
+
+  it('says nothing is submitted when the answers are only prefilled from last season', () => {
+    renderForm({ hasRole: false, registration: record(), prefilled: true });
+    expect(screen.queryByText('Registration submitted')).not.toBeInTheDocument();
+  });
+
+  it('does not tell a servant who has a role to wait for one', () => {
+    renderForm({ hasRole: true, registration: record() });
+    expect(screen.queryByText('Registration submitted')).not.toBeInTheDocument();
+    expect(screen.queryByText(/assign your role/)).not.toBeInTheDocument();
   });
 });

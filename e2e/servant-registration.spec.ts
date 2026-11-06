@@ -87,6 +87,7 @@ test('a new servant signs up, is sent to the form, registers, then edits it', as
   await page.getByRole('button', { name: 'Register' }).click();
 
   await expect(page.getByText('You are registered')).toBeVisible();
+  await expect(page.getByText('An Admin will review your registration and assign your role.')).toBeVisible();
 
   const saved = await withDb(async (client) =>
     (
@@ -108,8 +109,10 @@ test('a new servant signs up, is sent to the form, registers, then edits it', as
     },
   ]);
 
-  // 4. Edit: the answers are still there, and saving updates the same row.
+  // 4. Edit: the answers are still there, and saving updates the same row. Still
+  // roleless, so the page says the registration is in and waiting on an Admin.
   await page.reload();
+  await expect(page.getByRole('heading', { name: 'Registration submitted' })).toBeVisible();
   await expect(page.getByLabel('Name', { exact: true })).toHaveValue(NAME);
   await expect(page.getByText(/Last saved/)).toBeVisible();
   await page.getByLabel(/Dates you will miss/).fill('Feb 7 and Feb 14');
@@ -126,6 +129,12 @@ test('a new servant signs up, is sent to the form, registers, then edits it', as
     ).rows,
   );
   expect(rows).toEqual([{ dates_missing: 'Feb 7 and Feb 14' }]);
+
+  // 5. With no role there is no bottom bar, so the form is where they sign out.
+  await page.getByRole('button', { name: 'Sign out' }).first().click();
+  await page.waitForURL(/\/login/, { timeout: 15_000 });
+  await page.goto('/servant-registration');
+  await expect(page).toHaveURL(/\/login/);
 });
 
 test('a servant who already has a role is not sent to the form', async ({ page }) => {

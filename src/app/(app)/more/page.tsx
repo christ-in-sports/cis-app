@@ -13,10 +13,9 @@ import { redirect } from 'next/navigation';
 import { BoardHeader } from '@/components/cis/board-shell';
 import { MenuRow, MenuSheet } from '@/components/cis/menu-list';
 import { RegistrationColumn } from '@/components/cis/registration-frame';
+import { SignOutButton } from '@/components/cis/sign-out-button';
 import { getMyRoles } from '@/lib/auth/roles';
 import { SERVANT_REGISTRATION_PATH } from '@/lib/auth/servant-gate';
-
-import { SignOutButton } from './sign-out-button';
 
 export default async function MorePage() {
   const { userId, roles } = await getMyRoles();
