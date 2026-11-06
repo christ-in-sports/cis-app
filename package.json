@@ -11,7 +11,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:db": "jest --config jest.db.config.js",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "emails:build": "UPDATE_EMAIL_TEMPLATES=1 jest src/lib/email/auth-templates.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",

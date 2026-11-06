@@ -4,9 +4,26 @@
  * Pure (no network), so it can be tested. It deliberately leaves out the date of
  * birth, home address and emergency contacts: an email sits in an inbox long
  * after the form is closed, and none of those belong there.
+ *
+ * The HTML uses the shared `emailLayout`, the same look as the Auth emails.
  */
 
 import { SERVANT_SUBTEAMS, SUBTEAM_LABELS, type ServantRegistration } from '@/lib/validation/servant';
+
+import {
+  EMAIL_COLORS,
+  button,
+  dashedBreak,
+  details,
+  emailLayout,
+  escapeHtml,
+  heading,
+  heavyRule,
+  note,
+  paragraph,
+} from './layout';
+
+export { escapeHtml };
 
 export interface ServantConfirmationInput {
   fullName: string;
@@ -42,43 +59,57 @@ function teamsFor(
   return labels.join(', ');
 }
 
-export function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
 export function buildServantConfirmation(input: ServantConfirmationInput): ServantConfirmationEmail {
   const { fullName, seasonName, registration: r, formUrl } = input;
 
-  const lines: string[] = [];
+  // Label and value pairs, shared by the plain-text and HTML bodies.
+  const items: { label: string; value: string }[] = [
+    { label: 'Serving this season', value: r.is_serving ? 'Yes' : 'No, not serving a session' },
+  ];
   if (r.is_serving) {
-    lines.push('You are serving this season.');
     for (const session of r.sessions) {
-      const teams = teamsFor(
-        session === 'juniors' ? r.juniors_subteams : r.ambassadors_subteams,
-        session === 'juniors' ? r.juniors_other : r.ambassadors_other,
-      );
-      lines.push(`${SESSION_LABELS[session]}: ${teams}`);
+      items.push({
+        label: SESSION_LABELS[session],
+        value: teamsFor(
+          session === 'juniors' ? r.juniors_subteams : r.ambassadors_subteams,
+          session === 'juniors' ? r.juniors_other : r.ambassadors_other,
+        ),
+      });
     }
-  } else {
-    lines.push('You are not serving a session this season.');
   }
-  if (r.dates_missing) lines.push(`Dates you will miss: ${r.dates_missing}`);
+  if (r.dates_missing) items.push({ label: 'Dates you will miss', value: r.dates_missing });
 
   const intro = `Hi ${fullName}, we have your servant registration for ${seasonName}.`;
-  const outro =
-    'Your team choices are preferences. An Admin will confirm your role. ' +
-    'You can change your answers at any time:';
+  const review = 'An Admin will review your registration and confirm your role.';
+  const outro = 'Your team choices are preferences. You can change your answers at any time:';
 
-  const text = [intro, '', ...lines, '', outro, formUrl].join('\n');
-  const html =
-    `<p>${escapeHtml(intro)}</p>` +
-    `<ul>${lines.map((l) => `<li>${escapeHtml(l)}</li>`).join('')}</ul>` +
-    `<p>${escapeHtml(outro)} <a href="${escapeHtml(formUrl)}">${escapeHtml(formUrl)}</a></p>`;
+  const text = [
+    intro,
+    '',
+    ...items.map(({ label, value }) => `${label}: ${value}`),
+    '',
+    review,
+    outro,
+    formUrl,
+  ].join('\n');
+
+  const href = escapeHtml(formUrl);
+  const html = emailLayout({
+    title: `Servant registration received: ${escapeHtml(seasonName)}`,
+    preheader: escapeHtml(`We have your registration for ${seasonName}.`),
+    logoUrl: `${escapeHtml(new URL(formUrl).origin)}/assets/fish-mark.png`,
+    body: [
+      heading('You are registered'),
+      heavyRule(),
+      paragraph(escapeHtml(intro), { first: true }),
+      details(items.map(({ label, value }) => ({ label: escapeHtml(label), value: escapeHtml(value) }))),
+      dashedBreak(),
+      paragraph(escapeHtml(review), { bold: true, first: true }),
+      paragraph(escapeHtml(outro.replace(/:$/, '.'))),
+      button(href, 'Edit my answers'),
+      note(`Or open this link: <a href="${href}" style="color: ${EMAIL_COLORS.action};">${href}</a>`),
+    ],
+  });
 
   return { subject: `Servant registration received: ${seasonName}`, text, html };
 }

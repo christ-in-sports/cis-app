@@ -168,6 +168,9 @@ supabase db reset           # apply all migrations fresh
 supabase migration new <name>   # create a new migration file
 supabase gen types typescript --local > types/supabase.ts   # regen DB types
 
+# Regenerate the Supabase Auth email templates from src/lib/email/auth-templates.ts
+npm run emails:build
+
 # Lint & type-check
 npm run lint
 npm run type-check
@@ -248,4 +251,4 @@ Every PR that touches the items in the "non-negotiable" list must include or upd
 ---
 
 *Last updated: keep this line current — if you edit this file, update the date below.*
-**Last updated:** 2026-10-30
+**Last updated:** 2026-11-05
