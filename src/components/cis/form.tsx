@@ -235,6 +235,7 @@ export function TickRow({
   onChange,
   error,
   disabled,
+  centered,
   children,
 }: {
   checked: boolean;
@@ -242,6 +243,12 @@ export function TickRow({
   error?: string;
   /** Not changeable right now (still shown, so its state can be read). */
   disabled?: boolean;
+  /**
+   * The label is more than one line of text, such as a photo beside a name. The
+   * default top-aligns a single line with the box; this centres the whole label
+   * on it instead, so a taller label does not sit below the box.
+   */
+  centered?: boolean;
   children: ReactNode;
 }) {
   const id = useId();
@@ -251,7 +258,8 @@ export function TickRow({
     <div className="flex flex-col gap-1">
       <label
         className={cn(
-          'group relative flex min-h-cis-tap-primary items-start gap-cis-3 py-cis-2',
+          'group relative flex min-h-cis-tap-primary gap-cis-3 py-cis-2',
+          centered ? 'items-center' : 'items-start',
           disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer',
         )}
       >
@@ -285,7 +293,14 @@ export function TickRow({
         >
           {checked ? '✓' : ''}
         </span>
-        <span className="pt-[10px] text-cis-base font-bold leading-[1.45] text-cis-ink">{children}</span>
+        <span
+          className={cn(
+            'text-cis-base font-bold leading-[1.45] text-cis-ink',
+            !centered && 'pt-[10px]',
+          )}
+        >
+          {children}
+        </span>
       </label>
       {error && (
         <FieldError id={errorId}>{error}</FieldError>

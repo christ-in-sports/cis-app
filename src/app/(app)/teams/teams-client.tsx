@@ -111,7 +111,7 @@ export default function TeamsClient({ archived, teams, kids, coaches, links }: {
       <fieldset disabled={pending} className="space-y-2">
         <legend className="sr-only">Select kids to assign</legend>
         {!shown.length && <p>No registered kids match. Registrations arrive through the parent form or Admin CSV import.</p>}
-        {shown.map((kid) => <TickRow key={kid.id} checked={selected.includes(kid.id)}
+        {shown.map((kid) => <TickRow key={kid.id} centered checked={selected.includes(kid.id)}
           onChange={(checked) => setSelected((prev) => checked ? [...prev, kid.id] : prev.filter((id) => id !== kid.id))}
           ><span className="flex items-center gap-3">
             <KidAvatar size="sm" firstName={kid.first_name} lastName={kid.last_name} photo={kid.photo} />
