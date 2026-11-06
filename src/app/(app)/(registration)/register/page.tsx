@@ -53,5 +53,5 @@ export default async function RegisterPage() {
     );
   }
 
-  return <RegisterClient season={context.season} kids={context.kids} />;
+  return <RegisterClient season={context.season} kids={context.kids} email={context.email} />;
 }

@@ -107,19 +107,22 @@ const emptyForm: FormState = {
 };
 
 /**
- * A blank form for a new kid. When the parent already has a kid, the household
- * details are carried over -- a second child shares the address and both
- * contacts far more often than not, and retyping them is the most tedious part
- * of registering siblings. Everything about the child themselves stays blank.
+ * A blank form for a new kid. The guardian email starts as the parent's own
+ * sign-in email, which is almost always the right one. When the parent already
+ * has a kid, the household details are carried over -- a second child shares the
+ * address and both contacts far more often than not, and retyping them is the
+ * most tedious part of registering siblings. Everything about the child
+ * themselves stays blank.
  */
-function newKidForm(existing: ParentKid | undefined): FormState {
-  if (!existing) return emptyForm;
+function newKidForm(existing: ParentKid | undefined, signedInEmail: string): FormState {
+  if (!existing) return { ...emptyForm, guardian_email: signedInEmail };
   return {
     ...emptyForm,
     home_address: existing.home_address,
     guardian_name: existing.guardian_name,
     guardian_phone: existing.guardian_phone,
-    guardian_email: existing.guardian_email,
+    // What the parent typed for the sibling wins over the sign-in email.
+    guardian_email: existing.guardian_email || signedInEmail,
     emergency_contact_name: existing.emergency_contact_name,
     emergency_contact_phone: existing.emergency_contact_phone,
   };
@@ -263,13 +266,16 @@ function SectionBreak() {
 export default function RegisterClient({
   season,
   kids,
+  email,
 }: {
   season: { id: string; name: string };
   kids: ParentKid[];
+  /** The signed-in email, offered as the guardian email on a new kid. */
+  email: string;
 }) {
   const router = useRouter();
   const [step, setStep] = useState<Step>(kids.length > 0 ? { name: 'pick' } : { name: 'form', kidId: null });
-  const [form, setForm] = useState<FormState>(() => (kids.length > 0 ? emptyForm : newKidForm(undefined)));
+  const [form, setForm] = useState<FormState>(() => (kids.length > 0 ? emptyForm : newKidForm(undefined, email)));
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -313,7 +319,7 @@ export default function RegisterClient({
 
   function openForm(kidId: string | null) {
     const kid = kidId ? kids.find((k) => k.id === kidId) : undefined;
-    setForm(kid ? returningKidForm(kid) : newKidForm(kids[0]));
+    setForm(kid ? returningKidForm(kid) : newKidForm(kids[0], email));
     setPhoto(null);
     setErrors({});
     setFormError(null);
