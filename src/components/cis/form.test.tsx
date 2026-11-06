@@ -52,4 +52,25 @@ describe('TickRow', () => {
     expect(screen.getByRole('checkbox')).toBeDisabled();
     expect(screen.getByRole('checkbox').closest('label')!.querySelector('[class*="group-active:scale"]')).toBeNull();
   });
+
+  it('top-aligns a one-line label with the box, and centres a taller one', () => {
+    const { rerender } = render(
+      <TickRow checked={false} onChange={() => {}}>
+        Admin
+      </TickRow>
+    );
+    const label = () => screen.getByRole('checkbox').closest('label')!;
+    expect(label()).toHaveClass('items-start');
+    expect(screen.getByText('Admin')).toHaveClass('pt-[10px]');
+
+    // A photo and two lines would otherwise sit 10px lower than the box.
+    rerender(
+      <TickRow centered checked={false} onChange={() => {}}>
+        Mina Guirguis
+      </TickRow>
+    );
+    expect(label()).toHaveClass('items-center');
+    expect(label()).not.toHaveClass('items-start');
+    expect(screen.getByText('Mina Guirguis')).not.toHaveClass('pt-[10px]');
+  });
 });
