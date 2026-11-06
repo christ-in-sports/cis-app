@@ -1,24 +1,8 @@
-import { BoardHeader } from '@/components/cis/board-shell';
-import { RegistrationColumn } from '@/components/cis/registration-frame';
-import { Sheet } from '@/components/cis/sheet';
-
 /**
- * Shown inside the layout while a Registration page loads, so the board and the
- * nav stay put instead of the root loading screen's cream page replacing them.
- * Plain text, no spinner: the design system allows no animation beyond the press
- * states (`DESIGN_SYSTEM.md` §6).
+ * Shown inside the Registration layout while one of its pages loads, so the
+ * section tabs stay put. It reuses the app shell's loading screen: no heading,
+ * because this one fallback covers every screen in the group (CISers, Servants,
+ * Roster import, Roles, Register a kid) and any single title would be wrong for
+ * the others until the page's own `BoardHeader` arrives.
  */
-export default function RegistrationLoading() {
-  return (
-    <>
-      <BoardHeader title="Registration" />
-      <RegistrationColumn>
-        <Sheet className="px-cis-5 py-cis-6">
-          <p role="status" className="m-0 text-cis-base font-bold text-cis-ink-muted">
-            Loading…
-          </p>
-        </Sheet>
-      </RegistrationColumn>
-    </>
-  );
-}
+export { default } from '../loading';
