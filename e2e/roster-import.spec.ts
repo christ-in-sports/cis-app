@@ -142,7 +142,7 @@ test('upload, review, and commit a roster', async ({ page }) => {
 
   // ---- 1 · Empty -------------------------------------------------------
   await page.goto('/admin/imports');
-  await expect(page.getByRole('heading', { name: "Import this year's roster" })).toBeVisible();
+  await expect(page.getByText('Choose CSV file')).toBeVisible();
 
   // The Admin's Registration tabs, with Import as the current tab.
   const nav = page.getByRole('navigation', { name: 'Registration' });
@@ -196,7 +196,7 @@ test('upload, review, and commit a roster', async ({ page }) => {
   // the way out: clearing the summary re-rendered against a `batch` prop that
   // had not changed yet, so the component fell through to the review branch.
   await page.getByRole('button', { name: 'Import another file' }).click();
-  await expect(page.getByRole('heading', { name: "Import this year's roster" })).toBeVisible();
+  await expect(page.getByText('Choose CSV file')).toBeVisible();
   await expect(page.getByRole('table')).toHaveCount(0);
   await expect(page).toHaveURL(/\/admin\/imports$/);
 
@@ -267,5 +267,5 @@ test('a non-admin cannot reach the import screen', async ({ page }) => {
 
   // Redirected away, and never shown the upload control.
   await expect(page).not.toHaveURL(/\/admin\/imports/);
-  await expect(page.getByRole('heading', { name: "Import this year's roster" })).toHaveCount(0);
+  await expect(page.getByText('Choose CSV file')).toHaveCount(0);
 });

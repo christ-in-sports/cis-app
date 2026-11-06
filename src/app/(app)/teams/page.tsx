@@ -42,7 +42,7 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
   return <>
     <SportsNav canManage />
     <BoardHeader title={archived ? 'Archived teams' : 'Teams'} />
-    {!archived && <AttendanceSheet><p>{season?.name} · Teams and assignments are shared with Attendance and Sports.</p></AttendanceSheet>}
+    {!archived && <AttendanceSheet><p>{season?.name}</p></AttendanceSheet>}
     <TeamsClient key={archived ? 'archive' : seasonId} archived={archived} teams={teams} kids={registrations} coaches={coaches.data ?? []} links={links.data ?? []} />
   </>;
 }

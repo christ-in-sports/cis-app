@@ -48,7 +48,7 @@ export default function ForgotPasswordPage() {
             <CardTitle className="font-cis-display text-2xl font-normal leading-[1.1]">Check Your Email</CardTitle>
             <CardDescription>
               If an account exists for <strong>{email}</strong>, we&apos;ve sent a password
-              reset link. It expires in 1 hour. Check your spam folder too.
+              reset link. Check your spam folder too.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">

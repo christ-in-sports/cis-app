@@ -208,7 +208,7 @@ test('Program sets up a team; both coaches mark it; Program sees results and loc
     await page.goto('/sports/manage?division=juniors');
     await expect(page.getByText('Needs at least 6 teams. This division has 0.')).toBeVisible();
     await page.goto('/teams?view=archive');
-    await page.getByLabel('Teams', { exact: true }).selectOption('current');
+    await page.getByLabel('View', { exact: true }).selectOption('current');
     await expect(page.getByRole('heading', { name: `Tigers ${suffix}` })).toHaveCount(0);
     await page.getByLabel('New team name').fill(`Tigers ${suffix}`);
     await page.getByRole('button', { name: 'Create team', exact: true }).click();
@@ -235,7 +235,7 @@ test('Program sets up a team; both coaches mark it; Program sees results and loc
     await page.getByRole('button', { name: 'Delete team', exact: true }).click();
     await expect(page.getByRole('heading', { name: `Tigers ${suffix}` })).toHaveCount(0);
     await expect(page.getByText(`Attendance ${suffix}`, { exact: true })).toBeVisible();
-    await page.getByLabel('Teams', { exact: true }).selectOption('archive');
+    await page.getByLabel('View', { exact: true }).selectOption('archive');
     await expect(page.getByRole('heading', { name: `Tigers ${suffix}` })).toBeVisible();
     await page.getByText('View roster', { exact: true }).click();
     await expect(page.getByText(`Attendance ${suffix} · Grade 6`, { exact: true })).toBeVisible();

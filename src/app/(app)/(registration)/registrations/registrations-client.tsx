@@ -619,10 +619,6 @@ export default function RegistrationsClient({
         <RegistrationColumn>
           <Sheet tone="paper" className="flex flex-col gap-cis-3 px-cis-5 pb-cis-6 pt-cis-6">
             <SheetHeading className="text-cis-xl">Staff only</SheetHeading>
-            <p className="m-0 text-cis-base leading-[1.5]">
-              Registration records contain minors&apos; personal information and are limited
-              to approved staff.
-            </p>
           </Sheet>
         </RegistrationColumn>
       </>
@@ -808,8 +804,6 @@ export default function RegistrationsClient({
         </Sheet>
       ) : (
         <Sheet className="flex flex-col gap-cis-3 px-cis-4 pb-cis-4 pt-cis-5">
-          <SheetHeading>CISers</SheetHeading>
-
           {/* A real table, per DESIGN_SYSTEM.md §3 -- a roster is tabular data,
               so it is not a grid of cards. Details expand into a row beneath
               rather than opening a second screen, which keeps the whole record

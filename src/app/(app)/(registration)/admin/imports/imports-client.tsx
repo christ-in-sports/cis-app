@@ -337,7 +337,6 @@ export default function ImportsClient({
   return (
     <Shell>
       <Sheet className="flex flex-col gap-cis-3 px-cis-5 pb-cis-6 pt-cis-6">
-        <SheetHeading className="text-cis-xl">Import this year&apos;s roster</SheetHeading>
         <p className="m-0 text-cis-base leading-[1.5]">
           Choose the roster CSV for the current season. You&apos;ll see every row before anything
           is saved.

@@ -49,7 +49,7 @@ export default function TakeClient({ day, groupName, records, kids, teams, myTea
     <BoardHeader title={fmtDay(day.date)} kicker={day.archived_at ? 'Archived attendance' : day.label || groupName} />
     <AttendanceSheet>
       <SheetHeading>{day.archived_at ? 'Archived attendance' : day.locked ? 'Attendance locked' : 'Attendance open'}</SheetHeading>
-      <p>{day.archived_at ? 'Saved marks and the original teams are kept here. Restoring this day keeps its original roster.' : day.locked ? 'An Admin or Program Team member can reopen this day.' : 'Changes save as you go. Results refresh every 10 seconds.'}</p>
+      {(day.archived_at || day.locked) && <p>{day.archived_at ? 'Saved marks and the original teams are kept here. Restoring this day keeps its original roster.' : 'An Admin or Program Team member can reopen this day.'}</p>}
       <Field label="Team">{(props) => <SelectInput {...props} value={teamId} onChange={(e) => {
         const next = new URLSearchParams(params.toString()); next.set('team', e.target.value); router.replace(`${pathname}?${next}`);
       }}>

@@ -35,7 +35,7 @@ export default function SummaryClient({ archived, rows, canManage }: { archived:
         <option value="all">All accessible teams</option><option value="none">No team</option>{teams.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
       </SelectInput>}</Field>
       <Field label="Search kids">{(props) => <TextInput {...props} type="search" value={search} onChange={(e) => setSearch(e.target.value)} />}</Field>
-      <p className="text-cis-sm text-cis-ink-muted">Present includes late arrivals. Percent uses marked days, including excused absences; unmarked days are excluded. Results refresh every 10 seconds.</p>
+      <p className="text-cis-sm text-cis-ink-muted">Present includes late arrivals. Percent uses marked days, including excused absences; unmarked days are excluded.</p>
       {archived && <p className="text-cis-sm text-cis-ink-muted">Team names come from each kid’s most recent included attendance day.</p>}
     </AttendanceSheet>
     <AttendanceSheet>

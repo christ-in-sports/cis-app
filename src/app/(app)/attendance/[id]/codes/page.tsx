@@ -29,7 +29,7 @@ export default async function AttendanceCodesPage({ params, searchParams }: {
   return <>
     <div className="print:hidden"><BoardHeader title="Attendance QR cards" />
       <AttendanceSheet>
-        <p className="leading-relaxed">Print and cut out a card for each kid. Cards work across attendance days; a signed-in Admin or assigned Coach must scan them in the app.</p>
+        <p className="leading-relaxed">Print a card for each kid. Scanning needs a signed-in Admin or Coach.</p>
         <div className="flex flex-col items-start gap-5">
           <PrintCodesButton />
           <nav aria-label="QR card navigation" className="flex w-full flex-col gap-2 border-t border-cis-rule pt-4 sm:flex-row sm:flex-wrap sm:gap-x-6">

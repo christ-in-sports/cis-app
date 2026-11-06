@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import Image from 'next/image';
 import { EmailCodeForm, type CodeResult } from '@/components/cis/email-code-form';
@@ -99,7 +99,6 @@ export default function LoginPage() {
             />
           </div>
           <CardTitle className="font-cis-display text-2xl font-normal leading-[1.1]">Welcome Back</CardTitle>
-          <CardDescription>Sign in to CIS</CardDescription>
         </CardHeader>
         <CardContent>
           {mode === 'code' ? (
