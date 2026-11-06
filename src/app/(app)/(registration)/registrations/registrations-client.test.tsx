@@ -108,7 +108,7 @@ function renderRoster(opts: { isAdmin?: boolean; rows?: RosterEntry[] } = {}) {
 
 /** The row carrying the name, as opposed to the panel row beneath it. */
 function nameToggle() {
-  return screen.getByRole('button', { name: 'Guirguis, Mina' });
+  return screen.getByRole('button', { name: 'Mina Guirguis' });
 }
 
 const detailsAreOpen = () => screen.queryByText('Emergency contact') !== null;
@@ -227,8 +227,23 @@ describe('roster row -- rows are independent', () => {
 
     const panels = screen.getAllByText('Emergency contact');
     expect(panels).toHaveLength(1);
-    expect(within(screen.getByRole('table')).getByRole('button', { name: 'Sedra, Peter' }))
+    expect(within(screen.getByRole('table')).getByRole('button', { name: 'Peter Sedra' }))
       .toHaveAttribute('aria-expanded', 'false');
+  });
+});
+
+describe('roster row -- names', () => {
+  it('shows First Last and sorts by first name, then last, as on Servants', () => {
+    const kid = (id: string, first_name: string, last_name: string) =>
+      entry({ registration_id: `reg-${id}`, kid: { ...entry().kid, id: `kid-${id}`, first_name, last_name } });
+    renderRoster({
+      rows: [kid('1', 'Mina', 'Guirguis'), kid('2', 'Marina', 'Zaky'), kid('3', 'Mina', 'Abdo')],
+    });
+
+    const names = within(screen.getByRole('table'))
+      .getAllByRole('button', { expanded: false })
+      .map((b) => b.textContent);
+    expect(names).toEqual(['Marina Zaky', 'Mina Abdo', 'Mina Guirguis']);
   });
 });
 
@@ -257,8 +272,8 @@ describe('payments -- the "haven\'t paid" chase mode', () => {
     enterPaymentMode();
 
     expect(screen.getByRole('button', { name: "2 haven't paid" })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.queryByRole('button', { name: 'Abdo, Marina' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Guirguis, Mina' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Marina Abdo' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mina Guirguis' })).toBeInTheDocument();
   });
 
   // The roster, payments and the import are Admin-only, so anyone else gets the gate
@@ -267,7 +282,7 @@ describe('payments -- the "haven\'t paid" chase mode', () => {
     renderRoster({ isAdmin: false });
 
     expect(screen.getByRole('heading', { name: 'Staff only' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Guirguis, Mina' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Mina Guirguis' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /haven't paid/i })).not.toBeInTheDocument();
   });
 
@@ -294,7 +309,7 @@ describe('payments -- the "haven\'t paid" chase mode', () => {
     expect(recordPaymentsMock).toHaveBeenCalledWith(['reg-1', 'reg-2'], { amount: '85', method: 'cash' });
     expect(toast).toHaveBeenCalledWith({ title: '$85 recorded for 2 kids' });
     // Both are paid now, so the chase ends rather than leaving an empty roster.
-    expect(screen.getByRole('button', { name: 'Guirguis, Mina' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Mina Guirguis' })).toBeInTheDocument();
   });
 
   it('shows the action\'s field errors under the bulk fields and keeps the selection', async () => {
@@ -329,11 +344,11 @@ describe('payments -- the "haven\'t paid" chase mode', () => {
 });
 
 describe('payments -- the per-kid Payments block', () => {
-  const open = (name = 'Guirguis, Mina') => fireEvent.click(screen.getByRole('button', { name }));
+  const open = (name = 'Mina Guirguis') => fireEvent.click(screen.getByRole('button', { name }));
 
   it('lists recorded payments with their total', () => {
     renderRoster({ rows: [paid()] });
-    open('Abdo, Marina');
+    open('Marina Abdo');
 
     expect(screen.getByText('$40 recorded')).toBeInTheDocument();
     const list = screen.getByRole('list', { name: 'Payments for Marina Abdo' });
@@ -364,7 +379,7 @@ describe('payments -- the per-kid Payments block', () => {
     deletePaymentMock.mockResolvedValue({ ok: true });
     jest.spyOn(window, 'confirm').mockReturnValue(true);
     renderRoster({ rows: [paid()] });
-    open('Abdo, Marina');
+    open('Marina Abdo');
 
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Remove $40 Venmo payment for Marina Abdo' }));
@@ -521,8 +536,8 @@ describe('roster row -- photos', () => {
       renderRoster({ rows: [withPhoto(), marina()] });
 
       expect(screen.getByRole('button', { name: '1 still need a photo' })).toHaveAttribute('aria-pressed', 'true');
-      expect(screen.getByRole('button', { name: 'Zaky, Marina' })).toBeInTheDocument();
-      expect(screen.queryByRole('button', { name: 'Guirguis, Mina' })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Marina Zaky' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Mina Guirguis' })).not.toBeInTheDocument();
       expect(screen.getByText(/1 shown/)).toBeInTheDocument();
     });
 
@@ -551,7 +566,7 @@ describe('roster row -- photos', () => {
 
       fireEvent.click(screen.getByRole('button', { name: /still owe a consent form/ }));
 
-      expect(screen.getByRole('button', { name: 'Zaky, Marina' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Marina Zaky' })).toBeInTheDocument();
     });
   });
 });
