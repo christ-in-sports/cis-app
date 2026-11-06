@@ -197,10 +197,6 @@ export default async function SchedulePage({
                 />
               </div>
             ))}
-            <p className="mt-3 text-cis-xs font-bold leading-[1.45] text-cis-ink-muted">
-              Final: played, with score. Next up: the next slot to start. Upcoming: teams known, not started. Waiting: a
-              team comes from an earlier game.
-            </p>
           </>
         )}
       </SportsSheet>

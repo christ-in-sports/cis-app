@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import Papa from 'papaparse';
@@ -52,8 +51,7 @@ export default function AwardsClient({ archived, rows }: { archived: boolean; ro
       <Field label="Search kids">{(props) => <TextInput {...props} type="search" value={search} onChange={(e) => setSearch(e.target.value)} />}</Field>
       <details className="text-cis-sm text-cis-ink-muted">
         <summary className="min-h-11 cursor-pointer py-3 font-bold">How ranks work</summary>
-        <p>Everyone on the current registered roster is included, even with no attendance. Rank uses days present, including late arrivals, within the full division; ties share a rank. Team filters do not change ranks.</p>
-        <p className="mt-3">Percent uses marked days, including excused absences. Check unmarked days before choosing awards. Kids with no marked attendance have no rank. Archived results use this same roster; past rosters remain in <Link className="underline" href="/attendance/summary?view=archive">the archived summary</Link>.</p>
+        <p>Rank is days present (including late) within the division; ties share a rank. Kids with no marked days are unranked.</p>
       </details>
     </AttendanceSheet>
     <AttendanceSheet>

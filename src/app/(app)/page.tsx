@@ -62,22 +62,22 @@ export default async function TodayPage() {
         )}
         {manages && (
           <MenuSheet heading="Run the day">
-            <MenuRow href="/attendance" title="Attendance days" icon="attendance" note="Create today's day and see which teams are marked" />
-            <MenuRow href="/sports/schedule" title="Games and scores" icon="schedule" domain="sport" note="Today's schedule, with results to enter" />
-            <MenuRow href="/teams" title="Teams" icon="roster" note="Create teams and assign coaches and registered kids" />
-            <MenuRow href="/sports/manage" title="Manage sports" icon="manage" domain="sport" note="Blocks, fixtures and game days" />
-            {isAdmin && <MenuRow href="/servants" title="Servant registrations" icon="servants" note="Who has signed up this season" />}
+            <MenuRow href="/attendance" title="Attendance days" icon="attendance" />
+            <MenuRow href="/sports/schedule" title="Games and scores" icon="schedule" domain="sport" />
+            <MenuRow href="/teams" title="Teams" icon="roster" />
+            <MenuRow href="/sports/manage" title="Manage sports" icon="manage" domain="sport" />
+            {isAdmin && <MenuRow href="/servants" title="Servant registrations" icon="servants" />}
           </MenuSheet>
         )}
         {roles.has('coach') && (
           <MenuSheet heading="Your team">
-            <MenuRow href="/attendance" title="Take attendance" icon="attendance" note="Open today's day and mark your team, or scan QR cards" />
-            <MenuRow href="/sports/schedule" title="Your games" icon="schedule" domain="sport" note="Today's schedule and courts" />
+            <MenuRow href="/attendance" title="Take attendance" icon="attendance" />
+            <MenuRow href="/sports/schedule" title="Your games" icon="schedule" domain="sport" />
           </MenuSheet>
         )}
         {roles.has('parent') && (
           <MenuSheet heading="Your kids">
-            <MenuRow href="/register" title="Registration" icon="register" note="Register a kid or finish one in progress" />
+            <MenuRow href="/register" title="Registration" icon="register" />
           </MenuSheet>
         )}
         <MenuSheet heading="The season">

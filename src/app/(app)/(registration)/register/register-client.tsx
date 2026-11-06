@@ -755,7 +755,6 @@ export default function RegisterClient({
           </Field>
           <Field
             label="Email"
-            hint="We match your kids to your account by this address."
             error={err('kid.guardian_email')}
           >
             {(p) => (

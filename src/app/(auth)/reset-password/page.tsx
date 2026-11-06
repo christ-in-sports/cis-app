@@ -77,7 +77,6 @@ export default function ResetPasswordPage() {
             <CardTitle className="font-cis-display text-2xl font-normal leading-[1.1]">Link Expired</CardTitle>
             <CardDescription>
               This reset link is invalid, expired, or has already been used.
-              Reset links are valid for 1 hour and can only be used once.
             </CardDescription>
           </CardHeader>
           <CardContent>

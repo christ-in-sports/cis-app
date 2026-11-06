@@ -40,8 +40,7 @@ export default function TeamsClient({ archived, teams, kids, coaches, links }: {
   };
   return <>
     <AttendanceSheet>
-      <p>{archived ? 'Past teams, kids and coach assignments are saved here. New teams are managed in Current teams.' : 'Create teams, assign registered kids, and choose any number of coaches for each team. Only users with the Coach role appear here; an Admin grants roles.'}</p>
-      <Field label="Teams">{(props) => <SelectInput {...props} disabled={pending} value={archived ? 'archive' : 'current'} onChange={(e) => {
+      <Field label="View">{(props) => <SelectInput {...props} disabled={pending} value={archived ? 'archive' : 'current'} onChange={(e) => {
         setSelected([]); setTarget(''); setMessage(''); setError('');
         const next = new URLSearchParams(params.toString()); next.set('view', e.target.value);
         router.replace(`${pathname}?${next}`);
@@ -106,7 +105,7 @@ export default function TeamsClient({ archived, teams, kids, coaches, links }: {
     </AttendanceSheet>
     {!archived && <AttendanceSheet>
       <SheetHeading>Assign registered kids</SheetHeading>
-      <p className="text-cis-sm text-cis-ink-muted">{kids.filter((k) => k.division === division && !k.team_id).length} kids without a team in this division. Assignments are shared with Attendance and Sports. Archived attendance keeps its saved roster.</p>
+      <p className="text-cis-sm text-cis-ink-muted">{kids.filter((k) => k.division === division && !k.team_id).length} kids without a team</p>
       <Field label="Search kids">{(props) => <TextInput {...props} type="search" value={search} onChange={(e) => setSearch(e.target.value)} />}</Field>
       <fieldset disabled={pending} className="space-y-2">
         <legend className="sr-only">Select kids to assign</legend>
