@@ -180,11 +180,12 @@ interface RosterEntry_Row {
   team_id: string | null;
 }
 
+// First name, then last: the order the names are shown in, as on Servants.
 const sortRows = (rows: RosterEntry[]) =>
   [...rows].sort(
     (a, b) =>
-      a.kid.last_name.localeCompare(b.kid.last_name) ||
-      a.kid.first_name.localeCompare(b.kid.first_name)
+      a.kid.first_name.localeCompare(b.kid.first_name) ||
+      a.kid.last_name.localeCompare(b.kid.last_name)
   );
 
 export default function RegistrationsClient({
@@ -899,7 +900,7 @@ export default function RegistrationsClient({
                               aria-controls={panelId}
                               className="text-left text-cis-base font-bold leading-[1.3] group-hover:underline"
                             >
-                              {r.kid.last_name}, {r.kid.first_name}
+                              {r.kid.first_name} {r.kid.last_name}
                             </button>
                             <div className="text-cis-xs font-semibold text-cis-ink-muted">
                               {fmtDate(r.kid.dob)}

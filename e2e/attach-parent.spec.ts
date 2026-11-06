@@ -141,7 +141,7 @@ test('an Admin attaches an imported kid to a parent, who then finds them on Regi
 
   await signIn(page, ADMIN);
   await page.goto('/registrations');
-  await page.getByRole('button', { name: 'Attachson, Zed' }).click();
+  await page.getByRole('button', { name: 'Zed Attachson' }).click();
   await expect(page.getByText('Not attached', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Attach to parent' }).click();
 
@@ -183,7 +183,7 @@ test('a kid who already has a parent offers nothing to attach', async ({ page })
 
   await signIn(page, ADMIN);
   await page.goto('/registrations');
-  await page.getByRole('button', { name: 'Attachson, Zed' }).click();
+  await page.getByRole('button', { name: 'Zed Attachson' }).click();
 
   await expect(page.getByText('Attached', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Attach to parent' })).toHaveCount(0);
