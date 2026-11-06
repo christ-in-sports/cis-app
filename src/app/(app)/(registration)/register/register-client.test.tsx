@@ -44,6 +44,7 @@ const PHOTO_PATH = '4f3c1d52-9c7e-4d52-8a35-0b1f2f6c7a11.webp';
 const ON_FILE = { photoPath: 'on-file.webp', signedUrl: 'https://signed/on-file' };
 
 const season = { id: 'season-1', name: 'CIS 2026-2027' };
+const SIGNED_IN = 'parent@signin.test';
 
 function kid(overrides: Partial<ParentKid> = {}): ParentKid {
   return {
@@ -97,17 +98,37 @@ beforeEach(() => {
 
 describe('the kid picker', () => {
   it('goes straight to a blank form when the parent has no kids yet', () => {
-    render(<RegisterClient season={season} kids={[]} />);
+    render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
 
     expect(screen.getByRole('heading', { name: 'About your kid' })).toBeInTheDocument();
     expect(field('Home address').value).toBe('');
     expect(screen.queryByText('Who are you registering?')).not.toBeInTheDocument();
   });
 
+  it('offers the signed-in email as the guardian email on a first kid', () => {
+    render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
+
+    expect(field('Email')).toHaveValue(SIGNED_IN);
+    // The kid's own email is a different field and stays blank.
+    expect(screen.getByLabelText(/Kid's email/)).toHaveValue('');
+  });
+
+  it('keeps a typed-over guardian email for a sibling, and falls back to the sign-in email when empty', () => {
+    const { unmount } = render(<RegisterClient season={season} kids={[kid()]} email={SIGNED_IN} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add another kid' }));
+    expect(field('Email')).toHaveValue('mariam@example.com');
+    unmount();
+
+    render(<RegisterClient season={season} kids={[kid({ guardian_email: '' })]} email={SIGNED_IN} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add another kid' }));
+    expect(field('Email')).toHaveValue(SIGNED_IN);
+  });
+
   it('says when a registration is waiting on the waiver, and when it is done', () => {
     render(
       <RegisterClient
         season={season}
+        email={SIGNED_IN}
         kids={[
           withReg({ consent_given_at: null }),
           kid({ id: 'k2', first_name: 'Marina' }),
@@ -133,6 +154,7 @@ describe('the kid picker', () => {
     const { container } = render(
       <RegisterClient
         season={season}
+        email={SIGNED_IN}
         kids={[kid(), kid({ id: 'k2', first_name: 'Marina', photo: null })]}
       />,
     );
@@ -151,7 +173,7 @@ describe('the kid picker', () => {
   });
 
   it('carries household details to a new kid, but nothing about the child', () => {
-    render(<RegisterClient season={season} kids={[kid()]} />);
+    render(<RegisterClient season={season} kids={[kid()]} email={SIGNED_IN} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Add another kid' }));
 
@@ -166,7 +188,7 @@ describe('the kid picker', () => {
 
 describe('a returning kid', () => {
   it('shows name, birthday and gender as text, not as fields', () => {
-    render(<RegisterClient season={season} kids={[kid()]} />);
+    render(<RegisterClient season={season} kids={[kid()]} email={SIGNED_IN} />);
     fireEvent.click(screen.getByText('Mina Guirguis'));
 
     expect(screen.getByText('March 2, 2014')).toBeInTheDocument();
@@ -179,7 +201,7 @@ describe('a returning kid', () => {
   });
 
   it('leaves the waiver unticked, because consent is given again on every save', () => {
-    render(<RegisterClient season={season} kids={[kid()]} />);
+    render(<RegisterClient season={season} kids={[kid()]} email={SIGNED_IN} />);
     fireEvent.click(screen.getByText('Mina Guirguis'));
 
     expect(screen.getByRole('checkbox')).not.toBeChecked();
@@ -188,7 +210,7 @@ describe('a returning kid', () => {
 
   it('sends the returning branch with the kid id, and no locked fields', async () => {
     registerKid.mockResolvedValue({ ok: true });
-    render(<RegisterClient season={season} kids={[kid()]} />);
+    render(<RegisterClient season={season} kids={[kid()]} email={SIGNED_IN} />);
     fireEvent.click(screen.getByText('Mina Guirguis'));
     fireEvent.click(screen.getByRole('checkbox'));
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
@@ -206,7 +228,7 @@ describe('a returning kid', () => {
 
   it('keeps the photo on file when none is chosen, and shows it', async () => {
     registerKid.mockResolvedValue({ ok: true });
-    render(<RegisterClient season={season} kids={[kid()]} />);
+    render(<RegisterClient season={season} kids={[kid()]} email={SIGNED_IN} />);
     fireEvent.click(screen.getByText('Mina Guirguis'));
 
     expect(screen.getByRole('button', { name: 'Replace photo' })).toBeInTheDocument();
@@ -219,7 +241,7 @@ describe('a returning kid', () => {
 
   it('sends a replacement photo with the registration', async () => {
     registerKid.mockResolvedValue({ ok: true });
-    render(<RegisterClient season={season} kids={[kid()]} />);
+    render(<RegisterClient season={season} kids={[kid()]} email={SIGNED_IN} />);
     fireEvent.click(screen.getByText('Mina Guirguis'));
 
     await choosePhoto();
@@ -231,7 +253,7 @@ describe('a returning kid', () => {
   });
 
   it('asks for a photo from a kid who has none, and does not submit without one', async () => {
-    render(<RegisterClient season={season} kids={[kid({ photo: null })]} />);
+    render(<RegisterClient season={season} kids={[kid({ photo: null })]} email={SIGNED_IN} />);
     fireEvent.click(screen.getByText('Mina Guirguis'));
     fireEvent.click(screen.getByRole('checkbox'));
 
@@ -245,7 +267,7 @@ describe('a returning kid', () => {
 
   it('lets that kid be registered once a photo is added', async () => {
     registerKid.mockResolvedValue({ ok: true });
-    render(<RegisterClient season={season} kids={[kid({ photo: null })]} />);
+    render(<RegisterClient season={season} kids={[kid({ photo: null })]} email={SIGNED_IN} />);
     fireEvent.click(screen.getByText('Mina Guirguis'));
 
     await choosePhoto();
@@ -258,7 +280,7 @@ describe('a returning kid', () => {
 
   // The database refuses this too; the screen just should not offer the form.
   it('offers no form once the kid is on a team', () => {
-    render(<RegisterClient season={season} kids={[withReg({ on_team: true })]} />);
+    render(<RegisterClient season={season} kids={[withReg({ on_team: true })]} email={SIGNED_IN} />);
     fireEvent.click(screen.getByText('Mina Guirguis'));
 
     expect(screen.getByText('Mina Guirguis is on a team')).toBeInTheDocument();
@@ -272,7 +294,7 @@ describe('a returning kid', () => {
     it('replaces the photo at once, with no registration to submit', async () => {
       replaceKidPhoto.mockResolvedValue({ ok: true, photo: { photoPath: PHOTO_PATH, signedUrl: 'https://signed/new' } });
       const kids = [onTeam()];
-      const { container } = render(<RegisterClient season={season} kids={kids} />);
+      const { container } = render(<RegisterClient season={season} kids={kids} email={SIGNED_IN} />);
       fireEvent.click(screen.getByText('Mina Guirguis'));
       expect(screen.getByText('You can still replace their photo.')).toBeInTheDocument();
 
@@ -286,7 +308,7 @@ describe('a returning kid', () => {
 
     it('asks for a photo from a kid on a team who has none', async () => {
       replaceKidPhoto.mockResolvedValue({ ok: true, photo: { photoPath: PHOTO_PATH, signedUrl: 'https://signed/new' } });
-      render(<RegisterClient season={season} kids={[kid({ photo: null, registration: { ...kid().registration!, on_team: true } })]} />);
+      render(<RegisterClient season={season} kids={[kid({ photo: null, registration: { ...kid().registration!, on_team: true } })]} email={SIGNED_IN} />);
       fireEvent.click(screen.getByText('Mina Guirguis'));
 
       expect(screen.getByText(/Add one so coaches can recognise them/)).toBeInTheDocument();
@@ -300,7 +322,7 @@ describe('a returning kid', () => {
 
     it('shows why a replacement was refused, and keeps the photo on screen', async () => {
       replaceKidPhoto.mockResolvedValue({ ok: false, error: 'You can only change the photo of your own kids.' });
-      const { container } = render(<RegisterClient season={season} kids={[onTeam()]} />);
+      const { container } = render(<RegisterClient season={season} kids={[onTeam()]} email={SIGNED_IN} />);
       fireEvent.click(screen.getByText('Mina Guirguis'));
 
       const input = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -315,7 +337,7 @@ describe('a returning kid', () => {
 
 describe('the waiver', () => {
   it('links to the program\'s waiver document in a new tab', () => {
-    render(<RegisterClient season={season} kids={[]} />);
+    render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
 
     const link = screen.getByRole('link', { name: /Read the liability waiver/ });
     expect(link).toHaveAttribute('href', WAIVER_URL);
@@ -327,7 +349,7 @@ describe('the waiver', () => {
 
 describe('paying for registration', () => {
   it('lists every way to pay, with the fee placeholder, before the waiver', () => {
-    render(<RegisterClient season={season} kids={[]} />);
+    render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
 
     const heading = screen.getByRole('heading', { name: 'Paying for registration' });
     const sheet = heading.parentElement as HTMLElement;
@@ -348,7 +370,7 @@ describe('paying for registration', () => {
   // ENG-9: the form must never say whether a kid has paid, for a new kid or a
   // returning one.
   it('says nothing about whether a kid has paid', () => {
-    render(<RegisterClient season={season} kids={[kid()]} />);
+    render(<RegisterClient season={season} kids={[kid()]} email={SIGNED_IN} />);
     expect(screen.queryByText(/\b(paid|unpaid|balance|owe)\b/i)).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /Mina Guirguis/ }));
@@ -362,7 +384,7 @@ describe('grade and division', () => {
     document.querySelector(`input[name=division][value=${name}]`) as HTMLInputElement;
 
   it('sets the division from the grade and locks it', () => {
-    render(<RegisterClient season={season} kids={[]} />);
+    render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
 
     fireEvent.change(field('Grade'), { target: { value: '5' } });
     expect(division('juniors')).toBeChecked();
@@ -375,7 +397,7 @@ describe('grade and division', () => {
   });
 
   it('lets grade 7 choose either', () => {
-    render(<RegisterClient season={season} kids={[]} />);
+    render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
 
     fireEvent.change(field('Grade'), { target: { value: '7' } });
     expect(division('juniors')).toBeEnabled();
@@ -386,7 +408,7 @@ describe('grade and division', () => {
   });
 
   it('does not allow a division before a grade is chosen', () => {
-    render(<RegisterClient season={season} kids={[]} />);
+    render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
 
     expect(division('juniors')).toBeDisabled();
     expect(screen.getByText('Choose a grade first.')).toBeInTheDocument();
@@ -412,7 +434,7 @@ describe('submitting a new kid', () => {
   }
 
   it('shows every problem, focuses the first, and never calls the server', () => {
-    render(<RegisterClient season={season} kids={[]} />);
+    render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Register' }));
 
@@ -446,7 +468,7 @@ describe('submitting a new kid', () => {
   });
 
   it('will not submit without a photo, and says so beside the photo', async () => {
-    render(<RegisterClient season={season} kids={[]} />);
+    render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
     fillValid();
     fireEvent.click(screen.getByRole('checkbox'));
 
@@ -459,7 +481,7 @@ describe('submitting a new kid', () => {
   });
 
   it('takes the photo error away once a photo is added', async () => {
-    render(<RegisterClient season={season} kids={[]} />);
+    render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
     fireEvent.click(screen.getByRole('button', { name: 'Register' }));
     const group = screen.getByRole('group', { name: 'Photo' });
     expect(within(group).getByRole('alert')).toBeInTheDocument();
@@ -471,7 +493,7 @@ describe('submitting a new kid', () => {
 
   it('shows what the photo step says when it fails, and nothing is sent', async () => {
     jest.mocked(preparePhoto).mockRejectedValue(new PhotoError('heic-failed', 'That photo could not be converted. Choose a JPEG instead.'));
-    render(<RegisterClient season={season} kids={[]} />);
+    render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
 
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, { target: { files: [new File(['x'], 'IMG_1.HEIC')] } });
@@ -481,7 +503,7 @@ describe('submitting a new kid', () => {
   });
 
   it('will not submit without the waiver', async () => {
-    render(<RegisterClient season={season} kids={[]} />);
+    render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
     await choosePhoto();
     fillValid();
 
@@ -493,7 +515,7 @@ describe('submitting a new kid', () => {
 
   it('sends a valid registration and shows the done screen', async () => {
     registerKid.mockResolvedValue({ ok: true, kidId: 'k', registrationId: 'r' });
-    render(<RegisterClient season={season} kids={[]} />);
+    render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
     await choosePhoto();
     fillValid();
     fireEvent.click(screen.getByRole('checkbox'));
@@ -518,7 +540,7 @@ describe('submitting a new kid', () => {
       error: 'Please fix the highlighted fields.',
       fieldErrors: { 'kid.guardian_email': ['Parent/guardian email is not a valid email address'] },
     });
-    render(<RegisterClient season={season} kids={[]} />);
+    render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
     await choosePhoto();
     fillValid();
     fireEvent.click(screen.getByRole('checkbox'));
@@ -535,7 +557,7 @@ describe('submitting a new kid', () => {
       ok: false,
       error: 'You have already added a kid with that name and date of birth.',
     });
-    render(<RegisterClient season={season} kids={[]} />);
+    render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
     await choosePhoto();
     fillValid();
     fireEvent.click(screen.getByRole('checkbox'));
@@ -551,7 +573,7 @@ describe('submitting a new kid', () => {
       error: 'The photo upload was not found. Choose the photo again.',
       fieldErrors: { photo_path: ['Choose the photo again'] },
     });
-    render(<RegisterClient season={season} kids={[]} />);
+    render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
     await choosePhoto();
     fillValid();
     fireEvent.click(screen.getByRole('checkbox'));

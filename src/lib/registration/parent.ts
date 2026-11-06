@@ -49,6 +49,8 @@ export type ParentContext =
       status: 'ok';
       season: { id: string; name: string };
       kids: ParentKid[];
+      /** The signed-in email, which the form offers as the guardian email. */
+      email: string;
     };
 
 export async function loadParentRegistrationContext(): Promise<ParentContext> {
@@ -65,6 +67,11 @@ export async function loadParentRegistrationContext(): Promise<ParentContext> {
 
   if (!season) return { status: 'no-season' };
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const email = user?.email ?? '';
+
   const { data: kids, error } = await supabase
     .from('kids')
     .select(
@@ -80,7 +87,7 @@ export async function loadParentRegistrationContext(): Promise<ParentContext> {
   if (error) {
     // Never include row data in logs -- these are minors' records.
     console.error('loading parent kids failed:', error.message);
-    return { status: 'ok', season, kids: [] };
+    return { status: 'ok', season, kids: [], email };
   }
 
   // One request signs every photo on the page. A failure leaves kids with their
@@ -90,6 +97,7 @@ export async function loadParentRegistrationContext(): Promise<ParentContext> {
   return {
     status: 'ok',
     season,
+    email,
     kids: (kids ?? []).map((k) => {
       const reg = (k.registrations ?? []).find((r) => r.season_id === season.id) ?? null;
       // `photo_path` is replaced by `photo`: the path alone is no use to the page.
