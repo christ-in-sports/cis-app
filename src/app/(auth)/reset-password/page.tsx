@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
+import { authFrameClasses } from '@/components/cis/auth-frame';
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');
@@ -63,7 +64,7 @@ export default function ResetPasswordPage() {
 
   if (checking) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className={authFrameClasses}>
         <p className="text-sm text-muted-foreground">Verifying reset link...</p>
       </div>
     );
@@ -71,7 +72,7 @@ export default function ResetPasswordPage() {
 
   if (!validSession) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 safe-top safe-bottom">
+      <div className={authFrameClasses}>
         <Card className="w-full max-w-sm">
           <CardHeader className="text-center">
             <CardTitle className="font-cis-display text-2xl font-normal leading-[1.1]">Link Expired</CardTitle>
@@ -91,7 +92,7 @@ export default function ResetPasswordPage() {
 
   if (done) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 safe-top safe-bottom">
+      <div className={authFrameClasses}>
         <Card className="w-full max-w-sm">
           <CardHeader className="text-center">
             <CardTitle className="font-cis-display text-2xl font-normal leading-[1.1]">Password Updated</CardTitle>
@@ -113,7 +114,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 safe-top safe-bottom">
+    <div className={authFrameClasses}>
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <CardTitle className="font-cis-display text-2xl font-normal leading-[1.1]">Set New Password</CardTitle>

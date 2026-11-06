@@ -11,6 +11,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { EmailCodeForm, type CodeResult } from '@/components/cis/email-code-form';
 import { safeRedirect } from '@/lib/auth/safe-redirect';
+import { authFrameClasses } from '@/components/cis/auth-frame';
 
 /**
  * Asks for a sign-in code for someone who already has an account. `/login` never
@@ -85,7 +86,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 safe-top safe-bottom">
+    <div className={authFrameClasses}>
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-3">

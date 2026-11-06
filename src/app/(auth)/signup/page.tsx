@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import Image from 'next/image';
+import { authFrameClasses } from '@/components/cis/auth-frame';
 
 export default function SignupPage() {
   const [signupCode, setSignupCode] = useState('');
@@ -69,7 +70,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 safe-top safe-bottom">
+    <div className={authFrameClasses}>
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-3">

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
+import { authFrameClasses } from '@/components/cis/auth-frame';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -42,7 +43,7 @@ export default function ForgotPasswordPage() {
 
   if (sent) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 safe-top safe-bottom">
+      <div className={authFrameClasses}>
         <Card className="w-full max-w-sm">
           <CardHeader className="text-center">
             <CardTitle className="font-cis-display text-2xl font-normal leading-[1.1]">Check Your Email</CardTitle>
@@ -72,7 +73,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 safe-top safe-bottom">
+    <div className={authFrameClasses}>
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <CardTitle className="font-cis-display text-2xl font-normal leading-[1.1]">Forgot Password</CardTitle>

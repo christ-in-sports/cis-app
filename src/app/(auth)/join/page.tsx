@@ -22,6 +22,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { checkParentJoinCode } from '@/lib/auth/join-code';
 import { checkRole } from '@/lib/auth/roles';
 import JoinClient, { JoinSignedIn } from './join-client';
+import { authFrameClasses } from '@/components/cis/auth-frame';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,7 +35,7 @@ export const metadata: Metadata = {
 
 function JoinFrame({ title, description, children }: { title: string; description: string; children: ReactNode }) {
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 safe-top safe-bottom">
+    <div className={authFrameClasses}>
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-3">
