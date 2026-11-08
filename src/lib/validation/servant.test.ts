@@ -35,15 +35,20 @@ describe('servantRegistrationSchema', () => {
     expect(r.dates_missing).toBeNull();
   });
 
-  it('requires at least one session when serving', () => {
+  it('requires one session when serving', () => {
     expect(issues(base({ sessions: [] }))).toContainEqual(
-      expect.objectContaining({ path: 'sessions', message: 'Choose at least one session' }),
+      expect.objectContaining({ path: 'sessions', message: 'Choose one session only' }),
     );
   });
 
-  it('requires a team or Other for each chosen session', () => {
+  it('rejects both sessions even when both have teams', () => {
+    expect(issues(base({ sessions: ['juniors', 'ambassadors'], ambassadors_subteams: ['prayer'] })))
+      .toContainEqual({ path: 'sessions', message: 'Choose one session only' });
+  });
+
+  it('requires a team or Other for the chosen session', () => {
     const found = issues(
-      base({ sessions: ['juniors', 'ambassadors'], juniors_subteams: ['prayer'] }),
+      base({ sessions: ['ambassadors'], juniors_subteams: ['prayer'] }),
     );
     expect(found.map((i) => i.path)).toEqual(['ambassadors_subteams']);
   });

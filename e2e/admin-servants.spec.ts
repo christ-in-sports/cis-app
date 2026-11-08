@@ -106,6 +106,8 @@ test('an Admin sees a submitted registration, opens it, and can export', async (
 
   const row = page.getByRole('row').filter({ hasText: SERVANT_NAME });
   await expect(row).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Session preference and teams' })).toBeVisible();
+  await expect(row).toContainText('Juniors:');
   await expect(row).toContainText('Coaches');
   await expect(row).toContainText('(510) 555-1234');
 

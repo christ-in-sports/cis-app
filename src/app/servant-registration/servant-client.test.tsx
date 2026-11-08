@@ -82,13 +82,13 @@ beforeEach(() => {
 describe('servant registration form', () => {
   it('hides the session and team questions until the servant says they are serving', () => {
     renderForm();
-    expect(screen.queryByText('Which sessions can you serve?')).not.toBeInTheDocument();
+    expect(screen.queryByText('Which session would you prefer to serve?')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByLabelText('Yes'));
-    expect(screen.getByText('Which sessions can you serve?')).toBeInTheDocument();
+    expect(screen.getByText('Which session would you prefer to serve?')).toBeInTheDocument();
 
     fireEvent.click(screen.getByLabelText('No'));
-    expect(screen.queryByText('Which sessions can you serve?')).not.toBeInTheDocument();
+    expect(screen.queryByText('Which session would you prefer to serve?')).not.toBeInTheDocument();
   });
 
   it('asks for teams only for the sessions that were ticked', () => {
@@ -96,9 +96,48 @@ describe('servant registration form', () => {
     fireEvent.click(screen.getByLabelText('Yes'));
     expect(screen.queryByText(/Juniors: which teams/)).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('checkbox', { name: /Juniors/ }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Juniors' }));
     expect(screen.getByText(/Juniors: which teams/)).toBeInTheDocument();
     expect(screen.queryByText(/Ambassadors: which teams/)).not.toBeInTheDocument();
+  });
+
+  it('allows only one session and switches the team questions with the choice', () => {
+    renderForm();
+    fireEvent.click(screen.getByLabelText('Yes'));
+    expect(screen.getByText(/run at the same time.*does not guarantee placement/)).toBeInTheDocument();
+    const juniors = screen.getByRole('radio', { name: 'Juniors' });
+    const ambassadors = screen.getByRole('radio', { name: 'Ambassadors' });
+    fireEvent.click(juniors);
+    expect(juniors).toBeChecked();
+    fireEvent.click(ambassadors);
+    expect(ambassadors).toBeChecked();
+    expect(juniors).not.toBeChecked();
+    expect(screen.queryByText(/Juniors: which teams/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Ambassadors: which teams/)).toBeInTheDocument();
+  });
+
+  it('asks a returning servant who previously chose both to choose one before saving', () => {
+    renderForm({ registration: record({ sessions: ['juniors', 'ambassadors'] }) });
+    expect(screen.getByRole('radio', { name: 'Juniors' })).not.toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Ambassadors' })).not.toBeChecked();
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(screen.getByText('Choose one session only')).toBeInTheDocument();
+    expect(submitServantRegistration).not.toHaveBeenCalled();
+  });
+
+  it('submits only the chosen session and clears the other session teams', async () => {
+    submitServantRegistration.mockResolvedValue({ ok: true, isNew: false });
+    renderForm({ registration: record() });
+    fireEvent.click(screen.getByRole('radio', { name: 'Ambassadors' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: /Prayer Team/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => expect(submitServantRegistration).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sessions: ['ambassadors'],
+        juniors_subteams: [],
+        ambassadors_subteams: ['prayer'],
+      }),
+    ));
   });
 
   it('shows the login email read-only', () => {
@@ -112,7 +151,7 @@ describe('servant registration form', () => {
     renderForm({ registration: record() });
     expect(screen.getByLabelText('Name')).toHaveValue('Mina Hanna');
     expect(screen.getByLabelText('Yes')).toBeChecked();
-    expect(screen.getByRole('checkbox', { name: /Juniors/ })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Juniors' })).toBeChecked();
     expect(screen.getByRole('checkbox', { name: /Coaches/ })).toBeChecked();
     expect(screen.getByLabelText(/Dates you will miss/)).toHaveValue('Feb 7');
     expect(screen.getByText(/Last saved/)).toBeInTheDocument();

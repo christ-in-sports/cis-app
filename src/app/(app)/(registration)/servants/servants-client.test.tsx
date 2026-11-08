@@ -58,7 +58,7 @@ describe('Admin servants list', () => {
     expect(screen.getByText('2 registered · 1 serving · 1 not serving')).toBeInTheDocument();
 
     const table = screen.getByRole('table');
-    for (const name of ['Name', 'Serving', 'Sessions and teams', 'Phone', 'Updated']) {
+    for (const name of ['Name', 'Serving', 'Session preference and teams', 'Phone', 'Updated']) {
       expect(within(table).getByRole('columnheader', { name })).toBeInTheDocument();
     }
 
@@ -70,6 +70,14 @@ describe('Admin servants list', () => {
 
     const sara = screen.getByRole('button', { name: 'Sara Youssef' }).closest('tr')!;
     expect(within(sara).getByText('No')).toBeInTheDocument();
+  });
+
+  it('shows the saved single session preference with its teams', () => {
+    renderList({ rows: [row({ sessions: ['ambassadors'], ambassadors_subteams: ['prayer'], ambassadors_other: null })] });
+    const servant = screen.getByRole('button', { name: 'Mina Hanna' }).closest('tr')!;
+    expect(within(servant).getByText('Ambassadors:')).toBeInTheDocument();
+    expect(within(servant).getByText('Prayer Team')).toBeInTheDocument();
+    expect(within(servant).queryByText('Juniors:')).not.toBeInTheDocument();
   });
 
   it('opens a row to every field, and closes it again', () => {
