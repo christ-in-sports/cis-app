@@ -226,7 +226,8 @@ test('Program sets up a team; both coaches mark it; Program sees results and loc
     await page.getByRole('button', { name: 'Restore day' }).click();
     await expect(page.getByRole('heading', { name: 'Attendance open' })).toBeVisible();
     await page.getByRole('link', { name: 'Teams', exact: true }).click();
-    await expect(page.getByText(`Attendance ${suffix}`, { exact: true })).toBeVisible();
+    await expect(page.getByRole('group', { name: 'Select kids to assign' })
+      .getByText(`Attendance ${suffix}`, { exact: true })).toBeVisible();
     await page.getByText('Edit team', { exact: true }).click();
     page.once('dialog', (dialog) => dialog.dismiss());
     await page.getByRole('button', { name: 'Delete team', exact: true }).click();
@@ -234,7 +235,8 @@ test('Program sets up a team; both coaches mark it; Program sees results and loc
     page.once('dialog', (dialog) => dialog.accept());
     await page.getByRole('button', { name: 'Delete team', exact: true }).click();
     await expect(page.getByRole('heading', { name: `Tigers ${suffix}` })).toHaveCount(0);
-    await expect(page.getByText(`Attendance ${suffix}`, { exact: true })).toBeVisible();
+    await expect(page.getByRole('group', { name: 'Select kids to assign' })
+      .getByText(`Attendance ${suffix}`, { exact: true })).toBeVisible();
     await page.getByLabel('View', { exact: true }).selectOption('archive');
     await expect(page.getByRole('heading', { name: `Tigers ${suffix}` })).toBeVisible();
     await page.getByText('View roster', { exact: true }).click();
@@ -252,6 +254,7 @@ test('Program sets up a team; both coaches mark it; Program sees results and loc
     await expect(page).toHaveURL('/attendance');
     await expect(page.getByRole('link', { name: /Sun, Nov 1, 2026/ })).toHaveCount(0);
     await page.getByRole('link', { name: 'Teams', exact: true }).click();
-    await expect(page.getByText(`Attendance ${suffix}`, { exact: true })).toBeVisible();
+    await expect(page.getByRole('group', { name: 'Select kids to assign' })
+      .getByText(`Attendance ${suffix}`, { exact: true })).toBeVisible();
   } finally { await firstContext.close(); await secondContext.close(); }
 });
