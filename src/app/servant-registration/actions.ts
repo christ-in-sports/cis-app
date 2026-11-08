@@ -72,6 +72,7 @@ export async function submitServantRegistration(input: unknown): Promise<SubmitS
 
   const isNew = data === true;
   revalidatePath('/servant-registration');
+  revalidatePath('/servants');
 
   let emailFailed = false;
   if (isNew && user.email) {

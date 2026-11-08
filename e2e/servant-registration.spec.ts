@@ -70,13 +70,19 @@ test('a new servant signs up, is sent to the form, registers, then edits it', as
   await expect(page.getByLabel('Email')).toHaveValue(EMAIL);
 
   // The session and team questions are hidden until the servant says "Yes".
-  await expect(page.getByText('Which sessions can you serve?')).toBeHidden();
+  await expect(page.getByText('Which session would you prefer to serve?')).toBeHidden();
 
   // 3. Submit. The real inputs are visually hidden; the label is what a thumb taps.
   await page.getByLabel('Name', { exact: true }).fill(NAME);
   await page.locator('label').filter({ hasText: 'Not Completed' }).click();
   await page.locator('label').filter({ hasText: /^Yes$/ }).click();
-  await page.locator('label').filter({ hasText: /^Juniors$/ }).click();
+  const session = page.getByRole('group', { name: 'Which session would you prefer to serve?' });
+  await expect(session).toContainText('run at the same time');
+  await expect(session).toContainText('does not guarantee placement');
+  await session.locator('label').filter({ hasText: /^Ambassadors$/ }).click();
+  await session.locator('label').filter({ hasText: /^Juniors$/ }).click();
+  await expect(session.getByRole('radio', { name: 'Juniors' })).toBeChecked();
+  await expect(session.getByRole('radio', { name: 'Ambassadors' })).not.toBeChecked();
   await page.locator('label').filter({ hasText: 'Coaches' }).click();
   await page.getByLabel('Phone', { exact: true }).fill('510-555-1234');
   await page.locator('label').filter({ hasText: /^Male$/ }).click();
@@ -115,6 +121,10 @@ test('a new servant signs up, is sent to the form, registers, then edits it', as
   await expect(page.getByRole('heading', { name: 'Registration submitted' })).toBeVisible();
   await expect(page.getByLabel('Name', { exact: true })).toHaveValue(NAME);
   await expect(page.getByText(/Last saved/)).toBeVisible();
+  await expect(page.getByRole('radio', { name: 'Juniors' })).toBeChecked();
+  await page.getByRole('group', { name: 'Which session would you prefer to serve?' })
+    .locator('label').filter({ hasText: /^Ambassadors$/ }).click();
+  await page.locator('label').filter({ hasText: /^Prayer Team$/ }).click();
   await page.getByLabel(/Dates you will miss/).fill('Feb 7 and Feb 14');
   await page.getByRole('button', { name: 'Save changes' }).click();
   await expect(page.getByText('Changes saved')).toBeVisible();
@@ -122,13 +132,13 @@ test('a new servant signs up, is sent to the form, registers, then edits it', as
   const rows = await withDb(async (client) =>
     (
       await client.query(
-        `select r.dates_missing from servant_registrations r
+        `select r.dates_missing, r.sessions from servant_registrations r
            join auth.users u on u.id = r.user_id where u.email = $1`,
         [EMAIL],
       )
     ).rows,
   );
-  expect(rows).toEqual([{ dates_missing: 'Feb 7 and Feb 14' }]);
+  expect(rows).toEqual([{ dates_missing: 'Feb 7 and Feb 14', sessions: ['ambassadors'] }]);
 
   // 5. With no role there is no bottom bar, so the form is where they sign out.
   await page.getByRole('button', { name: 'Sign out' }).first().click();

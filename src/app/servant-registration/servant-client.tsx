@@ -94,7 +94,9 @@ function formFrom(record: ServantRegistrationRecord | null): FormState {
     full_name: record.full_name,
     evaluation_status: record.evaluation_status,
     serving: record.is_serving ? 'yes' : 'no',
-    sessions: record.sessions ?? [],
+    // Older registrations could choose both. Ask for a choice rather than
+    // silently treating either session as their preference.
+    sessions: record.sessions?.length === 1 ? record.sessions : [],
     juniors_subteams: record.juniors_subteams ?? [],
     ambassadors_subteams: record.ambassadors_subteams ?? [],
     juniors_other: record.juniors_other ?? '',
@@ -240,8 +242,8 @@ export default function ServantClient({
   const toggle = <T extends string>(list: T[], value: T, on: boolean): T[] =>
     on ? [...list.filter((v) => v !== value), value] : list.filter((v) => v !== value);
 
-  function toggleSession(session: ServantSession, on: boolean) {
-    set('sessions', toggle(form.sessions, session, on));
+  function chooseSession(session: ServantSession) {
+    set('sessions', [session]);
     setErrors((e) => {
       const rest = { ...e };
       delete rest[`${session}_subteams`];
@@ -479,32 +481,27 @@ export default function ServantClient({
               value={form.serving}
               onChange={(v) => set('serving', v)}
             />
+            {serving && (
+              <ChoiceGroup
+                name="sessions"
+                legend="Which session would you prefer to serve?"
+                hint="Choose one only: Juniors and Ambassadors run at the same time. Your preference does not guarantee placement."
+                error={err('sessions')}
+                choices={SERVANT_SESSIONS.map((session) => ({
+                  value: session,
+                  label: SESSION_LABEL[session],
+                }))}
+                value={form.sessions[0] ?? ''}
+                onChange={chooseSession}
+              />
+            )}
           </Sheet>
 
           {/* ----------------------------------------------- Sessions and teams */}
-          {serving && (
+          {serving && form.sessions.length === 1 && (
             <Sheet className="flex flex-col gap-cis-3 px-cis-5 pb-cis-6 pt-cis-6">
               <SheetHeading>Where will you serve?</SheetHeading>
               <SheetRule />
-              <fieldset
-                className="m-0 flex min-w-0 flex-col border-0 p-0"
-                data-invalid={err('sessions') ? true : undefined}
-              >
-                <legend className="mb-1 p-0 text-cis-base font-bold leading-[1.3]">
-                  Which sessions can you serve?
-                </legend>
-                {SERVANT_SESSIONS.map((session) => (
-                  <TickRow
-                    key={session}
-                    checked={form.sessions.includes(session)}
-                    onChange={(on) => toggleSession(session, on)}
-                  >
-                    {SESSION_LABEL[session]}
-                  </TickRow>
-                ))}
-                {err('sessions') && <FieldError>{err('sessions')}</FieldError>}
-              </fieldset>
-
               {SERVANT_SESSIONS.filter((s) => form.sessions.includes(s)).map((session) => {
                 const teams = form[`${session}_subteams`];
                 const other = form[`${session}_other`];

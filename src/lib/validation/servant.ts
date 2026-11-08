@@ -65,11 +65,11 @@ export const servantRegistrationSchema = z
     // otherwise, so there is nothing to validate.
     if (!value.is_serving) return;
 
-    if (value.sessions.length === 0) {
+    if (value.sessions.length !== 1) {
       ctx.addIssue({
         code: 'custom',
         path: ['sessions'],
-        message: 'Choose at least one session',
+        message: 'Choose one session only',
       });
     }
 

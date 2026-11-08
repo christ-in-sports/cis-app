@@ -108,11 +108,41 @@ describe('submit_servant_registration', () => {
     });
   });
 
+  it.each([
+    { sessions: [] },
+    { sessions: ['juniors', 'ambassadors'] },
+    { sessions: ['juniors', 'juniors'] },
+  ])(
+    'rejects a serving registration unless exactly one session is selected ($sessions)',
+    async ({ sessions }) => {
+      await withTx(pool, async (client) => {
+        const id = await createProfile(client, { email: 'one-session@test.local' });
+        await expect(submitAs(client, id, payload({
+          sessions,
+          ambassadors_subteams: sessions.includes('ambassadors') ? ['prayer'] : [],
+        })))
+          .rejects.toMatchObject({ code: '23514' });
+      });
+    },
+  );
+
+  it('saves and reads a changed session preference through the existing RPC', async () => {
+    await withTx(pool, async (client) => {
+      const id = await createProfile(client, { email: 'change-session@test.local' });
+      await submitAs(client, id);
+      await submitAs(client, id, payload({ sessions: ['ambassadors'], juniors_subteams: [], ambassadors_subteams: ['prayer'] }));
+      const rows = await asUser(client, id, async () =>
+        (await client.query('select sessions from servant_registrations')).rows,
+      );
+      expect(rows).toEqual([{ sessions: ['ambassadors'] }]);
+    });
+  });
+
   it('rejects a serving registration with a session but no team or Other', async () => {
     await withTx(pool, async (client) => {
       const id = await createProfile(client, { email: 'servant-e@test.local' });
       await expect(
-        submitAs(client, id, payload({ sessions: ['juniors', 'ambassadors'], ambassadors_subteams: [] }))
+        submitAs(client, id, payload({ sessions: ['ambassadors'], ambassadors_subteams: [] }))
       ).rejects.toThrow(/servant_registrations_serving_shape/);
     });
   });

@@ -300,3 +300,14 @@ Team integration after ENG-25/26: `/teams` joins `src/app/(app)/` and uses its e
 ### 2026-11-03 — Sun/moon appearance switch
 - **Status:** Accepted
 - **Decision:** Replace the Appearance dropdown with a two-position sun/moon switch. Before the first manual choice, the resolved theme follows the operating system. A tap saves the opposite theme using the existing `cis-theme` preference; cross-tab updates and storage-failure fallback remain.
+
+### 2026-11-07 — One servant session preference
+
+Keep `servant_registrations.sessions` as an array so the existing submission RPC,
+servants list, confirmation email and CSV format continue to read the same field.
+A `CHECK` constraint requires exactly one session whenever serving; Zod mirrors
+it and the form uses radio choices. Add the constraint `NOT VALID` to retain
+historical registrations that chose both without inventing a preference. It is
+still enforced on every new or updated row. The form asks those servants to
+choose one before saving. Existing owner/Admin RLS and RPC permissions apply.
+See `project_spec.md` §2.4.

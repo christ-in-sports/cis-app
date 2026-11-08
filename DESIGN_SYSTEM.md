@@ -389,3 +389,8 @@ QR cards retain black text and white backgrounds for scanning and printing.
 Teams page navigation (2026-11-03): `/teams` shares the Sports section's top
 `SectionTabs` row: Standings, Schedule, Bracket, Teams and Manage. Teams is active
 on the Teams page. The Current/Archived selector stays inside the Teams sheet.
+
+Servant session preference (2026-11-07): in About you, immediately under the serving
+question, use `ChoiceGroup` radio choices for Juniors or Ambassadors when serving.
+The hint explains that sessions overlap, only one may be chosen, and placement is
+not guaranteed. Show team questions for the selected session only.

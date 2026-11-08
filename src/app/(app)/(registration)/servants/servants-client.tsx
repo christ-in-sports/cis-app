@@ -143,7 +143,7 @@ export default function ServantsClient({
                   <tr className="border-b-4 border-cis-ink-dark">
                     <th scope="col" className={th}>Name</th>
                     <th scope="col" className={th}>Serving</th>
-                    <th scope="col" className={th}>Sessions and teams</th>
+                    <th scope="col" className={th}>Session preference and teams</th>
                     <th scope="col" className={th}>Phone</th>
                     <th scope="col" className="pb-2 text-left text-cis-sm font-bold text-cis-ink-muted">
                       Updated
