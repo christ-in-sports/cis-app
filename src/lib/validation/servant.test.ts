@@ -41,6 +41,29 @@ describe('servantRegistrationSchema', () => {
     );
   });
 
+  it('accepts No preference with one set of teams, copied to both sessions', () => {
+    const r = servantRegistrationSchema.parse(
+      base({ sessions: ['no_preference'], juniors_subteams: ['coaches'], juniors_other: 'Media', ambassadors_other: 'x' }),
+    );
+    expect(r.sessions).toEqual(['no_preference']);
+    expect(r.juniors_subteams).toEqual(['coaches']);
+    expect(r.ambassadors_subteams).toEqual(['coaches']);
+    expect(r.ambassadors_other).toBe('Media');
+  });
+
+  it('asks for a team or Other when No preference is chosen', () => {
+    expect(issues(base({ sessions: ['no_preference'], juniors_subteams: [] }))).toContainEqual(
+      expect.objectContaining({ path: 'juniors_subteams' }),
+    );
+  });
+
+  it('rejects No preference together with a session', () => {
+    expect(issues(base({ sessions: ['no_preference', 'juniors'] }))).toContainEqual({
+      path: 'sessions',
+      message: 'Choose one session only',
+    });
+  });
+
   it('rejects both sessions even when both have teams', () => {
     expect(issues(base({ sessions: ['juniors', 'ambassadors'], ambassadors_subteams: ['prayer'] })))
       .toContainEqual({ path: 'sessions', message: 'Choose one session only' });

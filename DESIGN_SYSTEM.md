@@ -193,6 +193,7 @@ one-off markup per screen.
 | `TextInput` / `SelectInput` | Text, date, tel, email, select | 48px tall, 12px chip radius, 2px ink outline on paper-light. Invalid gets a 3px outline. Focus is the standard 2px slate outline at 3px offset. |
 | `ChoiceGroup` | Short exclusive lists (gender, T-shirt size, division) | Real radio inputs styled as 12px chips; selected is ink-filled. The whole chip is the tap target. |
 | `TickRow` | Checkboxes such as the waiver | Whole row is the tap target; the 44px tick box (14px radius) fills slate with a light ✓ when set, as in `AttendanceRow`. Unticked, its outline is ink rather than `--cis-box-empty`: that tan is about 1.9:1 on paper-light, under the 3:1 WCAG asks of a control's boundary, and a form checkbox is not a glanceable roster mark. |
+| `PasswordInput` | Passwords and the servant signup code on the sign-in, signup and reset screens | The shadcn input with a text **Show** / **Hide** button on its right edge (`aria-pressed`, 56px wide, slate text), so what was typed can be checked on a phone. A word, not an eye icon: nothing to decode. |
 | `EmailCodeForm` | Sign in by emailed code (`/login`, the parent join link) | `src/components/cis/email-code-form.tsx`. Two steps in one form: email, then the 6-digit code. Built for a first-time parent on a phone: the code box asks for the number pad and `one-time-code`, signs in on the sixth digit, and a wrong code clears the box with a `FieldError`. "Send a new code" counts down 60s (the shortest gap hosted Supabase allows) rather than failing on a tap, and "Use a different email" is one tap. The page supplies `sendCode` / `verifyCode`, so the form never talks to Supabase itself. |
 
 **Validation errors are bold `--cis-danger` text with a warning icon (`FieldError`), `role="alert"`, and the invalid control takes a 3px danger outline.** This is the Sports screens' treatment (§10), applied to every form so an error looks the same wherever it appears, and it keeps ember meaning "this is a score". It briefly used ember on the registration form (2026-09-28) after bold ink proved too easy to miss; that was reversed when the registration screens moved onto the Sports board. Danger on 13px bold text is 8.7:1 on paper-light; the icon and the text carry the meaning, so colour is never the only signal. `--cis-danger` is otherwise for destructive actions (§4); errors are the one other place it appears.
@@ -392,5 +393,10 @@ on the Teams page. The Current/Archived selector stays inside the Teams sheet.
 
 Servant session preference (2026-11-07): in About you, immediately under the serving
 question, use `ChoiceGroup` radio choices for Juniors or Ambassadors when serving.
-The hint explains that sessions overlap, only one may be chosen, and placement is
-not guaranteed. Show team questions for the selected session only.
+The hint says only that the preference does not guarantee placement in that session. Show team questions for the selected session only.
+
+Servant session and Sundays (2026-11-09): the session choice also offers No preference,
+which stores `no_preference` as the one session. The team question is asked once (the same set of teams for either session), under its own un-prefixed legend. In Notes, a
+`TickRow` "I can attend every Sunday" sits above "Sundays you will miss, and why"; the
+box is hidden when it is ticked and required when it is not. The answer is not stored on
+its own: ticked means `dates_missing` is empty.

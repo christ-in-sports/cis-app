@@ -16,10 +16,13 @@ import { usPhone } from './phone';
 
 export const EVALUATION_STATUSES = ['completed', 'not_completed'] as const;
 export const SERVANT_SESSIONS = ['juniors', 'ambassadors'] as const;
+/** What a servant may answer to "which session": a session, or no preference (an Admin places them). */
+export const SESSION_PREFERENCES = ['juniors', 'ambassadors', 'no_preference'] as const;
 export const SERVANT_SUBTEAMS = ['admin', 'coaches', 'fellowship', 'prayer', 'program'] as const;
 export const SERVANT_GENDERS = ['female', 'male'] as const;
 
 export type ServantSession = (typeof SERVANT_SESSIONS)[number];
+export type SessionPreference = (typeof SESSION_PREFERENCES)[number];
 export type ServantSubteam = (typeof SERVANT_SUBTEAMS)[number];
 
 export const SUBTEAM_LABELS: Record<ServantSubteam, string> = {
@@ -44,7 +47,7 @@ export const servantRegistrationSchema = z
     evaluation_status: z.enum(EVALUATION_STATUSES, 'Choose Completed or Not Completed'),
     is_serving: z.boolean('Say whether you are serving this season'),
 
-    sessions: z.array(z.enum(SERVANT_SESSIONS)).default([]),
+    sessions: z.array(z.enum(SESSION_PREFERENCES)).default([]),
     juniors_subteams: z.array(z.enum(SERVANT_SUBTEAMS)).default([]),
     ambassadors_subteams: z.array(z.enum(SERVANT_SUBTEAMS)).default([]),
     juniors_other: optionalText.default(null),
@@ -73,6 +76,16 @@ export const servantRegistrationSchema = z
       });
     }
 
+    // No preference asks the one set of teams, kept in the Juniors fields and
+    // copied to Ambassadors below, so either list shows what they would serve on.
+    if (value.sessions.includes('no_preference') && value.juniors_subteams.length === 0 && !value.juniors_other) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['juniors_subteams'],
+        message: 'Choose at least one team, or fill in Other',
+      });
+    }
+
     for (const session of SERVANT_SESSIONS) {
       if (!value.sessions.includes(session)) continue;
       const teams = value[`${session}_subteams`];
@@ -97,6 +110,13 @@ export const servantRegistrationSchema = z
         ambassadors_subteams: [],
         juniors_other: null,
         ambassadors_other: null,
+      };
+    }
+    if (value.sessions.includes('no_preference')) {
+      return {
+        ...value,
+        ambassadors_subteams: value.juniors_subteams,
+        ambassadors_other: value.juniors_other,
       };
     }
     return {

@@ -68,6 +68,11 @@ export function buildServantConfirmation(input: ServantConfirmationInput): Serva
   ];
   if (r.is_serving) {
     for (const session of r.sessions) {
+      if (session === 'no_preference') {
+        items.push({ label: 'Session', value: 'No preference' });
+        items.push({ label: 'Teams', value: teamsFor(r.juniors_subteams, r.juniors_other) });
+        continue;
+      }
       items.push({
         label: SESSION_LABELS[session],
         value: teamsFor(

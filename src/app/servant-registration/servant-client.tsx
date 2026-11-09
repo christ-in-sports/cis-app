@@ -41,10 +41,11 @@ import {
   SERVANT_GENDERS,
   SERVANT_SESSIONS,
   SERVANT_SUBTEAMS,
+  SESSION_PREFERENCES,
   SUBTEAM_LABELS,
   servantRegistrationSchema,
-  type ServantSession,
   type ServantSubteam,
+  type SessionPreference,
 } from '@/lib/validation/servant';
 import { submitServantRegistration } from './actions';
 
@@ -54,12 +55,14 @@ interface FormState {
   full_name: string;
   evaluation_status: (typeof EVALUATION_STATUSES)[number] | '';
   serving: 'yes' | 'no' | '';
-  sessions: ServantSession[];
+  sessions: SessionPreference[];
   juniors_subteams: ServantSubteam[];
   ambassadors_subteams: ServantSubteam[];
   juniors_other: string;
   ambassadors_other: string;
   notes: string;
+  /** Can attend every Sunday. When ticked there are no dates to list. */
+  attend_all: boolean;
   dates_missing: string;
   phone: string;
   emergency_contact_name: string;
@@ -79,6 +82,7 @@ const emptyForm: FormState = {
   juniors_other: '',
   ambassadors_other: '',
   notes: '',
+  attend_all: false,
   dates_missing: '',
   phone: '',
   emergency_contact_name: '',
@@ -104,6 +108,7 @@ function formFrom(record: ServantRegistrationRecord | null): FormState {
     notes: record.notes ?? '',
     // Dates missing are about one season. Prefilled from last season they would
     // be wrong, so the caller clears them; an edit of this season's keeps them.
+    attend_all: !record.dates_missing,
     dates_missing: record.dates_missing ?? '',
     phone: record.phone,
     emergency_contact_name: record.emergency_contact_name,
@@ -126,7 +131,7 @@ function buildInput(form: FormState) {
     juniors_other: form.juniors_other,
     ambassadors_other: form.ambassadors_other,
     notes: form.notes,
-    dates_missing: form.dates_missing,
+    dates_missing: form.attend_all ? '' : form.dates_missing,
     phone: form.phone,
     emergency_contact_name: form.emergency_contact_name,
     emergency_contact_phone: form.emergency_contact_phone,
@@ -139,9 +144,10 @@ function buildInput(form: FormState) {
 /** What a roleless servant is told once their registration is in. */
 const AWAITING_ROLE = 'An Admin will review your registration and assign your role.';
 
-const SESSION_LABEL: Record<ServantSession, string> = {
+const SESSION_LABEL: Record<SessionPreference, string> = {
   juniors: 'Juniors',
   ambassadors: 'Ambassadors',
+  no_preference: 'No preference',
 };
 
 function formatSaved(iso: string): string {
@@ -176,7 +182,7 @@ export default function ServantClient({
 }) {
   const [form, setForm] = useState<FormState>(() => {
     const initial = formFrom(registration);
-    return prefilled ? { ...initial, dates_missing: '' } : initial;
+    return prefilled ? { ...initial, attend_all: false, dates_missing: '' } : initial;
   });
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -233,7 +239,7 @@ export default function ServantClient({
   const toggle = <T extends string>(list: T[], value: T, on: boolean): T[] =>
     on ? [...list.filter((v) => v !== value), value] : list.filter((v) => v !== value);
 
-  function chooseSession(session: ServantSession) {
+  function chooseSession(session: SessionPreference) {
     set('sessions', [session]);
     setErrors((e) => {
       const rest = { ...e };
@@ -257,9 +263,10 @@ export default function ServantClient({
     setJustSaved(false);
 
     const parsed = servantRegistrationSchema.safeParse(buildInput(form));
-    if (!parsed.success) {
+    const missingDates = !form.attend_all && form.dates_missing.trim() === '';
+    if (!parsed.success || missingDates) {
       const found: Record<string, string[]> = {};
-      for (const issue of parsed.error.issues) {
+      for (const issue of parsed.success ? [] : parsed.error.issues) {
         (found[issue.path.join('.')] ??= []).push(issue.message);
       }
       // Untouched choices reach the schema as `undefined`, whose enum messages
@@ -267,6 +274,9 @@ export default function ServantClient({
       if (found.is_serving) found.is_serving = ['Say whether you are serving this season'];
       if (found.evaluation_status) found.evaluation_status = ['Choose Completed or Not Completed'];
       if (found.gender) found.gender = ['Choose Female or Male'];
+      if (missingDates) {
+        found.dates_missing = ['Tick the box, or list the Sundays you will miss and why'];
+      }
       setErrors(found);
       setFormError('Please fix the fields marked above.');
       focusFirstInvalid();
@@ -274,7 +284,7 @@ export default function ServantClient({
     }
 
     startTransition(async () => {
-      const result = await submitServantRegistration(parsed.data);
+      const result = await submitServantRegistration(parsed.data!);
       if (!result.ok) {
         setErrors(result.fieldErrors ?? {});
         setFormError(result.error ?? 'Could not save your registration.');
@@ -328,6 +338,23 @@ export default function ServantClient({
                 <dt className="font-bold">Serving this season</dt>
                 <dd className="m-0">{serving ? 'Yes' : 'No'}</dd>
               </div>
+              {serving && form.sessions[0] === 'no_preference' && (
+                <div>
+                  <dt className="font-bold">Session</dt>
+                  <dd className="m-0">{SESSION_LABEL.no_preference}</dd>
+                </div>
+              )}
+              {serving && form.sessions[0] === 'no_preference' && (
+                <div>
+                  <dt className="font-bold">Teams</dt>
+                  <dd className="m-0">
+                    {[
+                      ...SERVANT_SUBTEAMS.filter((t) => form.juniors_subteams.includes(t)).map((t) => SUBTEAM_LABELS[t]),
+                      ...(form.juniors_other.trim() ? [`Other: ${form.juniors_other.trim()}`] : []),
+                    ].join(', ')}
+                  </dd>
+                </div>
+              )}
               {serving &&
                 SERVANT_SESSIONS.filter((s) => form.sessions.includes(s)).map((session) => {
                   const teams = SERVANT_SUBTEAMS.filter((t) =>
@@ -479,9 +506,9 @@ export default function ServantClient({
               <ChoiceGroup
                 name="sessions"
                 legend="Which session would you prefer to serve?"
-                hint="Choose one only: Juniors and Ambassadors run at the same time. Your preference does not guarantee placement."
+                hint="Your preference does not guarantee placement in that session."
                 error={err('sessions')}
-                choices={SERVANT_SESSIONS.map((session) => ({
+                choices={SESSION_PREFERENCES.map((session) => ({
                   value: session,
                   label: SESSION_LABEL[session],
                 }))}
@@ -496,19 +523,24 @@ export default function ServantClient({
             <Sheet className="flex flex-col gap-cis-3 px-cis-5 pb-cis-6 pt-cis-6">
               <SheetHeading>Where will you serve?</SheetHeading>
               <SheetRule />
-              {SERVANT_SESSIONS.filter((s) => form.sessions.includes(s)).map((session) => {
+              {form.sessions.map((choice) => {
+                // No preference asks the one set of teams, kept in the Juniors fields.
+                const noPreference = choice === 'no_preference';
+                const session = noPreference ? 'juniors' : choice;
                 const teams = form[`${session}_subteams`];
                 const other = form[`${session}_other`];
                 const path = `${session}_subteams`;
                 return (
-                  <div key={session} className="flex flex-col gap-cis-2">
+                  <div key={choice} className="flex flex-col gap-cis-2">
                     <SectionBreak />
                     <fieldset
                       className="m-0 flex min-w-0 flex-col border-0 p-0"
                       data-invalid={err(path) ? true : undefined}
                     >
                       <legend className="mb-1 p-0 text-cis-base font-bold leading-[1.3]">
-                        {SESSION_LABEL[session]}: which teams would you like to serve on?
+                        {noPreference
+                          ? 'Which teams would you like to serve on?'
+                          : `${SESSION_LABEL[session]}: which teams would you like to serve on?`}
                       </legend>
                       {SERVANT_SUBTEAMS.map((team) => (
                         <TickRow
@@ -528,7 +560,7 @@ export default function ServantClient({
                       ))}
                       {err(path) && <FieldError>{err(path)}</FieldError>}
                     </fieldset>
-                    <Field label={`${SESSION_LABEL[session]}: Other`} optional>
+                    <Field label={noPreference ? 'Other' : `${SESSION_LABEL[session]}: Other`} optional>
                       {(p) => (
                         <TextInput
                           {...p}
@@ -567,20 +599,33 @@ export default function ServantClient({
                 />
               )}
             </Field>
-            <Field
-              label="Dates you will miss"
-              optional
-              hint="For the Admins' information. It is not added to the calendar."
-              error={err('dates_missing')}
+            <TickRow
+              checked={form.attend_all}
+              onChange={(on) => {
+                set('attend_all', on);
+                setErrors((e) => {
+                  const rest = { ...e };
+                  delete rest.dates_missing;
+                  return rest;
+                });
+              }}
             >
-              {(p) => (
-                <TextArea
-                  {...p}
-                  value={form.dates_missing}
-                  onChange={(e) => set('dates_missing', e.target.value)}
-                />
-              )}
-            </Field>
+              I can attend every Sunday
+            </TickRow>
+            {!form.attend_all && (
+              <Field
+                label="Sundays you will miss, and why"
+                error={err('dates_missing')}
+              >
+                {(p) => (
+                  <TextArea
+                    {...p}
+                    value={form.dates_missing}
+                    onChange={(e) => set('dates_missing', e.target.value)}
+                  />
+                )}
+              </Field>
+            )}
           </Sheet>
 
           {/* --------------------------------------------------------- Contact */}
