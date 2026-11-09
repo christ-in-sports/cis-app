@@ -144,15 +144,6 @@ const SESSION_LABEL: Record<ServantSession, string> = {
   ambassadors: 'Ambassadors',
 };
 
-function formatDay(iso: string): string {
-  const [y, m, d] = iso.split('-').map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
-
 function formatSaved(iso: string): string {
   return new Date(iso).toLocaleString('en-US', {
     month: 'short',
@@ -420,10 +411,13 @@ export default function ServantClient({
           </Sheet>
         )}
         <Sheet tone="paper" className="flex flex-col gap-cis-2 px-cis-5 pb-cis-5 pt-cis-5">
-          <SheetHeading className="text-cis-xl">{season.name}</SheetHeading>
+          <SheetHeading className="text-cis-xl">{SERVANT_INTRO.heading}</SheetHeading>
           <p className="m-0 text-cis-base leading-[1.5]">
-            The season starts on {formatDay(season.starts_on)}. {SERVANT_INTRO.sessions}{' '}
-            {SERVANT_INTRO.meeting}
+            <strong>The season starts on {SERVANT_INTRO.startDate}.</strong>{' '}
+            {SERVANT_INTRO.sessions} {SERVANT_INTRO.meeting} {SERVANT_INTRO.conclusion}
+          </p>
+          <p className="m-0 text-cis-base font-bold leading-[1.5]">
+            {SERVANT_INTRO.simultaneousSessions}
           </p>
           <p className="m-0 text-cis-base leading-[1.5]">
             Tell us whether you are serving and where you would like to help. Your team choices are
