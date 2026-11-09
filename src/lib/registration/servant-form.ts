@@ -13,8 +13,12 @@ import type {
 
 /** The static intro shown above the form (ENG-17: not editable in the app). */
 export const SERVANT_INTRO = {
+  heading: 'CIS 2026-2027',
+  startDate: 'January 3rd, 2027',
   meeting: 'All servants attend the 12:00 meeting on Sundays, including those not serving a session this season.',
   sessions: 'Sessions run on Sundays.',
+  simultaneousSessions: 'BOTH SESSIONS HAPPEN AT THE SAME TIME',
+  conclusion: 'All service will be concluded by 3pm.',
 } as const;
 
 export interface ServantSeason {
