@@ -182,7 +182,12 @@ export default function ServantsClient({
                             {r.is_serving ? 'Yes' : 'No'}
                           </td>
                           <td className="py-[10px] pr-3 text-cis-sm font-semibold leading-[1.4]">
-                            {hasNoSessionPreference(r) && <div>{NO_SESSION_PREFERENCE}</div>}
+                            {hasNoSessionPreference(r) && (
+                              <div>
+                                <span className="font-bold">{NO_SESSION_PREFERENCE}:</span>{' '}
+                                {sessionTeams(r, 'juniors')}
+                              </div>
+                            )}
                             {chosenSessions(r).map((s) => (
                               <div key={s}>
                                 <span className="font-bold">{SESSION_LABELS[s]}:</span>{' '}
@@ -210,7 +215,10 @@ export default function ServantsClient({
                                 </Detail>
                                 <Detail label="Serving this season">{r.is_serving ? 'Yes' : 'No'}</Detail>
                                 {hasNoSessionPreference(r) && (
-                                  <Detail label="Session preference">{NO_SESSION_PREFERENCE}</Detail>
+                                  <>
+                                    <Detail label="Session preference">{NO_SESSION_PREFERENCE}</Detail>
+                                    <Detail label="Teams (either session)">{sessionTeams(r, 'juniors')}</Detail>
+                                  </>
                                 )}
                                 {chosenSessions(r).map((s) => (
                                   <Detail key={s} label={`${SESSION_LABELS[s]} teams`}>

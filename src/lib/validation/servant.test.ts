@@ -41,13 +41,20 @@ describe('servantRegistrationSchema', () => {
     );
   });
 
-  it('accepts No preference with no teams and keeps no team answers', () => {
+  it('accepts No preference with one set of teams, copied to both sessions', () => {
     const r = servantRegistrationSchema.parse(
-      base({ sessions: ['no_preference'], juniors_subteams: ['coaches'], ambassadors_other: 'x' }),
+      base({ sessions: ['no_preference'], juniors_subteams: ['coaches'], juniors_other: 'Media', ambassadors_other: 'x' }),
     );
     expect(r.sessions).toEqual(['no_preference']);
-    expect(r.juniors_subteams).toEqual([]);
-    expect(r.ambassadors_other).toBeNull();
+    expect(r.juniors_subteams).toEqual(['coaches']);
+    expect(r.ambassadors_subteams).toEqual(['coaches']);
+    expect(r.ambassadors_other).toBe('Media');
+  });
+
+  it('asks for a team or Other when No preference is chosen', () => {
+    expect(issues(base({ sessions: ['no_preference'], juniors_subteams: [] }))).toContainEqual(
+      expect.objectContaining({ path: 'juniors_subteams' }),
+    );
   });
 
   it('rejects No preference together with a session', () => {

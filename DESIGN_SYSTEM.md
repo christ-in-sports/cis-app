@@ -397,7 +397,7 @@ The hint explains that sessions overlap, only one may be chosen, and placement i
 not guaranteed. Show team questions for the selected session only.
 
 Servant session and Sundays (2026-11-09): the session choice also offers No preference,
-which stores `no_preference` as the one session and asks no team questions. In Notes, a
+which stores `no_preference` as the one session. The team question is asked once (the same set of teams for either session), under its own un-prefixed legend. In Notes, a
 `TickRow` "I can attend every Sunday" sits above "Sundays you will miss, and why"; the
 box is hidden when it is ticked and required when it is not. The answer is not stored on
 its own: ticked means `dates_missing` is empty.

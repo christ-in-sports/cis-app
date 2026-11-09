@@ -138,14 +138,26 @@ describe('submit_servant_registration', () => {
     });
   });
 
-  it('saves No preference as the single session, with no team answers', async () => {
+  it('saves No preference as the single session, with the same teams for both', async () => {
     await withTx(pool, async (client) => {
       const id = await createProfile(client, { email: 'no-pref@test.local' });
-      await submitAs(client, id, payload({ sessions: ['no_preference'], juniors_subteams: [], ambassadors_subteams: [] }));
+      await submitAs(client, id, payload({ sessions: ['no_preference'], juniors_subteams: ['coaches'], ambassadors_subteams: ['coaches'] }));
       const rows = await asUser(client, id, async () =>
         (await client.query('select sessions, juniors_subteams, ambassadors_subteams from servant_registrations')).rows,
       );
-      expect(rows).toEqual([{ sessions: ['no_preference'], juniors_subteams: [], ambassadors_subteams: [] }]);
+      expect(rows).toEqual([{ sessions: ['no_preference'], juniors_subteams: ['coaches'], ambassadors_subteams: ['coaches'] }]);
+    });
+  });
+
+  it('rejects No preference with no teams, or with different teams per session', async () => {
+    await withTx(pool, async (client) => {
+      const id = await createProfile(client, { email: 'no-pref-teams@test.local' });
+      await expect(
+        submitAs(client, id, payload({ sessions: ['no_preference'], juniors_subteams: [], ambassadors_subteams: [] })),
+      ).rejects.toThrow(/servant_registrations_serving_shape/);
+      await expect(
+        submitAs(client, id, payload({ sessions: ['no_preference'], juniors_subteams: ['coaches'], ambassadors_subteams: ['prayer'] })),
+      ).rejects.toThrow(/servant_registrations_serving_shape/);
     });
   });
 
@@ -153,7 +165,7 @@ describe('submit_servant_registration', () => {
     await withTx(pool, async (client) => {
       const id = await createProfile(client, { email: 'no-pref-both@test.local' });
       await expect(
-        submitAs(client, id, payload({ sessions: ['no_preference', 'juniors'] })),
+        submitAs(client, id, payload({ sessions: ['no_preference', 'juniors'], ambassadors_subteams: ['coaches'] })),
       ).rejects.toThrow(/servant_registrations_single_session/);
     });
   });

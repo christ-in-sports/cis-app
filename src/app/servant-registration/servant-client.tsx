@@ -344,6 +344,17 @@ export default function ServantClient({
                   <dd className="m-0">{SESSION_LABEL.no_preference}</dd>
                 </div>
               )}
+              {serving && form.sessions[0] === 'no_preference' && (
+                <div>
+                  <dt className="font-bold">Teams</dt>
+                  <dd className="m-0">
+                    {[
+                      ...SERVANT_SUBTEAMS.filter((t) => form.juniors_subteams.includes(t)).map((t) => SUBTEAM_LABELS[t]),
+                      ...(form.juniors_other.trim() ? [`Other: ${form.juniors_other.trim()}`] : []),
+                    ].join(', ')}
+                  </dd>
+                </div>
+              )}
               {serving &&
                 SERVANT_SESSIONS.filter((s) => form.sessions.includes(s)).map((session) => {
                   const teams = SERVANT_SUBTEAMS.filter((t) =>
@@ -508,23 +519,28 @@ export default function ServantClient({
           </Sheet>
 
           {/* ----------------------------------------------- Sessions and teams */}
-          {serving && form.sessions.length === 1 && form.sessions[0] !== 'no_preference' && (
+          {serving && form.sessions.length === 1 && (
             <Sheet className="flex flex-col gap-cis-3 px-cis-5 pb-cis-6 pt-cis-6">
               <SheetHeading>Where will you serve?</SheetHeading>
               <SheetRule />
-              {SERVANT_SESSIONS.filter((s) => form.sessions.includes(s)).map((session) => {
+              {form.sessions.map((choice) => {
+                // No preference asks the one set of teams, kept in the Juniors fields.
+                const noPreference = choice === 'no_preference';
+                const session = noPreference ? 'juniors' : choice;
                 const teams = form[`${session}_subteams`];
                 const other = form[`${session}_other`];
                 const path = `${session}_subteams`;
                 return (
-                  <div key={session} className="flex flex-col gap-cis-2">
+                  <div key={choice} className="flex flex-col gap-cis-2">
                     <SectionBreak />
                     <fieldset
                       className="m-0 flex min-w-0 flex-col border-0 p-0"
                       data-invalid={err(path) ? true : undefined}
                     >
                       <legend className="mb-1 p-0 text-cis-base font-bold leading-[1.3]">
-                        {SESSION_LABEL[session]}: which teams would you like to serve on?
+                        {noPreference
+                          ? 'Which teams would you like to serve on?'
+                          : `${SESSION_LABEL[session]}: which teams would you like to serve on?`}
                       </legend>
                       {SERVANT_SUBTEAMS.map((team) => (
                         <TickRow
@@ -544,7 +560,7 @@ export default function ServantClient({
                       ))}
                       {err(path) && <FieldError>{err(path)}</FieldError>}
                     </fieldset>
-                    <Field label={`${SESSION_LABEL[session]}: Other`} optional>
+                    <Field label={noPreference ? 'Other' : `${SESSION_LABEL[session]}: Other`} optional>
                       {(p) => (
                         <TextInput
                           {...p}

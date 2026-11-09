@@ -76,6 +76,16 @@ export const servantRegistrationSchema = z
       });
     }
 
+    // No preference asks the one set of teams, kept in the Juniors fields and
+    // copied to Ambassadors below, so either list shows what they would serve on.
+    if (value.sessions.includes('no_preference') && value.juniors_subteams.length === 0 && !value.juniors_other) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['juniors_subteams'],
+        message: 'Choose at least one team, or fill in Other',
+      });
+    }
+
     for (const session of SERVANT_SESSIONS) {
       if (!value.sessions.includes(session)) continue;
       const teams = value[`${session}_subteams`];
@@ -100,6 +110,13 @@ export const servantRegistrationSchema = z
         ambassadors_subteams: [],
         juniors_other: null,
         ambassadors_other: null,
+      };
+    }
+    if (value.sessions.includes('no_preference')) {
+      return {
+        ...value,
+        ambassadors_subteams: value.juniors_subteams,
+        ambassadors_other: value.juniors_other,
       };
     }
     return {

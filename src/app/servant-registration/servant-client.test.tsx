@@ -169,21 +169,23 @@ describe('servant registration form', () => {
     expect(screen.getByRole('button', { name: 'Register' })).toBeInTheDocument();
   });
 
-  it('offers No preference as a session, with no team questions, and submits it', async () => {
+  it('offers No preference as a session, asks the one set of teams, and submits it', async () => {
     submitServantRegistration.mockResolvedValue({ ok: true, isNew: false });
     renderForm({ registration: record() });
     fireEvent.click(screen.getByRole('radio', { name: 'No preference' }));
     expect(screen.getByRole('radio', { name: 'No preference' })).toBeChecked();
     expect(screen.getByRole('radio', { name: 'Juniors' })).not.toBeChecked();
-    expect(screen.queryByText(/which teams would you like/)).not.toBeInTheDocument();
+    // One set of teams, not one per session.
+    expect(screen.getByText('Which teams would you like to serve on?')).toBeInTheDocument();
+    expect(screen.queryByText(/Juniors: which teams/)).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     await waitFor(() =>
       expect(submitServantRegistration).toHaveBeenCalledWith(
         expect.objectContaining({
           sessions: ['no_preference'],
-          juniors_subteams: [],
-          ambassadors_subteams: [],
+          juniors_subteams: ['coaches'],
+          ambassadors_subteams: ['coaches'],
         }),
       ),
     );
