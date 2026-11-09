@@ -41,6 +41,22 @@ describe('servantRegistrationSchema', () => {
     );
   });
 
+  it('accepts No preference with no teams and keeps no team answers', () => {
+    const r = servantRegistrationSchema.parse(
+      base({ sessions: ['no_preference'], juniors_subteams: ['coaches'], ambassadors_other: 'x' }),
+    );
+    expect(r.sessions).toEqual(['no_preference']);
+    expect(r.juniors_subteams).toEqual([]);
+    expect(r.ambassadors_other).toBeNull();
+  });
+
+  it('rejects No preference together with a session', () => {
+    expect(issues(base({ sessions: ['no_preference', 'juniors'] }))).toContainEqual({
+      path: 'sessions',
+      message: 'Choose one session only',
+    });
+  });
+
   it('rejects both sessions even when both have teams', () => {
     expect(issues(base({ sessions: ['juniors', 'ambassadors'], ambassadors_subteams: ['prayer'] })))
       .toContainEqual({ path: 'sessions', message: 'Choose one session only' });

@@ -16,10 +16,13 @@ import { usPhone } from './phone';
 
 export const EVALUATION_STATUSES = ['completed', 'not_completed'] as const;
 export const SERVANT_SESSIONS = ['juniors', 'ambassadors'] as const;
+/** What a servant may answer to "which session": a session, or no preference (an Admin places them). */
+export const SESSION_PREFERENCES = ['juniors', 'ambassadors', 'no_preference'] as const;
 export const SERVANT_SUBTEAMS = ['admin', 'coaches', 'fellowship', 'prayer', 'program'] as const;
 export const SERVANT_GENDERS = ['female', 'male'] as const;
 
 export type ServantSession = (typeof SERVANT_SESSIONS)[number];
+export type SessionPreference = (typeof SESSION_PREFERENCES)[number];
 export type ServantSubteam = (typeof SERVANT_SUBTEAMS)[number];
 
 export const SUBTEAM_LABELS: Record<ServantSubteam, string> = {
@@ -44,7 +47,7 @@ export const servantRegistrationSchema = z
     evaluation_status: z.enum(EVALUATION_STATUSES, 'Choose Completed or Not Completed'),
     is_serving: z.boolean('Say whether you are serving this season'),
 
-    sessions: z.array(z.enum(SERVANT_SESSIONS)).default([]),
+    sessions: z.array(z.enum(SESSION_PREFERENCES)).default([]),
     juniors_subteams: z.array(z.enum(SERVANT_SUBTEAMS)).default([]),
     ambassadors_subteams: z.array(z.enum(SERVANT_SUBTEAMS)).default([]),
     juniors_other: optionalText.default(null),

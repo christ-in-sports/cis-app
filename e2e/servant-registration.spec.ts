@@ -90,6 +90,8 @@ test('a new servant signs up, is sent to the form, registers, then edits it', as
   await page.getByLabel('Home address').fill('1 Main St, Hayward, CA');
   await page.getByLabel('Emergency contact name').fill('Sara Hanna');
   await page.getByLabel('Emergency contact phone').fill('510-555-9876');
+  // A new form must say whether every Sunday works.
+  await page.locator('label').filter({ hasText: 'I can attend every Sunday' }).click();
   await page.getByRole('button', { name: 'Register' }).click();
 
   await expect(page.getByText('You are registered')).toBeVisible();
@@ -125,7 +127,8 @@ test('a new servant signs up, is sent to the form, registers, then edits it', as
   await page.getByRole('group', { name: 'Which session would you prefer to serve?' })
     .locator('label').filter({ hasText: /^Ambassadors$/ }).click();
   await page.locator('label').filter({ hasText: /^Prayer Team$/ }).click();
-  await page.getByLabel(/Dates you will miss/).fill('Feb 7 and Feb 14');
+  await page.locator('label').filter({ hasText: 'I can attend every Sunday' }).click();
+  await page.getByLabel(/Sundays you will miss/).fill('Feb 7 and Feb 14');
   await page.getByRole('button', { name: 'Save changes' }).click();
   await expect(page.getByText('Changes saved')).toBeVisible();
 

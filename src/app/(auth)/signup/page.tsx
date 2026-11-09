@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/cis/password-input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
@@ -94,9 +95,8 @@ export default function SignupPage() {
             )}
             <div className="space-y-2">
               <Label htmlFor="signupCode">Servant signup code</Label>
-              <Input
+              <PasswordInput
                 id="signupCode"
-                type="password"
                 placeholder="Servants code sent to you"
                 value={signupCode}
                 onChange={(e) => setSignupCode(e.target.value)}
@@ -135,9 +135,8 @@ export default function SignupPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 placeholder="At least 10 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -148,9 +147,8 @@ export default function SignupPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirm">Confirm Password</Label>
-              <Input
+              <PasswordInput
                 id="confirm"
-                type="password"
                 placeholder="Confirm password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}

@@ -10,6 +10,7 @@ import {
   SERVANT_SUBTEAMS,
   SUBTEAM_LABELS,
   type ServantSession,
+  type SessionPreference,
   type ServantSubteam,
 } from '@/lib/validation/servant';
 
@@ -20,7 +21,7 @@ export interface ServantListRow {
   phone: string;
   evaluation_status: 'completed' | 'not_completed';
   is_serving: boolean;
-  sessions: ServantSession[];
+  sessions: SessionPreference[];
   juniors_subteams: ServantSubteam[];
   ambassadors_subteams: ServantSubteam[];
   juniors_other: string | null;
@@ -41,6 +42,8 @@ export const SESSION_LABELS: Record<ServantSession, string> = {
   ambassadors: 'Ambassadors',
 };
 
+export const NO_SESSION_PREFERENCE = 'No preference';
+
 export const EVALUATION_LABELS = { completed: 'Completed', not_completed: 'Not Completed' } as const;
 export const GENDER_LABELS = { female: 'Female', male: 'Male' } as const;
 
@@ -56,6 +59,10 @@ export function sessionTeams(row: ServantListRow, session: ServantSession): stri
 /** Sessions the servant chose, in a fixed order. */
 export const chosenSessions = (row: ServantListRow): ServantSession[] =>
   SERVANT_SESSIONS.filter((s) => row.sessions.includes(s));
+
+/** True when the servant said either session is fine. */
+export const hasNoSessionPreference = (row: ServantListRow): boolean =>
+  row.sessions.includes('no_preference');
 
 export const SERVANT_CSV_COLUMNS = [
   'full_name',
@@ -96,7 +103,10 @@ export function servantsToCsv(rows: readonly ServantListRow[]): string {
         r.phone,
         EVALUATION_LABELS[r.evaluation_status],
         r.is_serving ? 'Yes' : 'No',
-        chosenSessions(r).map((s) => SESSION_LABELS[s]).join(', '),
+        [
+          ...chosenSessions(r).map((s) => SESSION_LABELS[s]),
+          ...(hasNoSessionPreference(r) ? [NO_SESSION_PREFERENCE] : []),
+        ].join(', '),
         r.sessions.includes('juniors') ? sessionTeams(r, 'juniors') : '',
         r.sessions.includes('ambassadors') ? sessionTeams(r, 'ambassadors') : '',
         r.notes ?? '',

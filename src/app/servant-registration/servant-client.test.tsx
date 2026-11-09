@@ -153,7 +153,8 @@ describe('servant registration form', () => {
     expect(screen.getByLabelText('Yes')).toBeChecked();
     expect(screen.getByRole('radio', { name: 'Juniors' })).toBeChecked();
     expect(screen.getByRole('checkbox', { name: /Coaches/ })).toBeChecked();
-    expect(screen.getByLabelText(/Dates you will miss/)).toHaveValue('Feb 7');
+    expect(screen.getByRole('checkbox', { name: /every Sunday/ })).not.toBeChecked();
+    expect(screen.getByLabelText(/Sundays you will miss/)).toHaveValue('Feb 7');
     expect(screen.getByText(/Last saved/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save changes' })).toBeInTheDocument();
   });
@@ -161,10 +162,58 @@ describe('servant registration form', () => {
   it('prefills from last season but leaves the missed dates empty and nothing "saved"', () => {
     renderForm({ registration: record(), prefilled: true });
     expect(screen.getByLabelText('Name')).toHaveValue('Mina Hanna');
-    expect(screen.getByLabelText(/Dates you will miss/)).toHaveValue('');
+    expect(screen.getByRole('checkbox', { name: /every Sunday/ })).not.toBeChecked();
+    expect(screen.getByLabelText(/Sundays you will miss/)).toHaveValue('');
     expect(screen.queryByText(/Last saved/)).not.toBeInTheDocument();
     expect(screen.getByText(/from your last registration/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Register' })).toBeInTheDocument();
+  });
+
+  it('offers No preference as a session, with no team questions, and submits it', async () => {
+    submitServantRegistration.mockResolvedValue({ ok: true, isNew: false });
+    renderForm({ registration: record() });
+    fireEvent.click(screen.getByRole('radio', { name: 'No preference' }));
+    expect(screen.getByRole('radio', { name: 'No preference' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Juniors' })).not.toBeChecked();
+    expect(screen.queryByText(/which teams would you like/)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() =>
+      expect(submitServantRegistration).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sessions: ['no_preference'],
+          juniors_subteams: [],
+          ambassadors_subteams: [],
+        }),
+      ),
+    );
+  });
+
+  it('hides the missed-dates box when the servant can attend every Sunday, and saves no dates', async () => {
+    submitServantRegistration.mockResolvedValue({ ok: true, isNew: false });
+    renderForm({ registration: record() });
+    fireEvent.click(screen.getByRole('checkbox', { name: /every Sunday/ }));
+    expect(screen.queryByLabelText(/Sundays you will miss/)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() =>
+      expect(submitServantRegistration).toHaveBeenCalledWith(
+        expect.objectContaining({ dates_missing: null }),
+      ),
+    );
+  });
+
+  it('asks for the missed Sundays when the box is not ticked and nothing is written', () => {
+    renderForm({ registration: record({ dates_missing: null }) });
+    // Saved with no dates before: read back as able to attend every Sunday.
+    expect(screen.getByRole('checkbox', { name: /every Sunday/ })).toBeChecked();
+
+    fireEvent.click(screen.getByRole('checkbox', { name: /every Sunday/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(
+      screen.getByText('Tick the box, or list the Sundays you will miss and why'),
+    ).toBeInTheDocument();
+    expect(submitServantRegistration).not.toHaveBeenCalled();
   });
 
   it('does not call the action for an invalid form, and says what is wrong', async () => {

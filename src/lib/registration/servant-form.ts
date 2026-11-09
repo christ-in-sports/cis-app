@@ -7,7 +7,7 @@
 import type {
   EVALUATION_STATUSES,
   SERVANT_GENDERS,
-  ServantSession,
+  SessionPreference,
   ServantSubteam,
 } from '@/lib/validation/servant';
 
@@ -32,7 +32,7 @@ export interface ServantRegistrationRecord {
   full_name: string;
   evaluation_status: (typeof EVALUATION_STATUSES)[number];
   is_serving: boolean;
-  sessions: ServantSession[];
+  sessions: SessionPreference[];
   juniors_subteams: ServantSubteam[];
   ambassadors_subteams: ServantSubteam[];
   juniors_other: string | null;
