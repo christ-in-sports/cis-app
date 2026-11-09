@@ -104,7 +104,7 @@ describe('servant registration form', () => {
   it('allows only one session and switches the team questions with the choice', () => {
     renderForm();
     fireEvent.click(screen.getByLabelText('Yes'));
-    expect(screen.getByText(/run at the same time.*does not guarantee placement/)).toBeInTheDocument();
+    expect(screen.getByText('Your preference does not guarantee placement in that session.')).toBeInTheDocument();
     const juniors = screen.getByRole('radio', { name: 'Juniors' });
     const ambassadors = screen.getByRole('radio', { name: 'Ambassadors' });
     fireEvent.click(juniors);

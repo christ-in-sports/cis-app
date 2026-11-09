@@ -506,7 +506,7 @@ export default function ServantClient({
               <ChoiceGroup
                 name="sessions"
                 legend="Which session would you prefer to serve?"
-                hint="Choose one only: Juniors and Ambassadors run at the same time. Your preference does not guarantee placement."
+                hint="Your preference does not guarantee placement in that session."
                 error={err('sessions')}
                 choices={SESSION_PREFERENCES.map((session) => ({
                   value: session,
@@ -615,7 +615,6 @@ export default function ServantClient({
             {!form.attend_all && (
               <Field
                 label="Sundays you will miss, and why"
-                hint="For the Admins' information. It is not added to the calendar."
                 error={err('dates_missing')}
               >
                 {(p) => (

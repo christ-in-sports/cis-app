@@ -393,8 +393,7 @@ on the Teams page. The Current/Archived selector stays inside the Teams sheet.
 
 Servant session preference (2026-11-07): in About you, immediately under the serving
 question, use `ChoiceGroup` radio choices for Juniors or Ambassadors when serving.
-The hint explains that sessions overlap, only one may be chosen, and placement is
-not guaranteed. Show team questions for the selected session only.
+The hint says only that the preference does not guarantee placement in that session. Show team questions for the selected session only.
 
 Servant session and Sundays (2026-11-09): the session choice also offers No preference,
 which stores `no_preference` as the one session. The team question is asked once (the same set of teams for either session), under its own un-prefixed legend. In Notes, a

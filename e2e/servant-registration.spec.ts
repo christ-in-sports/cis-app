@@ -77,8 +77,7 @@ test('a new servant signs up, is sent to the form, registers, then edits it', as
   await page.locator('label').filter({ hasText: 'Not Completed' }).click();
   await page.locator('label').filter({ hasText: /^Yes$/ }).click();
   const session = page.getByRole('group', { name: 'Which session would you prefer to serve?' });
-  await expect(session).toContainText('run at the same time');
-  await expect(session).toContainText('does not guarantee placement');
+  await expect(session).toContainText('does not guarantee placement in that session');
   await session.locator('label').filter({ hasText: /^Ambassadors$/ }).click();
   await session.locator('label').filter({ hasText: /^Juniors$/ }).click();
   await expect(session.getByRole('radio', { name: 'Juniors' })).toBeChecked();
