@@ -1,6 +1,6 @@
 /**
  * Servant registration (ENG-17/ENG-19): a new servant signs up with the shared
- * code, is sent to the registration form, submits, and edits it. Once an Admin
+ * code, is sent to the registration form, submits, and edits it. Once a Director
  * gives them a role they can leave the form for the rest of the app.
  *
  * Writes only to one throwaway user it deletes first and last (the registration
@@ -94,7 +94,7 @@ test('a new servant signs up, is sent to the form, registers, then edits it', as
   await page.getByRole('button', { name: 'Register' }).click();
 
   await expect(page.getByText('You are registered')).toBeVisible();
-  await expect(page.getByText('An Admin will review your registration and assign your role.')).toBeVisible();
+  await expect(page.getByText('A Director will review your registration and assign your role.')).toBeVisible();
 
   const saved = await withDb(async (client) =>
     (
@@ -117,7 +117,7 @@ test('a new servant signs up, is sent to the form, registers, then edits it', as
   ]);
 
   // 4. Edit: the answers are still there, and saving updates the same row. Still
-  // roleless, so the page says the registration is in and waiting on an Admin.
+  // roleless, so the page says the registration is in and waiting on a Director.
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Registration submitted' })).toBeVisible();
   await expect(page.getByLabel('Name', { exact: true })).toHaveValue(NAME);
