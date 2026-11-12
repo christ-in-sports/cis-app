@@ -80,6 +80,45 @@ beforeEach(() => {
 });
 
 describe('servant registration form', () => {
+  it.each(['First name', 'Last name'])('requires %s even when the other name is filled', (label) => {
+    renderForm({ registration: record() });
+    expect(screen.getByLabelText(label)).toBeRequired();
+    fireEvent.change(screen.getByLabelText(label), { target: { value: '   ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(screen.getByText(`${label} is required`)).toBeInTheDocument();
+    expect(screen.getByLabelText(label)).toHaveAttribute('aria-invalid', 'true');
+    expect(submitServantRegistration).not.toHaveBeenCalled();
+  });
+
+  it('combines trimmed first and last names into the existing full_name field', async () => {
+    submitServantRegistration.mockResolvedValue({ ok: true, isNew: false });
+    renderForm({ registration: record() });
+    fireEvent.change(screen.getByLabelText('First name'), { target: { value: '  Mary Ann  ' } });
+    fireEvent.change(screen.getByLabelText('Last name'), { target: { value: '  De Silva  ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => expect(submitServantRegistration).toHaveBeenCalledWith(
+      expect.objectContaining({ full_name: 'Mary Ann De Silva' }),
+    ));
+    const input = submitServantRegistration.mock.calls[0][0];
+    expect(input).not.toHaveProperty('first_name');
+    expect(input).not.toHaveProperty('last_name');
+  });
+
+  it('preserves all remaining words when prefilling an existing full name', () => {
+    renderForm({ registration: record({ full_name: '  Mina   Hanna Habib  ' }) });
+    expect(screen.getByLabelText('First name')).toHaveValue('Mina');
+    expect(screen.getByLabelText('Last name')).toHaveValue('Hanna Habib');
+  });
+
+  it('asks for a last name when an existing registration has only one name', () => {
+    renderForm({ registration: record({ full_name: 'Mina' }) });
+    expect(screen.getByLabelText('First name')).toHaveValue('Mina');
+    expect(screen.getByLabelText('Last name')).toHaveValue('');
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    expect(screen.getByText('Last name is required')).toBeInTheDocument();
+    expect(submitServantRegistration).not.toHaveBeenCalled();
+  });
+
   it('hides the session and team questions until the servant says they are serving', () => {
     renderForm();
     expect(screen.queryByText('Which session would you prefer to serve?')).not.toBeInTheDocument();
@@ -149,7 +188,8 @@ describe('servant registration form', () => {
 
   it('prefills from this season\'s registration and shows when it was last saved', () => {
     renderForm({ registration: record() });
-    expect(screen.getByLabelText('Name')).toHaveValue('Mina Hanna');
+    expect(screen.getByLabelText('First name')).toHaveValue('Mina');
+    expect(screen.getByLabelText('Last name')).toHaveValue('Hanna');
     expect(screen.getByLabelText('Yes')).toBeChecked();
     expect(screen.getByRole('radio', { name: 'Juniors' })).toBeChecked();
     expect(screen.getByRole('checkbox', { name: /Coaches/ })).toBeChecked();
@@ -161,7 +201,8 @@ describe('servant registration form', () => {
 
   it('prefills from last season but leaves the missed dates empty and nothing "saved"', () => {
     renderForm({ registration: record(), prefilled: true });
-    expect(screen.getByLabelText('Name')).toHaveValue('Mina Hanna');
+    expect(screen.getByLabelText('First name')).toHaveValue('Mina');
+    expect(screen.getByLabelText('Last name')).toHaveValue('Hanna');
     expect(screen.getByRole('checkbox', { name: /every Sunday/ })).not.toBeChecked();
     expect(screen.getByLabelText(/Sundays you will miss/)).toHaveValue('');
     expect(screen.queryByText(/Last saved/)).not.toBeInTheDocument();
@@ -223,7 +264,8 @@ describe('servant registration form', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Register' }));
 
     expect(await screen.findByText('Say whether you are serving this season')).toBeInTheDocument();
-    expect(screen.getByText('Name is required')).toBeInTheDocument();
+    expect(screen.getByText('First name is required')).toBeInTheDocument();
+    expect(screen.getByText('Last name is required')).toBeInTheDocument();
     expect(submitServantRegistration).not.toHaveBeenCalled();
   });
 
@@ -278,7 +320,8 @@ describe('servant registration form', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Edit my answers' }));
 
-    expect(screen.getByLabelText('Name')).toHaveValue('Mina Hanna');
+    expect(screen.getByLabelText('First name')).toHaveValue('Mina');
+    expect(screen.getByLabelText('Last name')).toHaveValue('Hanna');
     expect(screen.getByRole('button', { name: 'Save changes' })).toBeInTheDocument();
   });
 
@@ -293,7 +336,7 @@ describe('servant registration form', () => {
       expect(screen.getByRole('button', { name: 'Saved ✓' })).toBeInTheDocument();
     });
     expect(screen.queryByText('You are registered')).not.toBeInTheDocument();
-    expect(screen.getByLabelText('Name')).toBeInTheDocument();
+    expect(screen.getByLabelText('First name')).toBeInTheDocument();
   });
 
   it('returns to the confirmation screen when an edit was started from it', async () => {
@@ -304,14 +347,14 @@ describe('servant registration form', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Edit my answers' }));
 
-    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Mina H.' } });
+    fireEvent.change(screen.getByLabelText('Last name'), { target: { value: 'H.' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
     expect(await screen.findByRole('heading', { name: 'Changes saved' })).toBeInTheDocument();
     expect(screen.getByText(/is up to date/)).toBeInTheDocument();
     // No email went out for an edit, so none is mentioned.
     expect(screen.queryByText(/confirmation email/)).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Name')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('First name')).not.toBeInTheDocument();
   });
 
   it('flags unsaved changes, and clears the flag once they are saved', async () => {
@@ -319,7 +362,7 @@ describe('servant registration form', () => {
     renderForm({ registration: record() });
     expect(screen.queryByText('You have unsaved changes')).not.toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Mina H.' } });
+    fireEvent.change(screen.getByLabelText('Last name'), { target: { value: 'H.' } });
     expect(screen.getByText('You have unsaved changes')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
@@ -333,7 +376,7 @@ describe('servant registration form', () => {
     window.dispatchEvent(clean);
     expect(clean.defaultPrevented).toBe(false);
 
-    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Mina H.' } });
+    fireEvent.change(screen.getByLabelText('Last name'), { target: { value: 'H.' } });
     const dirty = new Event('beforeunload', { cancelable: true });
     window.dispatchEvent(dirty);
     expect(dirty.defaultPrevented).toBe(true);
@@ -374,7 +417,8 @@ describe('servant registration form', () => {
       screen.getByText('An Admin will review your registration and assign your role.'),
     ).toBeInTheDocument();
     // The form stays editable below it.
-    expect(screen.getByLabelText('Name')).toHaveValue('Mina Hanna');
+    expect(screen.getByLabelText('First name')).toHaveValue('Mina');
+    expect(screen.getByLabelText('Last name')).toHaveValue('Hanna');
   });
 
   it('says nothing is submitted when the answers are only prefilled from last season', () => {
