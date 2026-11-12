@@ -16,6 +16,7 @@
 
 import { useEffect, useRef, useState, useTransition } from 'react';
 import Link from 'next/link';
+import { z } from 'zod';
 
 import { BoardHeader, BoardShell } from '@/components/cis/board-shell';
 import { Icon } from '@/components/cis/icon';
@@ -52,7 +53,8 @@ import { submitServantRegistration } from './actions';
 // ------------------------------------------------------------------ form state
 
 interface FormState {
-  full_name: string;
+  first_name: string;
+  last_name: string;
   evaluation_status: (typeof EVALUATION_STATUSES)[number] | '';
   serving: 'yes' | 'no' | '';
   sessions: SessionPreference[];
@@ -73,7 +75,8 @@ interface FormState {
 }
 
 const emptyForm: FormState = {
-  full_name: '',
+  first_name: '',
+  last_name: '',
   evaluation_status: '',
   serving: '',
   sessions: [],
@@ -92,10 +95,18 @@ const emptyForm: FormState = {
   home_address: '',
 };
 
+const nameFieldsSchema = z.object({
+  first_name: z.string().trim().min(1, 'First name is required'),
+  last_name: z.string().trim().min(1, 'Last name is required'),
+});
+
 function formFrom(record: ServantRegistrationRecord | null): FormState {
   if (!record) return emptyForm;
+  // Keep every word of an existing name, including compound family names.
+  const [firstName, ...lastName] = record.full_name.trim().split(/\s+/);
   return {
-    full_name: record.full_name,
+    first_name: firstName,
+    last_name: lastName.join(' '),
     evaluation_status: record.evaluation_status,
     serving: record.is_serving ? 'yes' : 'no',
     // Older registrations could choose both. Ask for a choice rather than
@@ -122,7 +133,7 @@ function formFrom(record: ServantRegistrationRecord | null): FormState {
 /** The shape `servantRegistrationSchema` expects, from what is on screen. */
 function buildInput(form: FormState) {
   return {
-    full_name: form.full_name,
+    full_name: `${form.first_name.trim()} ${form.last_name.trim()}`.trim(),
     evaluation_status: form.evaluation_status || undefined,
     is_serving: form.serving === '' ? undefined : form.serving === 'yes',
     sessions: form.sessions,
@@ -231,6 +242,7 @@ export default function ServantClient({
     setErrors((e) => {
       const rest = { ...e };
       delete rest[key];
+      if (key === 'first_name' || key === 'last_name') delete rest.full_name;
       if (key === 'serving') delete rest.sessions;
       return rest;
     });
@@ -262,12 +274,19 @@ export default function ServantClient({
     setFormError(null);
     setJustSaved(false);
 
+    const names = nameFieldsSchema.safeParse(form);
     const parsed = servantRegistrationSchema.safeParse(buildInput(form));
     const missingDates = !form.attend_all && form.dates_missing.trim() === '';
-    if (!parsed.success || missingDates) {
+    if (!names.success || !parsed.success || missingDates) {
       const found: Record<string, string[]> = {};
       for (const issue of parsed.success ? [] : parsed.error.issues) {
         (found[issue.path.join('.')] ??= []).push(issue.message);
+      }
+      if (!names.success) {
+        delete found.full_name;
+        for (const issue of names.error.issues) {
+          (found[issue.path.join('.')] ??= []).push(issue.message);
+        }
       }
       // Untouched choices reach the schema as `undefined`, whose enum messages
       // do not say what to do.
@@ -326,7 +345,7 @@ export default function ServantClient({
               <p className="m-0 text-cis-base leading-[1.5]">
                 {confirmed.updated
                   ? `Your registration for ${season.name} is up to date.`
-                  : `Thank you, ${form.full_name.trim().split(/\s+/)[0]}. Your registration for ${season.name} is ${hasRole ? 'saved' : 'submitted'}.`}
+                  : `Thank you, ${form.first_name.trim()}. Your registration for ${season.name} is ${hasRole ? 'saved' : 'submitted'}.`}
               </p>
               {!hasRole && (
                 <p className="m-0 text-cis-base font-bold leading-[1.5]">{AWAITING_ROLE}</p>
@@ -470,13 +489,25 @@ export default function ServantClient({
           <Sheet className="flex flex-col gap-cis-3 px-cis-5 pb-cis-6 pt-cis-6">
             <SheetHeading>About you</SheetHeading>
             <SheetRule />
-            <Field label="Name" error={err('full_name')}>
+            <Field label="First name" error={err('first_name') ?? err('full_name')}>
               {(p) => (
                 <TextInput
                   {...p}
-                  autoComplete="name"
-                  value={form.full_name}
-                  onChange={(e) => set('full_name', e.target.value)}
+                  autoComplete="given-name"
+                  required
+                  value={form.first_name}
+                  onChange={(e) => set('first_name', e.target.value)}
+                />
+              )}
+            </Field>
+            <Field label="Last name" error={err('last_name')}>
+              {(p) => (
+                <TextInput
+                  {...p}
+                  autoComplete="family-name"
+                  required
+                  value={form.last_name}
+                  onChange={(e) => set('last_name', e.target.value)}
                 />
               )}
             </Field>

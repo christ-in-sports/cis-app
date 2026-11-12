@@ -73,7 +73,8 @@ test('a new servant signs up, is sent to the form, registers, then edits it', as
   await expect(page.getByText('Which session would you prefer to serve?')).toBeHidden();
 
   // 3. Submit. The real inputs are visually hidden; the label is what a thumb taps.
-  await page.getByLabel('Name', { exact: true }).fill(NAME);
+  await page.getByLabel('First name', { exact: true }).fill('E2E');
+  await page.getByLabel('Last name', { exact: true }).fill('Servant Form');
   await page.locator('label').filter({ hasText: 'Not Completed' }).click();
   await page.locator('label').filter({ hasText: /^Yes$/ }).click();
   const session = page.getByRole('group', { name: 'Which session would you prefer to serve?' });
@@ -99,7 +100,7 @@ test('a new servant signs up, is sent to the form, registers, then edits it', as
   const saved = await withDb(async (client) =>
     (
       await client.query(
-        `select r.is_serving, r.sessions, r.juniors_subteams, r.phone, r.email
+        `select r.full_name, r.is_serving, r.sessions, r.juniors_subteams, r.phone, r.email
            from servant_registrations r join auth.users u on u.id = r.user_id
           where u.email = $1`,
         [EMAIL],
@@ -108,6 +109,7 @@ test('a new servant signs up, is sent to the form, registers, then edits it', as
   );
   expect(saved).toEqual([
     {
+      full_name: NAME,
       is_serving: true,
       sessions: ['juniors'],
       juniors_subteams: ['coaches'],
@@ -120,7 +122,8 @@ test('a new servant signs up, is sent to the form, registers, then edits it', as
   // roleless, so the page says the registration is in and waiting on an Admin.
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Registration submitted' })).toBeVisible();
-  await expect(page.getByLabel('Name', { exact: true })).toHaveValue(NAME);
+  await expect(page.getByLabel('First name', { exact: true })).toHaveValue('E2E');
+  await expect(page.getByLabel('Last name', { exact: true })).toHaveValue('Servant Form');
   await expect(page.getByText(/Last saved/)).toBeVisible();
   await expect(page.getByRole('radio', { name: 'Juniors' })).toBeChecked();
   await page.getByRole('group', { name: 'Which session would you prefer to serve?' })
