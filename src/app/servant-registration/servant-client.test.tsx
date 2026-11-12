@@ -297,7 +297,7 @@ describe('servant registration form', () => {
     // A servant with no role is told it went through and what happens next.
     expect(screen.getByText(/registration for CIS 2026-2027 is submitted/)).toBeInTheDocument();
     expect(
-      screen.getByText('An Admin will review your registration and assign your role.'),
+      screen.getByText('A Director will review your registration and assign your role.'),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
     // The form, and what must not be repeated, is gone.
@@ -414,7 +414,7 @@ describe('servant registration form', () => {
     renderForm({ hasRole: false, registration: record() });
     expect(screen.getByRole('heading', { name: 'Registration submitted' })).toBeInTheDocument();
     expect(
-      screen.getByText('An Admin will review your registration and assign your role.'),
+      screen.getByText('A Director will review your registration and assign your role.'),
     ).toBeInTheDocument();
     // The form stays editable below it.
     expect(screen.getByLabelText('First name')).toHaveValue('Mina');

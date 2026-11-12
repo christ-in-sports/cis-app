@@ -8,7 +8,7 @@ import { markInput, sessionInput } from '@/lib/attendance-input';
 
 async function access(manager: boolean) {
   const auth = await getMyRoles();
-  if (!auth.userId || !(auth.roles.has('admin') || auth.roles.has('program') || (!manager && auth.roles.has('coach')))) {
+  if (!auth.userId || !(auth.roles.has('director') || auth.roles.has('admin') || auth.roles.has('program') || (!manager && auth.roles.has('coach')))) {
     throw new Error('You do not have permission to do that.');
   }
   return auth;
@@ -38,7 +38,7 @@ export async function createSession(input: unknown) {
 export async function saveMarks(input: unknown) {
   return mutate(async () => {
     const { supabase, roles } = await access(false);
-    if (!roles.has('admin') && !roles.has('coach')) throw new Error('Only Admin and assigned coaches can mark attendance.');
+    if (!(roles.has('director') || roles.has('admin')) && !roles.has('coach')) throw new Error('Only Director, Admin and assigned coaches can mark attendance.');
     const v = markInput.parse(input);
     let query = supabase.from('attendance_records').update({ status: v.status, ...(v.note !== undefined ? { note: v.note } : {}) })
       .eq('day_id', v.dayId).in('id', v.ids);
@@ -98,7 +98,7 @@ export async function deleteAttendance(dayId: string) {
 export async function scanAttendance(input: unknown) {
   try {
     const { supabase, roles } = await access(false);
-    if (!roles.has('admin') && !roles.has('coach')) throw new Error('Only Admin and assigned coaches can scan attendance.');
+    if (!(roles.has('director') || roles.has('admin')) && !roles.has('coach')) throw new Error('Only Director, Admin and assigned coaches can scan attendance.');
     const { dayId, code: kidId } = attendanceQrInput.parse(input);
     const { data: day, error: dayError } = await supabase.from('attendance_days')
       .select('locked, archived_at').eq('id', dayId).maybeSingle();

@@ -42,11 +42,11 @@ export async function loadServantRegistrationContext(): Promise<ServantContext> 
   if (userId === null) return { status: 'signed-out' };
 
   const hasRole = roles.size > 0;
-  // Servants only: no role yet, or Admin, Program Team, Coach or Prayer Team. A
+  // Servants only: no role yet, or Director, Admin, Program Team, Coach or Prayer Team. A
   // Parent or Kid account is not a servant. UX only: the database refuses the
   // same callers (`submit_servant_registration()` and the read policy).
   const isServant =
-    !hasRole || roles.has('admin') || roles.has('program') || roles.has('coach') || roles.has('prayer');
+    !hasRole || roles.has('director') || roles.has('admin') || roles.has('program') || roles.has('coach') || roles.has('prayer');
   if (!isServant) return { status: 'not-servant' };
 
   const { data: season } = await supabase

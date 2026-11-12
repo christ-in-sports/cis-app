@@ -44,7 +44,7 @@ export async function setRegistrationsConsent(
     return { ok: false, error: 'You are no longer signed in.' };
   }
   if (!isAdmin) {
-    return { ok: false, error: 'Recording consent is available to Admins only.' };
+    return { ok: false, error: 'Recording consent is available to Directors and Admins only.' };
   }
   if (registrationIds.length === 0) {
     return { ok: false, error: 'Select at least one kid first.' };
@@ -57,7 +57,7 @@ export async function setRegistrationsConsent(
 
   if (error) {
     if (error.code === FORBIDDEN) {
-      return { ok: false, error: 'Recording consent is available to Admins only.' };
+      return { ok: false, error: 'Recording consent is available to Directors and Admins only.' };
     }
     if (error.code === NOT_FOUND) {
       return {
@@ -122,7 +122,7 @@ export async function recordPayments(
     return { ok: false, error: 'You are no longer signed in.' };
   }
   if (!isAdmin) {
-    return { ok: false, error: 'Recording payments is available to Admins only.' };
+    return { ok: false, error: 'Recording payments is available to Directors and Admins only.' };
   }
   if (registrationIds.length === 0) {
     return { ok: false, error: 'Select at least one kid first.' };
@@ -148,7 +148,7 @@ export async function recordPayments(
 
   if (error) {
     if (error.code === FORBIDDEN) {
-      return { ok: false, error: 'Recording payments is available to Admins only.' };
+      return { ok: false, error: 'Recording payments is available to Directors and Admins only.' };
     }
     if (error.code === NOT_FOUND) {
       return {
@@ -203,14 +203,14 @@ export async function deletePayment(paymentId: string): Promise<DeletePaymentRes
     return { ok: false, error: 'You are no longer signed in.' };
   }
   if (!isAdmin) {
-    return { ok: false, error: 'Removing payments is available to Admins only.' };
+    return { ok: false, error: 'Removing payments is available to Directors and Admins only.' };
   }
 
   const { error } = await supabase.rpc('delete_payment', { p_payment_id: paymentId });
 
   if (error) {
     if (error.code === FORBIDDEN) {
-      return { ok: false, error: 'Removing payments is available to Admins only.' };
+      return { ok: false, error: 'Removing payments is available to Directors and Admins only.' };
     }
     if (error.code === NOT_FOUND) {
       return { ok: false, error: 'That payment was already removed. Reload to see the latest.' };
@@ -240,41 +240,22 @@ type Supabase = Awaited<ReturnType<typeof checkAdmin>>['supabase'];
 
 const NO_ACCOUNT = 'No account has that email. The parent needs to join through the parent link first.';
 const NOT_A_PARENT =
-  'That email has an account, but it is not a Parent. Ask them to use the parent link, or give them Parent on the Roles page.';
+  'That email has an account, but it is not a Parent. Ask them to use the parent link, or ask a Director to give them the Parent role.';
 
-/**
- * Finds the account with this email among those holding Parent. Runs under the
- * Admin's own session: profiles and user_roles are readable by an Admin and by
- * no one else's lookup, which is the boundary (AGENTS.md section 4).
- */
+/** Find a parent by exact email without exposing other accounts' role lists. */
 async function resolveParent(
   supabase: Supabase,
   email: string,
 ): Promise<{ id: string; match: ParentMatch } | { error: string }> {
-  const { data: profile, error } = await supabase
-    .from('profiles')
-    .select('id, display_name, email')
-    .eq('email', email)
-    .maybeSingle();
-
+  // A narrow lookup preserves parent linking without exposing other users' roles.
+  const { data, error } = await supabase.rpc('find_parent_account', { p_email: email });
   if (error) {
-    console.error('resolveParent profile lookup failed:', error.code);
+    console.error('resolveParent lookup failed:', error.code);
     return { error: 'Could not look that email up.' };
   }
+  const profile = data?.[0];
   if (!profile) return { error: NO_ACCOUNT };
-
-  const { data: role, error: roleError } = await supabase
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', profile.id)
-    .eq('role', 'parent')
-    .maybeSingle();
-
-  if (roleError) {
-    console.error('resolveParent role lookup failed:', roleError.code);
-    return { error: 'Could not look that email up.' };
-  }
-  if (!role) return { error: NOT_A_PARENT };
+  if (!profile.is_parent) return { error: NOT_A_PARENT };
 
   return {
     id: profile.id,
@@ -290,7 +271,7 @@ export async function findParentByEmail(email: string): Promise<FindParentResult
     return { ok: false, error: 'You are no longer signed in.' };
   }
   if (!isAdmin) {
-    return { ok: false, error: 'Attaching a kid to a parent is available to Admins only.' };
+    return { ok: false, error: 'Attaching a kid to a parent is available to Directors and Admins only.' };
   }
 
   const parsed = findParentSchema.safeParse({ email });
@@ -327,7 +308,7 @@ export async function attachKidToParent(input: { kidId: string; email: string })
     return { ok: false, error: 'You are no longer signed in.' };
   }
   if (!isAdmin) {
-    return { ok: false, error: 'Attaching a kid to a parent is available to Admins only.' };
+    return { ok: false, error: 'Attaching a kid to a parent is available to Directors and Admins only.' };
   }
 
   const parsed = attachParentSchema.safeParse(input);

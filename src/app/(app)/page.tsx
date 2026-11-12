@@ -39,7 +39,7 @@ export default async function TodayPage() {
   // Today must open even if the sports read fails, so a failure only hides the card.
   const sports = await loadSportsData(supabase, userId).catch(() => null);
   const next = sports ? nextGame(sports, today) : null;
-  const isAdmin = roles.has('admin');
+  const isAdmin = (roles.has('director') || roles.has('admin'));
   const manages = isAdmin || roles.has('program');
 
   return (
@@ -66,7 +66,7 @@ export default async function TodayPage() {
             <MenuRow href="/sports/schedule" title="Games and scores" icon="schedule" domain="sport" />
             <MenuRow href="/teams" title="Teams" icon="roster" />
             <MenuRow href="/sports/manage" title="Manage sports" icon="manage" domain="sport" />
-            {isAdmin && <MenuRow href="/servants" title="Servant registrations" icon="servants" />}
+            {roles.has('director') && <MenuRow href="/servants" title="Servant registrations" icon="servants" />}
           </MenuSheet>
         )}
         {roles.has('coach') && (

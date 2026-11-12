@@ -31,7 +31,7 @@ afterAll(async () => {
   await pool.end();
 });
 
-type Actor = 'admin' | 'program' | 'coach' | 'prayer' | 'parent' | 'none';
+type Actor = 'director' | 'admin' | 'program' | 'coach' | 'prayer' | 'parent' | 'none';
 
 interface Fixture {
   actors: Record<Actor, string>;
@@ -53,7 +53,7 @@ const newName = (ext: 'webp' | 'jpg' = 'webp') => `${randomUUID()}.${ext}`;
 async function seed(client: PoolClient): Promise<Fixture> {
   const suffix = randomUUID().slice(0, 8);
   const actors = {} as Record<Actor, string>;
-  for (const actor of ['admin', 'program', 'coach', 'prayer', 'parent', 'none'] as Actor[]) {
+  for (const actor of ['director', 'admin', 'program', 'coach', 'prayer', 'parent', 'none'] as Actor[]) {
     actors[actor] = await createProfile(client, { email: `kp-${actor}-${suffix}@test.local` });
     if (actor !== 'none') await grantRole(client, actors[actor], actor);
   }
@@ -184,7 +184,7 @@ async function asAnon<T>(client: PoolClient, fn: () => Promise<T>): Promise<T> {
   }
 }
 
-const READS: Actor[] = ['admin', 'program', 'coach', 'parent'];
+const READS: Actor[] = ['director', 'admin', 'program', 'coach', 'parent'];
 const DENIED: Actor[] = ['prayer', 'none'];
 
 describe('kid photos -- schema', () => {
@@ -358,7 +358,7 @@ describe('kid photos -- who can upload', () => {
       )
     );
 
-  it.each(['admin', 'parent'] as Actor[])('lets %s upload under a random name', async (actor) => {
+  it.each(['director', 'admin', 'parent'] as Actor[])('lets %s upload under a random name', async (actor) => {
     await withTx(pool, async (client) => {
       const f = await seed(client);
       await expect(insertAs(client, f.actors[actor], newName())).resolves.toBeDefined();
@@ -404,7 +404,7 @@ describe('kid photos -- who can upload', () => {
       const name = await putObject(client, newName(), f.actors.parent);
       const target = newName();
 
-      for (const actor of ['parent', 'admin'] as Actor[]) {
+      for (const actor of ['parent', 'director', 'admin'] as Actor[]) {
         const r = await asUser(client, f.actors[actor], () =>
           client.query(
             `update storage.objects set name = $1 where bucket_id = 'kid-photos' and name = $2`,
@@ -450,7 +450,7 @@ describe('kid photos -- a photo can be replaced but never removed', () => {
       const f = await seed(client);
       const name = await kidWithPhoto(client, f, f.actors.admin);
 
-      for (const actor of ['admin', 'parent', 'program', 'coach'] as Actor[]) {
+      for (const actor of ['director', 'admin', 'parent', 'program', 'coach'] as Actor[]) {
         expect(await deleteAs(client, f.actors[actor], name)).toBe(0);
       }
       const r = await client.query(`select 1 from storage.objects where name = $1`, [name]);

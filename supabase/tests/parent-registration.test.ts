@@ -662,7 +662,7 @@ describe('attaching an imported kid to a parent (Admin only)', () => {
           role: (await client.query('select 1 from user_roles where user_id = $1', [target])).rowCount,
         }));
 
-      expect(await find(admin)).toEqual({ profile: 1, role: 1 });
+      expect(await find(admin)).toEqual({ profile: 1, role: 0 });
       expect(await find(snoop)).toEqual({ profile: 0, role: 0 });
     });
   });

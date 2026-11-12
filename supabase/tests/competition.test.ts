@@ -242,7 +242,7 @@ describe('who can read and write', () => {
         const user = await userWithRole(client, role);
         expect(await code(createGames(client, user, block, roundRobin(teams)))).toBe('42501');
       }
-      for (const role of ['admin', 'program']) {
+      for (const role of ['director', 'admin', 'program']) {
         const block = await seedBlock(client, { format: 'league', sport: `ok-${role}` });
         const user = await userWithRole(client, role);
         expect(await code(createGames(client, user, block, roundRobin(teams)))).toBe('ok');
@@ -334,7 +334,7 @@ describe('who can read and write', () => {
       const program = await userWithRole(client, 'program');
       await createGames(client, program, block, roundRobin(teams));
 
-      for (const role of ['admin', 'program', 'coach', 'prayer', 'parent', 'kid']) {
+      for (const role of ['director', 'admin', 'program', 'coach', 'prayer', 'parent', 'kid']) {
         const user = await userWithRole(client, role);
         const seen = await asUser(client, user, async () => ({
           blocks: (await client.query('select id from sport_blocks')).rowCount,

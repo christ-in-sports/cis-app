@@ -45,7 +45,7 @@ export async function POST(request: Request) {
   }
   if (!isAdmin) {
     return NextResponse.json(
-      { error: 'CSV import is available to Admins only.' },
+      { error: 'CSV import is available to Directors and Admins only.' },
       { status: 403 },
     );
   }

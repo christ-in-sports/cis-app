@@ -1,29 +1,29 @@
 /**
  * `/admin/roles` -- grant and remove roles.
  *
- * Admin-only. New servants sign up with the shared servant code and start with no
- * role (ENG-16); this is where an Admin gives them access. RLS is the boundary:
- * only an Admin can read everyone's `user_roles` or write them, so a non-Admin
+ * Director-only. New servants sign up with the shared servant code and start with no
+ * role (ENG-16); this is where a Director gives them access. RLS is the boundary:
+ * only a Director can read everyone's `user_roles` or write them, so a non-Director
  * who reached this page anyway would see only themselves and could change nothing.
  *
  * Servants only: an account holding the `kid` role is not listed. Kids get that
- * role automatically when they register, and are not people an Admin assigns
+ * role automatically when they register, and are not people a Director assigns
  * roles to.
  */
 
 import { redirect } from 'next/navigation';
 
 import { APP_ROLES, type AppRole } from '@/lib/auth/app-roles';
-import { checkAdmin } from '@/lib/auth/admin';
+import { checkRole } from '@/lib/auth/roles';
 import RolesClient, { type PersonRoles } from './roles-client';
 
 export const dynamic = 'force-dynamic';
 
 export default async function RolesPage() {
-  const { supabase, userId, isAdmin } = await checkAdmin();
+  const { supabase, userId, hasRole } = await checkRole('director');
 
   if (userId === null) redirect('/login?redirect=/admin/roles');
-  if (!isAdmin) redirect('/');
+  if (!hasRole) redirect('/');
 
   const [{ data: profiles }, { data: grants }] = await Promise.all([
     supabase.from('profiles').select('id, display_name, email'),

@@ -5,9 +5,9 @@ import { embeddedOne, type RosterKid } from '@/lib/attendance';
 export async function attendanceAccess(manager = false) {
   const auth = await getMyRoles();
   if (!auth.userId) redirect('/login?redirect=/attendance');
-  const canManage = auth.roles.has('admin') || auth.roles.has('program');
+  const canManage = auth.roles.has('director') || auth.roles.has('admin') || auth.roles.has('program');
   if (!canManage && (manager || !auth.roles.has('coach'))) redirect('/');
-  return { ...auth, canManage, isAdmin: auth.roles.has('admin') };
+  return { ...auth, canManage, isAdmin: (auth.roles.has('director') || auth.roles.has('admin')) };
 }
 
 export function rosterRows(rows: { id: string; kid_id: string; grade: number; division: 'juniors' | 'ambassadors'; team_id: string | null; kids: { first_name: string; last_name: string } | { first_name: string; last_name: string }[] }[]): RosterKid[] {

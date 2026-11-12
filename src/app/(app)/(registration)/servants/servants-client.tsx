@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * The Admin servants list: who is serving this season, where, and how to reach
+ * The Director servants list: who is serving this season, where, and how to reach
  * them. A real table (`DESIGN_SYSTEM.md` §3), the way the roster is, and a row
  * opens in place to show every field rather than a second screen.
  *
@@ -93,7 +93,7 @@ export default function ServantsClient({
 
   return (
     <>
-      <BoardHeader kicker="Admin" title="Servants" meta={seasonName} />
+      <BoardHeader kicker="Director" title="Servants" meta={seasonName} />
       <RegistrationColumn>
         <Sheet className="flex flex-col gap-cis-3 px-cis-4 pb-cis-4 pt-cis-4">
           <p className="m-0 text-cis-sm font-semibold text-cis-ink-muted">

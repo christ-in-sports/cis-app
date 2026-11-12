@@ -71,9 +71,9 @@ async function setConsentAs(
   });
 }
 
-async function makeAdmin(client: PoolClient, email: string): Promise<string> {
+async function makeAdmin(client: PoolClient, email: string, role = 'admin'): Promise<string> {
   const id = await createProfile(client, { email });
-  await grantRole(client, id, 'admin');
+  await grantRole(client, id, role);
   return id;
 }
 
@@ -86,9 +86,9 @@ async function readConsent(client: PoolClient, registrationId: string) {
 }
 
 describe('set_registrations_consent -- authorisation', () => {
-  it('lets an admin record consent', async () => {
+  it.each(['director', 'admin'])('lets %s record consent', async (role) => {
     await withTx(pool, async (client) => {
-      const adminId = await makeAdmin(client, 'consent-admin@test.local');
+      const adminId = await makeAdmin(client, 'consent-admin@test.local', role);
       const regId = await createRegistration(client);
 
       await setConsentAs(client, adminId, regId, true);

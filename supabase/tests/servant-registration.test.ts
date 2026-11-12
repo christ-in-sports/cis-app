@@ -223,7 +223,7 @@ describe('submit_servant_registration', () => {
     }
   );
 
-  it.each([['admin'], ['program'], ['coach'], ['prayer'], ['coach', 'parent'], ['parent', 'prayer']])(
+  it.each([['director'], ['admin'], ['program'], ['coach'], ['prayer'], ['coach', 'parent'], ['parent', 'prayer']])(
     'lets an account holding %s submit',
     async (...roles) => {
       await withTx(pool, async (client) => {
@@ -264,7 +264,7 @@ describe('servant_registrations read access', () => {
       const a = await createProfile(client, { email: 'read-c@test.local' });
       const b = await createProfile(client, { email: 'read-d@test.local' });
       const admin = await createProfile(client, { email: 'read-admin@test.local' });
-      await grantRole(client, admin, 'admin');
+      await grantRole(client, admin, 'director');
       await submitAs(client, a);
       await submitAs(client, b);
 
@@ -321,7 +321,7 @@ describe('servant_registrations has no direct write path', () => {
   it('rejects INSERT, UPDATE and DELETE from a signed-in user, even an Admin', async () => {
     await withTx(pool, async (client) => {
       const admin = await createProfile(client, { email: 'write-admin@test.local' });
-      await grantRole(client, admin, 'admin');
+      await grantRole(client, admin, 'director');
       await submitAs(client, admin);
       const season = (await client.query('select id from seasons where is_current')).rows[0].id;
 

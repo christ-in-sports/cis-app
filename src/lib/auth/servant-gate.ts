@@ -1,7 +1,7 @@
 /**
  * Sends a signed-in user who has no role yet to the servant registration form.
  *
- * A new servant signs up with the shared code and holds no role until an Admin
+ * A new servant signs up with the shared code and holds no role until a Director
  * assigns one, so until then the form is the only thing they can use. Call it
  * from the home page and the layouts of the role-gated areas. It is UX only:
  * RLS already returns nothing to a roleless user, and a signed-out visitor is

@@ -41,7 +41,7 @@ const UPLOAD_NOT_FOUND = '02000';
 const ALREADY_USED = '23505';
 
 export async function replaceKidPhoto(input: unknown): Promise<ReplaceKidPhotoResult> {
-  const { supabase, userId, hasRole } = await checkAnyRole(['admin', 'parent']);
+  const { supabase, userId, hasRole } = await checkAnyRole(['director', 'admin', 'parent']);
 
   if (userId === null) {
     return { ok: false, error: 'You are no longer signed in.' };

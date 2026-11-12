@@ -117,7 +117,7 @@ interface DbError {
 export function describeDbError(error: DbError): string {
   switch (error.code) {
     case '42501':
-      return 'Only Admin or Program Team can do that.';
+      return 'Only Director, Admin or Program Team can do that.';
     case '55000':
     case '22023':
     case 'P0002':

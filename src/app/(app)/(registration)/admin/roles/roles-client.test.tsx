@@ -1,7 +1,7 @@
 /**
- * The Admin roles screen: who is listed first, that a tick is saved and shown at
- * once, that a failed save is put back with a reason, and that an Admin cannot
- * untick their own Admin box.
+ * The Director roles screen: who is listed first, that a tick is saved and shown at
+ * once, that a failed save is put back with a reason, and that a Director cannot
+ * untick their own Director box.
  */
 
 import { act, fireEvent, render, screen } from '@testing-library/react';
@@ -18,7 +18,7 @@ jest.mock('./actions', () => ({
 const grantRoleMock = grantRole as jest.MockedFunction<typeof grantRole>;
 const revokeRoleMock = revokeRole as jest.MockedFunction<typeof revokeRole>;
 
-const me: PersonRoles = { id: 'me', name: 'Dina Admin', email: 'dina@example.com', roles: ['admin'] };
+const me: PersonRoles = { id: 'me', name: 'Dina Director', email: 'dina@example.com', roles: ['director'] };
 const newServant: PersonRoles = { id: 'new', name: 'Nabil New', email: 'nabil@example.com', roles: [] };
 const coach: PersonRoles = { id: 'coach', name: 'Carol Coach', email: 'carol@example.com', roles: ['coach'] };
 
@@ -41,7 +41,7 @@ describe('the roles screen', () => {
     const names = screen
       .getAllByRole('region')
       .map((section) => section.getAttribute('aria-label'));
-    expect(names).toEqual(['Nabil New', 'Carol Coach', 'Dina Admin']);
+    expect(names).toEqual(['Nabil New', 'Carol Coach', 'Dina Director']);
   });
 
   it('says how many people are waiting for a role', () => {
@@ -73,7 +73,7 @@ describe('the roles screen', () => {
   });
 
   it('puts the box back and says why when a save fails', async () => {
-    grantRoleMock.mockResolvedValue({ ok: false, error: 'Only Admins can change roles.' });
+    grantRoleMock.mockResolvedValue({ ok: false, error: 'Only Directors can change roles.' });
     renderRoles();
 
     await act(async () => {
@@ -81,19 +81,28 @@ describe('the roles screen', () => {
     });
 
     expect(box('Prayer Team', 'Nabil New')).not.toBeChecked();
-    expect(screen.getByRole('alert')).toHaveTextContent('Only Admins can change roles.');
+    expect(screen.getByRole('alert')).toHaveTextContent('Only Directors can change roles.');
   });
 
-  it('does not let an Admin untick their own Admin box, and explains', async () => {
+  it('does not let a Director untick their own Director box, and explains', async () => {
     renderRoles();
 
-    expect(box('Admin', 'Dina Admin')).toBeDisabled();
-    expect(screen.getByText(/can't remove your own Admin role/i)).toBeInTheDocument();
+    expect(box('Director', 'Dina Director')).toBeDisabled();
+    expect(screen.getByText(/can't remove your own Director role/i)).toBeInTheDocument();
 
     await act(async () => {
-      fireEvent.click(box('Admin', 'Dina Admin'));
+      fireEvent.click(box('Director', 'Dina Director'));
     });
     expect(revokeRoleMock).not.toHaveBeenCalled();
+  });
+
+  it('lets a Director grant and remove the new Admin role, including their own', async () => {
+    renderRoles();
+    expect(box('Admin', 'Dina Director')).toBeEnabled();
+    await act(async () => { fireEvent.click(box('Admin', 'Nabil New')); });
+    expect(grantRoleMock).toHaveBeenCalledWith('new', 'admin');
+    await act(async () => { fireEvent.click(box('Admin', 'Nabil New')); });
+    expect(revokeRoleMock).toHaveBeenCalledWith('new', 'admin');
   });
 
   it('offers the servant roles and never Kid', () => {
@@ -108,7 +117,7 @@ describe('the roles screen', () => {
   });
 
   it('shows the reason under the person it happened to, not at the top of the list', async () => {
-    grantRoleMock.mockResolvedValue({ ok: false, error: 'Only Admins can change roles.' });
+    grantRoleMock.mockResolvedValue({ ok: false, error: 'Only Directors can change roles.' });
     renderRoles();
 
     await act(async () => {
@@ -116,8 +125,8 @@ describe('the roles screen', () => {
     });
 
     const row = screen.getByRole('region', { name: 'Nabil New' });
-    expect(row).toHaveTextContent('Only Admins can change roles.');
-    expect(screen.getByRole('region', { name: 'Carol Coach' })).not.toHaveTextContent('Only Admins');
+    expect(row).toHaveTextContent('Only Directors can change roles.');
+    expect(screen.getByRole('region', { name: 'Carol Coach' })).not.toHaveTextContent('Only Directors');
   });
 
   it('puts the box back when the request itself fails', async () => {
@@ -139,9 +148,9 @@ describe('the roles screen', () => {
     expect(box('Prayer Team', 'Nabil New')).toBeChecked();
   });
 
-  it('lets an Admin change another Admin', () => {
-    renderRoles([me, { id: 'other', name: 'Omar Admin', email: 'omar@example.com', roles: ['admin'] }]);
-    expect(box('Admin', 'Omar Admin')).toBeEnabled();
+  it('lets a Director change another Director', () => {
+    renderRoles([me, { id: 'other', name: 'Omar Director', email: 'omar@example.com', roles: ['director'] }]);
+    expect(box('Director', 'Omar Director')).toBeEnabled();
   });
 
   it('filters by name or email', () => {
