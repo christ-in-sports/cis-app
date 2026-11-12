@@ -1,19 +1,5 @@
-/**
- * Server-side Admin check.
- *
- * `src/middleware.ts` deliberately excludes `/api`, and it only ever checks
- * whether someone is signed in -- never what they may do. So every server entry
- * point that is Admin-only has to establish that itself, and this is the one
- * place that knows how.
- *
- * This is a UX and defence-in-depth layer, not the security boundary. The real
- * boundary is RLS: `kids`, `registrations`, `import_batches` and `import_rows`
- * all restrict writes to `has_role('admin')`, and `import_commit()` re-checks
- * the same thing inside the database. A bug here produces a clearer error
- * message; it does not grant access.
- */
-
-import { checkRole, type RoleCheck } from '@/lib/auth/roles';
+/** Operational access shared by Director and Admin; RLS remains the boundary. */
+import { checkAnyRole, type RoleCheck } from '@/lib/auth/roles';
 
 export interface AdminCheck {
   supabase: RoleCheck['supabase'];
@@ -22,12 +8,12 @@ export interface AdminCheck {
 }
 
 /**
- * Resolves the caller's identity and whether they hold the `admin` role.
+ * Resolves the caller's identity and whether they hold the `director` or `admin` role.
  *
  * Reads `user_roles`, the primitive `has_role()` is defined in terms of, so this
- * check stays aligned with the RLS policies it mirrors. See `checkRole`.
+ * check stays aligned with the RLS policies it mirrors. See `checkAnyRole`.
  */
 export async function checkAdmin(): Promise<AdminCheck> {
-  const { supabase, userId, hasRole } = await checkRole('admin');
+  const { supabase, userId, hasRole } = await checkAnyRole(['director', 'admin']);
   return { supabase, userId, isAdmin: hasRole };
 }

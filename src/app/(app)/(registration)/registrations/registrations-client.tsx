@@ -194,7 +194,7 @@ export default function RegistrationsClient({
   season,
 }: {
   initial: RosterEntry[];
-  /** Holds the `admin` role: the roster, payments and the CSV import are Admin-only. */
+  /** Holds Director or Admin: roster, payments and CSV import. */
   isAdmin: boolean;
   season: { id: string; name: string } | null;
 }) {

@@ -105,7 +105,7 @@ export default function SignupPage() {
                 className="h-12 text-base"
               />
               <p className="text-xs text-muted-foreground">
-                An Admin will give you access after you sign up.
+                A Director will give you access after you sign up.
               </p>
             </div>
             <div className="space-y-2">

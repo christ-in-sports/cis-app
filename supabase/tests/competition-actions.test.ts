@@ -202,11 +202,11 @@ describe('who may use the sports actions', () => {
     current = await makeUser([role]);
 
     const r = await saveSportBlock({ seasonId: season, ...league });
-    expect(r).toEqual({ ok: false, error: 'Only Admin or Program Team can update sports standings.' });
+    expect(r).toEqual({ ok: false, error: 'Only Director, Admin or Program Team can update sports standings.' });
     expect((await pool.query('select 1 from sport_blocks where season_id = $1', [season])).rowCount).toBe(0);
   });
 
-  it.each([['admin'], ['program'], ['admin', 'program']])('lets %s create a block', async (...roles) => {
+  it.each([['director'], ['admin'], ['program'], ['admin', 'program']])('lets %s create a block', async (...roles) => {
     const { season } = await makeSeason({});
     current = await makeUser(roles);
     const r = await saveSportBlock({ seasonId: season, ...league });

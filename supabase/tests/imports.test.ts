@@ -170,16 +170,16 @@ async function commitAs(client: PoolClient, userId: string, batchId: string) {
   });
 }
 
-async function makeAdmin(client: PoolClient, email: string): Promise<string> {
+async function makeAdmin(client: PoolClient, email: string, role = 'admin'): Promise<string> {
   const id = await createProfile(client, { email });
-  await grantRole(client, id, 'admin');
+  await grantRole(client, id, role);
   return id;
 }
 
 describe('import staging tables -- Admin only', () => {
-  it('an admin can create and read a batch', async () => {
+  it.each(['director', 'admin'])('%s can create and read a batch', async (role) => {
     await withCleanTx(async (client) => {
-      const adminId = await makeAdmin(client, 'imp-admin@test.local');
+      const adminId = await makeAdmin(client, 'imp-admin@test.local', role);
       const seasonId = await currentSeasonId(client);
 
       const rows = await asUser(client, adminId, async () => {

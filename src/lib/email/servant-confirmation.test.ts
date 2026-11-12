@@ -60,7 +60,7 @@ describe('buildServantConfirmation', () => {
     expect(html).toContain(EMAIL_COLORS.action);
     expect(html).toContain(`href="${base.formUrl}"`);
     expect(html).toContain('Edit my answers');
-    expect(html).toContain('An Admin will review your registration and confirm your role.');
+    expect(html).toContain('A Director will review your registration and confirm your role.');
     // The logo comes from the same site as the form.
     expect(html).toContain('src="https://cis.example/assets/fish-mark.png"');
   });

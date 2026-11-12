@@ -28,6 +28,11 @@ issue holds the detail; this file is the index of "what's now different from the
 
 ## Decisions
 
+### 2026-11-11 — Separate Director leadership from operational Admin access
+- **Decision:** Rename the existing Admin role to Director and migrate existing grants. Add Admin with the same operational permissions, excluding all-servant registration access and user-role management. Admins retain their own servant registration. Director retains the previous verse/psalm permission limits.
+- **Why:** Delegate program operations without granting leadership access to servant personal information or role assignment.
+- **Reference:** `project_spec.md` §1.4–1.5; architecture entry dated 2026-11-11.
+
 ### 2026-10-25 — Parents join through one link in the parent group chat
 - **PRD reference:** §5.2 Role-Feature Permission Matrix and the parent registration stories (`project_spec.md` §1.4, §1.5); the rule that only an Admin grants roles (AGENTS.md §4)
 - **What changed:** One link, posted in the parent group chat as the Google Form used to be, is how parents get in. They type their name and email, enter a 6-digit code emailed to them, and land on kid registration already holding the Parent role. No password and no Admin approval. They stay signed in on that phone afterwards and only need a new code on a new device or after signing out. Parent is the one role an Admin does not grant; every servant role still is. A parent sees only the kids they registered themselves: kids are no longer attached to a parent automatically by matching the guardian email. The CSV import stays as a backup for families who cannot use the website, and an Admin attaches those kids to a parent account by hand if the parent later joins. One linked parent per kid for now; a second guardian is a later ticket.

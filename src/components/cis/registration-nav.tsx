@@ -5,12 +5,8 @@
  * like Sports' (`SectionTabs`). The app's bottom bar keeps More lit here, since
  * these screens are reached from More.
  *
- * Which tabs appear depends on who is looking, because each role has a different
- * job here and a tab that leads to a screen you may not use is just a dead end:
- *   - a Parent registers their kids;
- *   - an Admin reads the roster and the servant registrations, imports the
- *     season's CSV and assigns roles.
- * A Parent alone has one tab, which `SectionTabs` does not show.
+ * Parents register their kids. Director and Admin can use the roster and import;
+ * only Director can view servant registrations or assign roles.
  */
 
 import type { SectionNavItem } from '@/components/cis/section-nav';
@@ -24,8 +20,10 @@ const ROLES: SectionNavItem = { href: '/admin/roles', label: 'Roles' };
 
 export interface RegistrationNavRoles {
   isParent: boolean;
-  /** Holds the `admin` role: the roster, servants, the CSV import and role assignment. */
+  /** Holds Admin: roster and CSV import only. */
   isAdmin: boolean;
+  /** Holds Director: includes servant oversight and role assignment. */
+  isDirector?: boolean;
 }
 
 /**
@@ -36,8 +34,15 @@ export interface RegistrationNavRoles {
 export function registrationNavItems({
   isParent,
   isAdmin,
+  isDirector = false,
 }: RegistrationNavRoles): SectionNavItem[] {
-  return [...(isParent ? [REGISTER] : []), ...(isAdmin ? [ROSTER, SERVANTS, IMPORT, ROLES] : [])];
+  return [
+    ...(isParent ? [REGISTER] : []),
+    ...((isDirector || isAdmin) ? [ROSTER] : []),
+    ...(isDirector ? [SERVANTS] : []),
+    ...((isDirector || isAdmin) ? [IMPORT] : []),
+    ...(isDirector ? [ROLES] : []),
+  ];
 }
 
 export function RegistrationNav(props: RegistrationNavRoles) {

@@ -142,7 +142,7 @@ function buildInput(form: FormState) {
 }
 
 /** What a roleless servant is told once their registration is in. */
-const AWAITING_ROLE = 'An Admin will review your registration and assign your role.';
+const AWAITING_ROLE = 'A Director will review your registration and assign your role.';
 
 const SESSION_LABEL: Record<SessionPreference, string> = {
   juniors: 'Juniors',
@@ -448,7 +448,7 @@ export default function ServantClient({
           </p>
           <p className="m-0 text-cis-base leading-[1.5]">
             Tell us whether you are serving and where you would like to help. Your team choices are
-            preferences; an Admin gives you your role.
+            preferences; a Director gives you your role.
           </p>
           {prefilled && (
             <p className="m-0 text-cis-base font-bold leading-[1.5]">

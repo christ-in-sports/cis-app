@@ -4,8 +4,8 @@ import { getMyRoles } from '@/lib/auth/roles';
 /** Check every entry point; RLS remains the database permission boundary. */
 export async function requireTeamManager() {
   const auth = await getMyRoles();
-  if (!auth.userId || !(auth.roles.has('admin') || auth.roles.has('program'))) {
-    throw new Error('Only Admin or Program Team can manage teams.');
+  if (!auth.userId || !(auth.roles.has('director') || auth.roles.has('admin') || auth.roles.has('program'))) {
+    throw new Error('Only Director, Admin or Program Team can manage teams.');
   }
   return auth;
 }
@@ -13,7 +13,7 @@ export async function requireTeamManager() {
 export async function teamsAccess() {
   const auth = await getMyRoles();
   if (!auth.userId) redirect('/login?redirect=/teams');
-  if (!(auth.roles.has('admin') || auth.roles.has('program'))) redirect('/');
+  if (!(auth.roles.has('director') || auth.roles.has('admin') || auth.roles.has('program'))) redirect('/');
   return auth;
 }
 

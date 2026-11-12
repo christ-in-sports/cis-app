@@ -15,6 +15,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      find_parent_account: {
+        Args: { p_email: string }
+        Returns: { id: string; display_name: string | null; email: string; is_parent: boolean }[]
+      }
+
       graphql: {
         Args: {
           extensions?: Json
@@ -1050,6 +1055,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      find_parent_account: {
+        Args: { p_email: string }
+        Returns: { id: string; display_name: string | null; email: string; is_parent: boolean }[]
+      }
+
       _parse_competition_games: {
         Args: { p_games: Json }
         Returns: {
@@ -1210,7 +1220,7 @@ export type Database = {
       submit_servant_registration: { Args: { p: Json }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "program" | "coach" | "prayer" | "parent" | "kid"
+      app_role: "director" | "admin" | "program" | "coach" | "prayer" | "parent" | "kid"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1341,7 +1351,7 @@ export const Constants = {
   },
   public: {
     Enums: {
-      app_role: ["admin", "program", "coach", "prayer", "parent", "kid"],
+      app_role: ["director", "admin", "program", "coach", "prayer", "parent", "kid"],
     },
   },
 } as const

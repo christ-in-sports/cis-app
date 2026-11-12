@@ -1,9 +1,9 @@
 /**
  * `/servants` -- the current season's servant registrations.
  *
- * Admin-only. A registration holds a DOB, a home address and emergency contacts,
- * so only an Admin reads other servants' rows. RLS is the boundary
- * (`servant_registrations` is readable by its owner and by `has_role('admin')`);
+ * Director-only. A registration holds a DOB, a home address and emergency contacts,
+ * so only a Director reads other servants' rows. RLS is the boundary
+ * (`servant_registrations` is readable by its owner and by `has_role('director')`);
  * this redirect only spares anyone else an empty screen.
  */
 
@@ -12,7 +12,7 @@ import { redirect } from 'next/navigation';
 import { BoardHeader } from '@/components/cis/board-shell';
 import { RegistrationColumn } from '@/components/cis/registration-frame';
 import { Sheet, SheetHeading } from '@/components/cis/sheet';
-import { checkAdmin } from '@/lib/auth/admin';
+import { checkRole } from '@/lib/auth/roles';
 import type { ServantListRow } from '@/lib/registration/servant-list';
 import ServantsClient from './servants-client';
 
@@ -24,10 +24,10 @@ const COLUMNS =
   'home_address, emergency_contact_name, emergency_contact_phone, created_at, updated_at';
 
 export default async function ServantsPage() {
-  const { supabase, userId, isAdmin } = await checkAdmin();
+  const { supabase, userId, hasRole } = await checkRole('director');
 
   if (userId === null) redirect('/login?redirect=/servants');
-  if (!isAdmin) redirect('/');
+  if (!hasRole) redirect('/');
 
   const { data: season } = await supabase
     .from('seasons')
@@ -38,7 +38,7 @@ export default async function ServantsPage() {
   if (!season) {
     return (
       <>
-        <BoardHeader kicker="Admin" title="Servants" />
+        <BoardHeader kicker="Director" title="Servants" />
         <RegistrationColumn>
           <Sheet tone="paper" className="flex flex-col gap-cis-2 px-cis-5 pb-cis-6 pt-cis-6">
             <SheetHeading>No active season</SheetHeading>
