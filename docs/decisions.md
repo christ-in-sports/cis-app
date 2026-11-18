@@ -28,6 +28,12 @@ issue holds the detail; this file is the index of "what's now different from the
 
 ## Decisions
 
+### 2026-11-17 — Parent form asks about outside leagues and missed Sundays; fee is $100
+- **PRD reference:** parent registration stories and the `Registration` entity (`project_spec.md` §1.4, §2.3); the fee, previously "to be announced"
+- **What changed:** The parent form now asks whether the kid plays in an outside league or club (Yes/No, required), and if Yes, which sports. It also lists every Sunday of the season (Jan 3 to Apr 18, 2027) as tick boxes so a parent can mark the ones the kid may miss; none ticked means every Sunday. Admin, Program and coaches see both answers in the roster's kid details. The registration fee is $100 per kid.
+- **Why:** The program asked for both questions, to plan around outside commitments and expected absences, and confirmed the fee.
+- **Linear:** none yet
+
 ### 2026-10-25 — Parents join through one link in the parent group chat
 - **PRD reference:** §5.2 Role-Feature Permission Matrix and the parent registration stories (`project_spec.md` §1.4, §1.5); the rule that only an Admin grants roles (AGENTS.md §4)
 - **What changed:** One link, posted in the parent group chat as the Google Form used to be, is how parents get in. They type their name and email, enter a 6-digit code emailed to them, and land on kid registration already holding the Parent role. No password and no Admin approval. They stay signed in on that phone afterwards and only need a new code on a new device or after signing out. Parent is the one role an Admin does not grant; every servant role still is. A parent sees only the kids they registered themselves: kids are no longer attached to a parent automatically by matching the guardian email. The CSV import stays as a backup for families who cannot use the website, and an Admin attaches those kids to a parent account by hand if the parent later joins. One linked parent per kid for now; a second guardian is a later ticket.

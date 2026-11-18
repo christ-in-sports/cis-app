@@ -25,7 +25,7 @@ const kidFields = {
   emergency_contact_name: 'Sara Hanna',
   emergency_contact_phone: '(510) 555-1234',
 };
-const registration = { grade: 5, division: 'juniors', tshirt_size: 'YM', top_sports: null };
+const registration = { grade: 5, division: 'juniors', tshirt_size: 'YM', top_sports: null, plays_outside_league: false };
 
 const newKid = {
   mode: 'new',

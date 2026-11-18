@@ -71,6 +71,9 @@ function entry(overrides: Partial<RosterEntry> = {}): RosterEntry {
     division: 'juniors',
     tshirt_size: 'YM',
     top_sports: null,
+    plays_outside_league: null,
+    outside_sports: null,
+    missed_sundays: [],
     active: true,
     consent_given_at: null,
     team_id: null,
@@ -343,6 +346,32 @@ describe('payments -- the "haven\'t paid" chase mode', () => {
   });
 });
 
+describe('parent form answers in the kid details', () => {
+  it('shows the outside league answer and the Sundays the kid may miss', () => {
+    renderRoster({
+      rows: [
+        entry({
+          plays_outside_league: true,
+          outside_sports: 'Club soccer',
+          missed_sundays: ['2027-01-03', '2027-02-14'],
+        }),
+      ],
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Mina Guirguis' }));
+
+    expect(screen.getByText('Yes: Club soccer')).toBeInTheDocument();
+    expect(screen.getByText('Jan 3, Feb 14')).toBeInTheDocument();
+  });
+
+  it('shows nothing for a registration that was never asked', () => {
+    renderRoster();
+    fireEvent.click(screen.getByRole('button', { name: 'Mina Guirguis' }));
+
+    expect(screen.queryByText('Outside league')).not.toBeInTheDocument();
+    expect(screen.queryByText('May miss')).not.toBeInTheDocument();
+  });
+});
+
 describe('payments -- the per-kid Payments block', () => {
   const open = (name = 'Mina Guirguis') => fireEvent.click(screen.getByRole('button', { name }));
 
@@ -350,7 +379,7 @@ describe('payments -- the per-kid Payments block', () => {
     renderRoster({ rows: [paid()] });
     open('Marina Abdo');
 
-    expect(screen.getByText('$40 recorded')).toBeInTheDocument();
+    expect(screen.getByText('$40 of $100')).toBeInTheDocument();
     const list = screen.getByRole('list', { name: 'Payments for Marina Abdo' });
     expect(within(list).getByText('Venmo')).toBeInTheDocument();
     expect(within(list).getByText('$40')).toBeInTheDocument();
@@ -372,7 +401,7 @@ describe('payments -- the per-kid Payments block', () => {
     });
 
     expect(recordPaymentsMock).toHaveBeenCalledWith(['reg-1'], { amount: '42.50', method: 'paypal' });
-    expect(screen.getByText('$42.50 recorded')).toBeInTheDocument();
+    expect(screen.getByText('$42.50 of $100')).toBeInTheDocument();
   });
 
   it('removes a payment after confirming', async () => {

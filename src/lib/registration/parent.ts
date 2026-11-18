@@ -35,6 +35,11 @@ export interface ParentKid {
     division: 'juniors' | 'ambassadors';
     tshirt_size: string;
     top_sports: string[] | null;
+    /** Null when never asked (an imported or Admin-entered registration). */
+    plays_outside_league: boolean | null;
+    outside_sports: string | null;
+    /** Sundays the kid expects to miss, YYYY-MM-DD. */
+    missed_sundays: string[];
     /** Set once an Admin places the kid; the parent can no longer edit. */
     on_team: boolean;
     consent_given_at: string | null;
@@ -79,6 +84,7 @@ export async function loadParentRegistrationContext(): Promise<ParentContext> {
        home_address, emergency_contact_name, emergency_contact_phone,
        guardian_name, guardian_phone, guardian_email, photo_path,
        registrations ( id, season_id, grade, division, tshirt_size, top_sports,
+                       plays_outside_league, outside_sports, missed_sundays,
                        team_id, consent_given_at )`,
     )
     .eq('parent_user_id', userId)
@@ -113,6 +119,9 @@ export async function loadParentRegistrationContext(): Promise<ParentContext> {
               division: reg.division as 'juniors' | 'ambassadors',
               tshirt_size: reg.tshirt_size,
               top_sports: reg.top_sports,
+              plays_outside_league: reg.plays_outside_league,
+              outside_sports: reg.outside_sports,
+              missed_sundays: reg.missed_sundays ?? [],
               on_team: reg.team_id !== null,
               consent_given_at: reg.consent_given_at,
             }

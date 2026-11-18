@@ -22,6 +22,7 @@
 
 import { z } from 'zod';
 import { defaultDivision, divisionAllowedForGrade, type Division } from '@/lib/attendance';
+import { SEASON_SUNDAYS } from '@/lib/registration/sundays';
 import { KID_PHOTO_PATH, kidPhotoPathSchema } from '@/lib/validation/photo';
 
 /** Matches the `gender` CHECK on `kids`. Stored lower-case. */
@@ -196,6 +197,42 @@ const requiredPhoto = z
   .regex(KID_PHOTO_PATH, 'Add a photo of your kid');
 
 /**
+ * The questions only the parent form asks: whether the kid plays in an outside
+ * league or club (and which sports), and which Sundays of the season they will
+ * miss. Kept off `registrationCoreSchema` so the CSV import, which has no such
+ * columns, is unchanged. `register_kid()` re-checks both.
+ */
+const parentRegistrationSchema_ = registrationCoreSchema
+  .extend({
+    plays_outside_league: z.boolean(
+      'Say whether they play in an outside league or club',
+    ),
+    outside_sports: blankToNull(
+      z.string().trim().min(1).max(500, 'Keep this under 500 characters').nullable(),
+    ).default(null),
+    missed_sundays: z
+      .array(
+        z.string().refine((d) => SEASON_SUNDAYS.includes(d), 'Pick Sundays from the list'),
+      )
+      .default([])
+      .transform((days) => [...new Set(days)].sort()),
+  })
+  .superRefine(refineGradeDivision)
+  .superRefine((value, ctx) => {
+    if (value.plays_outside_league && value.outside_sports === null) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['outside_sports'],
+        message: 'Say which sports they play outside',
+      });
+    }
+  })
+  // A No carries no sports, whatever was typed before switching to it.
+  .transform((value) =>
+    value.plays_outside_league ? value : { ...value, outside_sports: null },
+  );
+
+/**
  * One parent form submission (ENG-4): either a new kid or a returning one.
  *
  * The grade/division rule lives on `registration`, so its error path is
@@ -205,7 +242,7 @@ export const parentRegistrationSchema = z.discriminatedUnion('mode', [
   z.object({
     mode: z.literal('new'),
     kid: parentKidSchema,
-    registration: registrationSchema,
+    registration: parentRegistrationSchema_,
     photo_path: requiredPhoto,
     consent: waiverAgreed,
   }),
@@ -213,7 +250,7 @@ export const parentRegistrationSchema = z.discriminatedUnion('mode', [
     mode: z.literal('returning'),
     kid_id: z.uuid('Pick one of your kids'),
     kid: returningKidSchema,
-    registration: registrationSchema,
+    registration: parentRegistrationSchema_,
     photo_path: kidPhotoPathSchema.nullish(),
     consent: waiverAgreed,
   }),

@@ -203,7 +203,8 @@ describe('registrationSchema t-shirt size', () => {
 
 describe('parentRegistrationSchema', () => {
   const photo_path = '4f3c1d52-9c7e-4d52-8a35-0b1f2f6c7a11.webp';
-  const newKid = { mode: 'new', kid: validKid, registration: validRegistration, photo_path, consent: true };
+  const parentRegistration = { ...validRegistration, plays_outside_league: false };
+  const newKid = { mode: 'new', kid: validKid, registration: parentRegistration, photo_path, consent: true };
 
   const editable = {
     home_address: '2 Oak Ave, Hayward CA',
@@ -217,7 +218,7 @@ describe('parentRegistrationSchema', () => {
     mode: 'returning',
     kid_id: '6f1c3a52-7a4b-4d55-9f44-0a6f3e1c2b10',
     kid: editable,
-    registration: validRegistration,
+    registration: parentRegistration,
     consent: true,
   };
 
@@ -227,6 +228,49 @@ describe('parentRegistrationSchema', () => {
 
   it('accepts a returning kid without the locked fields', () => {
     expect(parentRegistrationSchema.safeParse(returning).success).toBe(true);
+  });
+
+  describe('outside league and missed Sundays', () => {
+    const withReg = (over: Record<string, unknown>) => ({
+      ...newKid,
+      registration: { ...parentRegistration, ...over },
+    });
+    const regOf = (input: unknown) => {
+      const r = parentRegistrationSchema.safeParse(input);
+      if (!r.success) throw new Error(JSON.stringify(r.error.issues));
+      return r.data.registration;
+    };
+    const pathsOf = (input: unknown) =>
+      parentRegistrationSchema.safeParse(input).error?.issues.map((i) => i.path.join('.'));
+
+    it('requires a yes or no on the outside league question', () => {
+      expect(pathsOf(withReg({ plays_outside_league: undefined }))).toContain(
+        'registration.plays_outside_league',
+      );
+    });
+
+    it('requires sports with a yes, and drops them with a no', () => {
+      expect(pathsOf(withReg({ plays_outside_league: true, outside_sports: ' ' }))).toContain(
+        'registration.outside_sports',
+      );
+      expect(regOf(withReg({ plays_outside_league: true, outside_sports: ' Club soccer ' })).outside_sports).toBe(
+        'Club soccer',
+      );
+      expect(regOf(withReg({ plays_outside_league: false, outside_sports: 'Club soccer' })).outside_sports).toBeNull();
+    });
+
+    it('takes season Sundays only, sorted and without repeats', () => {
+      expect(regOf(withReg({})).missed_sundays).toEqual([]);
+      expect(
+        regOf(withReg({ missed_sundays: ['2027-02-14', '2027-01-03', '2027-02-14'] })).missed_sundays,
+      ).toEqual(['2027-01-03', '2027-02-14']);
+      expect(pathsOf(withReg({ missed_sundays: ['2027-01-04'] }))).toContain('registration.missed_sundays.0');
+      expect(pathsOf(withReg({ missed_sundays: ['2027-04-25'] }))).toContain('registration.missed_sundays.0');
+    });
+
+    it('still applies the grade/division rule', () => {
+      expect(pathsOf(withReg({ grade: 8, division: 'juniors' }))).toContain('registration.division');
+    });
   });
 
   describe('the photo', () => {
@@ -304,7 +348,7 @@ describe('parentRegistrationSchema', () => {
   it('puts the grade/division error on registration.division', () => {
     const result = parentRegistrationSchema.safeParse({
       ...newKid,
-      registration: { ...validRegistration, grade: 8, division: 'juniors' },
+      registration: { ...parentRegistration, grade: 8, division: 'juniors' },
     });
     expect(result.success).toBe(false);
     expect(messagesFor(result, 'registration.division')).toEqual([
@@ -316,7 +360,7 @@ describe('parentRegistrationSchema', () => {
     for (const division of ['juniors', 'ambassadors']) {
       const result = parentRegistrationSchema.safeParse({
         ...newKid,
-        registration: { ...validRegistration, grade: 7, division },
+        registration: { ...parentRegistration, grade: 7, division },
       });
       expect(result.success).toBe(true);
     }

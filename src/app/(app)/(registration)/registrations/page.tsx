@@ -24,6 +24,7 @@ export default async function RegistrationsPage() {
         .from('registrations')
         .select(
           `id, kid_id, grade, division, tshirt_size, top_sports, active,
+           plays_outside_league, outside_sports, missed_sundays,
            consent_given_at, team_id,
            payments(id, amount_cents, method, received_at),
            kids!inner(
@@ -52,6 +53,9 @@ export default async function RegistrationsPage() {
       division: r.division,
       tshirt_size: r.tshirt_size,
       top_sports: r.top_sports,
+      plays_outside_league: r.plays_outside_league,
+      outside_sports: r.outside_sports,
+      missed_sundays: r.missed_sundays ?? [],
       active: r.active,
       consent_given_at: r.consent_given_at,
       team_id: r.team_id,

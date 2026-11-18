@@ -50,6 +50,8 @@ const regPayload = (over: Record<string, unknown> = {}) => ({
   division: 'juniors',
   tshirt_size: 'YM',
   top_sports: ['soccer'],
+  plays_outside_league: false,
+  missed_sundays: [],
   ...over,
 });
 
@@ -317,6 +319,57 @@ describe('register_kid -- returning kids', () => {
 });
 
 describe('register_kid -- the season registration', () => {
+  it('saves the outside league answer and the Sundays the kid will miss', async () => {
+    await withTx(pool, async (client) => {
+      const parentId = await makeParent(client, 'rk-outside@test.local');
+      const first = await registerAs(client, parentId, {
+        reg: regPayload({
+          plays_outside_league: true,
+          outside_sports: ' Club soccer ',
+          missed_sundays: ['2027-02-14', '2027-01-03', '2027-02-14'],
+        }),
+      });
+      const r = await client.query(
+        `select plays_outside_league, outside_sports, missed_sundays::text[] as missed
+           from registrations where id = $1`,
+        [first.registration_id]
+      );
+      expect(r.rows[0]).toEqual({
+        plays_outside_league: true,
+        outside_sports: 'Club soccer',
+        missed: ['2027-01-03', '2027-02-14'],
+      });
+
+      // Changing to No clears the sports; none ticked clears the Sundays.
+      await registerAs(client, parentId, {
+        kidId: first.kid_id,
+        reg: regPayload({ outside_sports: 'ignored', missed_sundays: [] }),
+      });
+      const again = await client.query(
+        `select plays_outside_league, outside_sports, cardinality(missed_sundays) as n
+           from registrations where id = $1`,
+        [first.registration_id]
+      );
+      expect(again.rows[0]).toEqual({ plays_outside_league: false, outside_sports: null, n: 0 });
+    });
+  });
+
+  it('refuses a missing outside league answer, a yes without sports, and a non-Sunday', async () => {
+    await withTx(pool, async (client) => {
+      const parentId = await makeParent(client, 'rk-outside-bad@test.local');
+      await expect(
+        registerAs(client, parentId, { reg: regPayload({ plays_outside_league: undefined }) })
+      ).rejects.toThrow(/outside league or club/);
+      await expect(
+        registerAs(client, parentId, { reg: regPayload({ plays_outside_league: true, outside_sports: ' ' }) })
+      ).rejects.toThrow(/which sports/);
+      await expect(
+        registerAs(client, parentId, { reg: regPayload({ missed_sundays: ['2027-01-04'] }) })
+      ).rejects.toThrow(/must be Sundays/);
+      expect((await client.query('select 1 from kids')).rowCount).toBe(0);
+    });
+  });
+
   it('edits the same registration when submitted again, and re-stamps consent', async () => {
     await withTx(pool, async (client) => {
       const parentId = await makeParent(client, 'rk-resubmit@test.local');
