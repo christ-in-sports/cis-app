@@ -69,6 +69,9 @@ function kid(overrides: Partial<ParentKid> = {}): ParentKid {
       division: 'juniors',
       tshirt_size: 'YM',
       top_sports: null,
+      plays_outside_league: false,
+      outside_sports: null,
+      missed_sundays: [],
       on_team: false,
       consent_given_at: '2026-09-28T12:00:00Z',
     },
@@ -80,6 +83,7 @@ const withReg = (patch: Partial<NonNullable<ParentKid['registration']>>) =>
   kid({ registration: { ...kid().registration!, ...patch } });
 
 const field = (label: string) => screen.getByLabelText(label) as HTMLInputElement;
+const waiverBox = () => screen.getByRole('checkbox', { name: /liability waiver/ });
 
 /** Chooses a photo file, as a parent would, and waits for the upload to finish. */
 async function choosePhoto(name = 'IMG_1.jpg') {
@@ -204,7 +208,7 @@ describe('a returning kid', () => {
     render(<RegisterClient season={season} kids={[kid()]} email={SIGNED_IN} />);
     fireEvent.click(screen.getByText('Mina Guirguis'));
 
-    expect(screen.getByRole('checkbox')).not.toBeChecked();
+    expect(waiverBox()).not.toBeChecked();
     expect(screen.getByRole('button', { name: 'Save changes' })).toBeInTheDocument();
   });
 
@@ -212,7 +216,7 @@ describe('a returning kid', () => {
     registerKid.mockResolvedValue({ ok: true });
     render(<RegisterClient season={season} kids={[kid()]} email={SIGNED_IN} />);
     fireEvent.click(screen.getByText('Mina Guirguis'));
-    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(waiverBox());
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
     await waitFor(() => expect(registerKid).toHaveBeenCalledTimes(1));
@@ -232,7 +236,7 @@ describe('a returning kid', () => {
     fireEvent.click(screen.getByText('Mina Guirguis'));
 
     expect(screen.getByRole('button', { name: 'Replace photo' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(waiverBox());
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
     await waitFor(() => expect(registerKid).toHaveBeenCalledTimes(1));
@@ -245,7 +249,7 @@ describe('a returning kid', () => {
     fireEvent.click(screen.getByText('Mina Guirguis'));
 
     await choosePhoto();
-    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(waiverBox());
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
     await waitFor(() => expect(registerKid).toHaveBeenCalledTimes(1));
@@ -255,7 +259,7 @@ describe('a returning kid', () => {
   it('asks for a photo from a kid who has none, and does not submit without one', async () => {
     render(<RegisterClient season={season} kids={[kid({ photo: null })]} email={SIGNED_IN} />);
     fireEvent.click(screen.getByText('Mina Guirguis'));
-    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(waiverBox());
 
     expect(screen.getByRole('button', { name: 'Add a photo' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
@@ -271,7 +275,7 @@ describe('a returning kid', () => {
     fireEvent.click(screen.getByText('Mina Guirguis'));
 
     await choosePhoto();
-    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(waiverBox());
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
     await waitFor(() => expect(registerKid).toHaveBeenCalledTimes(1));
@@ -348,12 +352,12 @@ describe('the waiver', () => {
 });
 
 describe('paying for registration', () => {
-  it('lists every way to pay, with the fee placeholder, before the waiver', () => {
+  it('lists every way to pay, with the $100 fee, before the waiver', () => {
     render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
 
     const heading = screen.getByRole('heading', { name: 'Paying for registration' });
     const sheet = heading.parentElement as HTMLElement;
-    expect(within(sheet).getByText('To be announced')).toBeInTheDocument();
+    expect(within(sheet).getByText('$100')).toBeInTheDocument();
     expect(within(sheet).getByText('Give it to Maria Ehab or Joseph Tadrous')).toBeInTheDocument();
     expect(within(sheet).getByText('@CIS-stantonios')).toBeInTheDocument();
 
@@ -424,6 +428,7 @@ describe('submitting a new kid', () => {
     fireEvent.change(field('Home address'), { target: { value: '1 Church Way' } });
     fireEvent.change(field('Grade'), { target: { value: '6' } });
     fireEvent.click(screen.getByLabelText('M'));
+    fireEvent.click(screen.getByLabelText('No'));
     const names = screen.getAllByLabelText('Name');
     const phones = screen.getAllByLabelText('Phone');
     fireEvent.change(names[0], { target: { value: 'Mariam Guirguis' } });
@@ -470,7 +475,7 @@ describe('submitting a new kid', () => {
   it('will not submit without a photo, and says so beside the photo', async () => {
     render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
     fillValid();
-    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(waiverBox());
 
     fireEvent.click(screen.getByRole('button', { name: 'Register' }));
 
@@ -518,7 +523,7 @@ describe('submitting a new kid', () => {
     render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
     await choosePhoto();
     fillValid();
-    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(waiverBox());
 
     fireEvent.click(screen.getByRole('button', { name: 'Register' }));
 
@@ -543,7 +548,7 @@ describe('submitting a new kid', () => {
     render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
     await choosePhoto();
     fillValid();
-    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(waiverBox());
     fireEvent.click(screen.getByRole('button', { name: 'Register' }));
 
     expect(
@@ -560,7 +565,7 @@ describe('submitting a new kid', () => {
     render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
     await choosePhoto();
     fillValid();
-    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(waiverBox());
     fireEvent.click(screen.getByRole('button', { name: 'Register' }));
 
     expect(await screen.findByText(/already added a kid/)).toBeInTheDocument();
@@ -576,7 +581,7 @@ describe('submitting a new kid', () => {
     render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
     await choosePhoto();
     fillValid();
-    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(waiverBox());
     fireEvent.click(screen.getByRole('button', { name: 'Register' }));
 
     const group = screen.getByRole('group', { name: 'Photo' });

@@ -52,6 +52,7 @@ import type { KidPhoto } from '@/lib/photo/types';
 import type { ParentKid } from '@/lib/registration/parent';
 import { WAIVER_TITLE, WAIVER_URL } from '@/lib/registration/waiver';
 import { PAYMENT_METHODS, REGISTRATION_FEE_CENTS, formatCents } from '@/lib/registration/payment';
+import { SEASON_SUNDAYS, formatSunday } from '@/lib/registration/sundays';
 import {
   GENDERS,
   TSHIRT_SIZES,
@@ -82,6 +83,10 @@ interface FormState {
   division: Division | '';
   tshirt_size: TshirtSize | '';
   top_sports: string;
+  plays_outside_league: 'yes' | 'no' | '';
+  outside_sports: string;
+  /** YYYY-MM-DD, from `SEASON_SUNDAYS`. */
+  missed_sundays: string[];
   consent: boolean;
 }
 
@@ -103,6 +108,9 @@ const emptyForm: FormState = {
   division: '',
   tshirt_size: '',
   top_sports: '',
+  plays_outside_league: '',
+  outside_sports: '',
+  missed_sundays: [],
   consent: false,
 };
 
@@ -151,6 +159,15 @@ function returningKidForm(kid: ParentKid): FormState {
     division: kid.registration?.division ?? '',
     tshirt_size: (kid.registration?.tshirt_size as TshirtSize | undefined) ?? '',
     top_sports: kid.registration?.top_sports?.join(', ') ?? '',
+    plays_outside_league:
+      kid.registration?.plays_outside_league == null
+        ? ''
+        : kid.registration.plays_outside_league
+          ? 'yes'
+          : 'no',
+    outside_sports: kid.registration?.outside_sports ?? '',
+    // Only this season's Sundays can be shown as boxes, so anything else is dropped.
+    missed_sundays: (kid.registration?.missed_sundays ?? []).filter((d) => SEASON_SUNDAYS.includes(d)),
     consent: false,
   };
 }
@@ -181,6 +198,9 @@ function buildInput(form: FormState, kidId: string | null, photo: UploadedPhoto 
     division: form.division || undefined,
     tshirt_size: form.tshirt_size || undefined,
     top_sports: parseSports(form.top_sports),
+    plays_outside_league: form.plays_outside_league === '' ? undefined : form.plays_outside_league === 'yes',
+    outside_sports: form.outside_sports,
+    missed_sundays: form.missed_sundays,
   };
 
   if (kidId) {
@@ -725,6 +745,65 @@ export default function RegisterClient({
               />
             )}
           </Field>
+          <ChoiceGroup
+            name="plays_outside_league"
+            legend="Does your kid play in an outside league or club?"
+            error={err('registration.plays_outside_league')}
+            choices={[
+              { value: 'yes', label: 'Yes' },
+              { value: 'no', label: 'No' },
+            ]}
+            value={form.plays_outside_league}
+            onChange={(v) => set('plays_outside_league', v)}
+          />
+          {form.plays_outside_league === 'yes' && (
+            <Field label="Which sports?" error={err('registration.outside_sports')}>
+              {(p) => (
+                <TextInput
+                  {...p}
+                  placeholder="Club soccer, AAU basketball"
+                  value={form.outside_sports}
+                  onChange={(e) => set('outside_sports', e.target.value)}
+                />
+              )}
+            </Field>
+          )}
+        </Sheet>
+
+        {/* ------------------------------------------------- Missed Sundays */}
+        <Sheet className="flex flex-col gap-cis-3 px-cis-5 pb-cis-6 pt-cis-6">
+          <SheetHeading>Sundays they may miss</SheetHeading>
+          <SheetRule />
+          <fieldset className="m-0 flex min-w-0 flex-col gap-cis-2 border-0 p-0" aria-describedby="missed-sundays-hint">
+            <legend className="mb-1 p-0 text-cis-base font-bold leading-[1.3] text-cis-ink">
+              Do you know which Sundays your kid may not be able to attend?
+            </legend>
+            <p id="missed-sundays-hint" className="m-0 text-cis-sm font-semibold leading-[1.4] text-cis-ink-muted">
+              Tick each one. If you do not know the exact dates, tick the range you expect. Leave them all blank if
+              they can come every Sunday.
+            </p>
+            <div className="grid grid-cols-2 gap-x-cis-3 sm:grid-cols-4">
+              {SEASON_SUNDAYS.map((day) => (
+                <TickRow
+                  key={day}
+                  checked={form.missed_sundays.includes(day)}
+                  onChange={(on) =>
+                    set(
+                      'missed_sundays',
+                      on
+                        ? [...form.missed_sundays, day].sort()
+                        : form.missed_sundays.filter((d) => d !== day),
+                    )
+                  }
+                >
+                  {formatSunday(day)}
+                </TickRow>
+              ))}
+            </div>
+            {err('registration.missed_sundays.0') && (
+              <FieldError>{err('registration.missed_sundays.0')}</FieldError>
+            )}
+          </fieldset>
         </Sheet>
 
         {/* ------------------------------------------------------- Contacts */}

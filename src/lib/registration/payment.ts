@@ -15,13 +15,12 @@
 import { z } from 'zod';
 
 /**
- * The registration fee, in cents.
+ * The registration fee, in cents: $100 per kid.
  *
- * PLACEHOLDER: pricing is not confirmed yet. While this is `null` the form says
- * the fee is to be announced and the roster shows totals without an "of $X".
- * Set it to a number of cents (e.g. `8500` for $85) once the fee is known.
+ * Set it to `null` if the fee is ever unknown again: the form then says it is
+ * to be announced and the roster shows totals without an "of $X".
  */
-export const REGISTRATION_FEE_CENTS: number | null = null;
+export const REGISTRATION_FEE_CENTS: number | null = 10_000;
 
 /** Matches the `payments_method_values` CHECK. */
 export const PAYMENT_METHOD_IDS = ['cash', 'venmo', 'paypal'] as const;

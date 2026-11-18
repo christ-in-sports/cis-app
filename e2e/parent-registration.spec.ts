@@ -145,13 +145,17 @@ interface StoredRegistration {
   source: string;
   consent_given_at: Date | null;
   consent_by_user_id: string | null;
+  plays_outside_league: boolean | null;
+  outside_sports: string | null;
+  missed_sundays: string[];
 }
 
 async function registrationFor(firstName: string): Promise<StoredRegistration | undefined> {
   return withDb(async (client) => {
     const r = await client.query<StoredRegistration>(
       `select k.first_name, k.parent_user_id, r.grade, r.division, r.tshirt_size, r.source,
-              r.consent_given_at, r.consent_by_user_id
+              r.consent_given_at, r.consent_by_user_id, r.plays_outside_league, r.outside_sports,
+              r.missed_sundays::text[] as missed_sundays
          from kids k
          join registrations r on r.kid_id = k.id
          join seasons s on s.id = r.season_id and s.is_current
@@ -276,6 +280,7 @@ test('a kid already on file with no parent is not registered a second time', asy
   await page.getByRole('group', { name: 'Gender' }).getByText('Female', { exact: true }).click();
   await page.getByLabel('Grade').selectOption('8');
   await page.getByRole('group', { name: 'T-shirt size' }).getByText('M', { exact: true }).click();
+  await page.getByRole('group', { name: /outside league or club/ }).getByText('No', { exact: true }).click();
   await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/kid.jpg');
   await expect(page.getByRole('button', { name: 'Replace photo' })).toBeVisible();
   await page.getByText('I have read and agree to the liability waiver.').click();
@@ -340,6 +345,7 @@ test('a parent completes an imported kid, then registers a new one', async ({ pa
   await expect(page.getByRole('button', { name: 'Replace photo' })).toBeVisible();
   await expect(page.getByRole('alert').filter({ hasText: 'Add a photo of your kid' })).toHaveCount(0);
 
+  await page.getByRole('group', { name: /outside league or club/ }).getByText('No', { exact: true }).click();
   await page.getByText('I have read and agree to the liability waiver.').click();
   await page.getByRole('button', { name: 'Save changes' }).click();
   await expect(page.getByRole('heading', { name: 'Registration saved' })).toBeVisible();
@@ -374,6 +380,10 @@ test('a parent completes an imported kid, then registers a new one', async ({ pa
     .getByText('Ambassadors (7th–12th)')
     .click();
   await page.getByRole('group', { name: 'T-shirt size' }).getByText('M', { exact: true }).click();
+  await page.getByRole('group', { name: /outside league or club/ }).getByText('Yes', { exact: true }).click();
+  await page.getByLabel('Which sports?').fill('Club volleyball');
+  await page.getByText('Jan 3', { exact: true }).click();
+  await page.getByText('Feb 14', { exact: true }).click();
   await page.screenshot({ path: 'test-results/register-2-form.png', fullPage: true });
 
   // Without the waiver, or a photo, nothing is written.
@@ -401,6 +411,9 @@ test('a parent completes an imported kid, then registers a new one', async ({ pa
     tshirt_size: 'M',
     source: 'parent',
     consent_by_user_id: await parentId(),
+    plays_outside_league: true,
+    outside_sports: 'Club volleyball',
+    missed_sundays: ['2027-01-03', '2027-02-14'],
   });
   expect(marina?.consent_given_at).not.toBeNull();
 

@@ -112,7 +112,7 @@ export async function registerKid(input: unknown): Promise<RegisterKidResult> {
       case CHECK_FAILED:
         return {
           ok: false,
-          error: 'Check the grade, division and T-shirt size and try again.',
+          error: 'Check your answers under This season and try again.',
         };
     }
 

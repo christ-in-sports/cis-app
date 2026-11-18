@@ -445,7 +445,10 @@ describe('payments survive the other registration writes', () => {
             emergency_contact_name: 'EC', emergency_contact_phone: '555-0100',
             guardian_name: 'Guardian', guardian_phone: '555-0101', guardian_email: 'g@test.local',
           }),
-          JSON.stringify({ grade: 6, division: 'juniors', tshirt_size: 'YL', top_sports: null }),
+          JSON.stringify({
+            grade: 6, division: 'juniors', tshirt_size: 'YL', top_sports: null,
+            plays_outside_league: false, missed_sundays: [],
+          }),
         ])
       );
 

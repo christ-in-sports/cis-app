@@ -710,6 +710,9 @@ export type Database = {
           source: string
           team_id: string | null
           top_sports: string[] | null
+          plays_outside_league: boolean | null
+          outside_sports: string | null
+          missed_sundays: string[]
           tshirt_size: string
           updated_at: string
         }
@@ -727,6 +730,9 @@ export type Database = {
           source?: string
           team_id?: string | null
           top_sports?: string[] | null
+          plays_outside_league?: boolean | null
+          outside_sports?: string | null
+          missed_sundays?: string[]
           tshirt_size: string
           updated_at?: string
         }
@@ -744,6 +750,9 @@ export type Database = {
           source?: string
           team_id?: string | null
           top_sports?: string[] | null
+          plays_outside_league?: boolean | null
+          outside_sports?: string | null
+          missed_sundays?: string[]
           tshirt_size?: string
           updated_at?: string
         }

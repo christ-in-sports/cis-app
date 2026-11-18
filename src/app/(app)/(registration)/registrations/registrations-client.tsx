@@ -33,6 +33,7 @@ import {
   type PaymentFieldErrors,
 } from './payments';
 import { formatCents } from '@/lib/registration/payment';
+import { formatSunday } from '@/lib/registration/sundays';
 import {
   PrimaryButton,
   SecondaryButton,
@@ -82,6 +83,10 @@ export interface RosterEntry {
   division: Division;
   tshirt_size: string;
   top_sports: string[] | null;
+  /** Parent form answers; null / empty when never asked. */
+  plays_outside_league: boolean | null;
+  outside_sports: string | null;
+  missed_sundays: string[];
   active: boolean;
   consent_given_at: string | null;
   team_id: string | null;
@@ -160,6 +165,9 @@ function toEntry(reg: RosterEntry_Row, kid: Kid, payments: PaymentEntry[] = []):
     division: reg.division,
     tshirt_size: reg.tshirt_size,
     top_sports: reg.top_sports,
+    plays_outside_league: reg.plays_outside_league,
+    outside_sports: reg.outside_sports,
+    missed_sundays: reg.missed_sundays ?? [],
     active: reg.active,
     consent_given_at: reg.consent_given_at,
     team_id: reg.team_id,
@@ -175,6 +183,10 @@ interface RosterEntry_Row {
   division: Division;
   tshirt_size: string;
   top_sports: string[] | null;
+  /** Parent form answers; null / empty when never asked. */
+  plays_outside_league: boolean | null;
+  outside_sports: string | null;
+  missed_sundays: string[];
   active: boolean;
   consent_given_at: string | null;
   team_id: string | null;
@@ -1028,6 +1040,20 @@ export default function RegistrationsClient({
                                 ['Emergency contact', r.kid.emergency_contact_name],
                                 ['Emergency phone', r.kid.emergency_contact_phone],
                                 ['Allergies', r.kid.allergies],
+                                [
+                                  'Outside league',
+                                  r.plays_outside_league === null
+                                    ? null
+                                    : r.plays_outside_league
+                                      ? `Yes: ${r.outside_sports ?? ''}`
+                                      : 'No',
+                                ],
+                                [
+                                  'May miss',
+                                  r.missed_sundays.length > 0
+                                    ? r.missed_sundays.map(formatSunday).join(', ')
+                                    : null,
+                                ],
                               ] as Array<[string, string | null]>
                             )
                               .filter(([, v]) => v)
