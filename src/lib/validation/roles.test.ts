@@ -3,7 +3,7 @@ import { roleChangeSchema } from './roles';
 const userId = '3f2b6f0e-7d1a-4c53-9a0e-6f5d2a1b8c44';
 
 describe('roleChangeSchema', () => {
-  it.each(['admin', 'program', 'coach', 'prayer', 'parent'])('accepts %s', (role) => {
+  it.each(['director', 'admin', 'program', 'coach', 'prayer', 'parent'])('accepts %s', (role) => {
     expect(roleChangeSchema.safeParse({ userId, role }).success).toBe(true);
   });
 

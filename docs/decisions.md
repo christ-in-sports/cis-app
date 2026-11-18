@@ -30,9 +30,14 @@ issue holds the detail; this file is the index of "what's now different from the
 
 ### 2026-11-17 — Parent form asks about outside leagues and missed Sundays; fee is $100
 - **PRD reference:** parent registration stories and the `Registration` entity (`project_spec.md` §1.4, §2.3); the fee, previously "to be announced"
-- **What changed:** The parent form now asks whether the kid plays in an outside league or club (Yes/No, required), and if Yes, which sports. It also lists every Sunday of the season (Jan 3 to Apr 18, 2027) as tick boxes so a parent can mark the ones the kid may miss; none ticked means every Sunday. Admin, Program and coaches see both answers in the roster's kid details. The registration fee is $100 per kid.
+- **What changed:** The parent form now asks whether the kid plays in an outside league or club (Yes/No, required), and if Yes, which sports. It also lists every Sunday of the season (Jan 3 to Apr 18, 2027) as tick boxes so a parent can mark the ones the kid may miss; none ticked means every Sunday. Staff who can read the roster see both answers in its kid details. The registration fee is $100 per kid.
 - **Why:** The program asked for both questions, to plan around outside commitments and expected absences, and confirmed the fee.
 - **Linear:** none yet
+
+### 2026-11-11 — Separate Director leadership from operational Admin access
+- **Decision:** Rename the existing Admin role to Director and migrate existing grants. Add Admin with the same operational permissions, excluding all-servant registration access and user-role management. Admins retain their own servant registration. Director retains the previous verse/psalm permission limits.
+- **Why:** Delegate program operations without granting leadership access to servant personal information or role assignment.
+- **Reference:** `project_spec.md` §1.4–1.5; architecture entry dated 2026-11-11.
 
 ### 2026-10-25 — Parents join through one link in the parent group chat
 - **PRD reference:** §5.2 Role-Feature Permission Matrix and the parent registration stories (`project_spec.md` §1.4, §1.5); the rule that only an Admin grants roles (AGENTS.md §4)

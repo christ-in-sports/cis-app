@@ -33,11 +33,12 @@ Build a **Progressive Web App (PWA)** that centralizes all operational aspects o
 
 ### 1.4 Users & Roles
 
-The app supports **6 roles**. A person may hold more than one role simultaneously (e.g., a Coach who is also on the Prayer Team). New servant accounts start with no role; an Admin grants roles after signup. Parents are an exception: they join through one link posted in the parent group chat, sign in with a code emailed to them, and get the Parent role from that link without waiting for an Admin (ENG-27; `docs/decisions.md`, 2026-10-25). The `kid` role is another exception: it is never assigned by an Admin, and a kid's account gets it automatically when they self-register (not built yet).
+The app supports **7 roles**. A person may hold more than one role simultaneously (e.g., a Coach who is also on the Prayer Team). New servant accounts start with no role; a Director grants roles after signup. Parents are an exception: they join through one link posted in the parent group chat, sign in with a code emailed to them, and get the Parent role from that link without waiting for a Director (ENG-27; `docs/decisions.md`, 2026-10-25). The `kid` role is another exception: it is never assigned by a Director, and a kid's account gets it automatically when they self-register (not built yet).
 
 | Role | Who They Are |
 |---|---|
-| **Admin / Director** | Program leadership — full visibility and control |
+| **Director** | Program leadership — full visibility and control |
+| **Admin** | Operational administration; no access to other servants’ registrations or user-role management |
 | **Program Team** | Servants managing logistics, scheduling, equipment |
 | **Coaches** | Lead a specific team (Juniors or Ambassadors division) |
 | **Prayer Team** | Manage spiritual content and scoring |
@@ -48,46 +49,47 @@ The app supports **6 roles**. A person may hold more than one role simultaneousl
 
 ✓ = has access · ✗ = no access
 
-| Feature | Admin | Program | Coaches | Prayer | Parents | Kids |
-|---|---|---|---|---|---|---|
-| View season calendar | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ |
-| Update season calendar | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ |
-| View sports standings | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Update sports standings | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ |
-| View spiritual standings | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Update spiritual standings | ✓ | ✗ | ✗ | ✓ | ✗ | ✗ |
-| View full roster | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ |
-| Update full roster | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
-| Manage attendance sessions, teams & coach assignments | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ |
-| Assign registered kids to season teams | ✓ | ✓ (team only) | ✗ | ✗ | ✗ | ✗ |
-| Archive and restore attendance | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ |
-| Delete attendance days after confirmation | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ |
-| View full-division attendance award standings | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ |
-| View kid attendance | ✓ | ✓ | ✓ (own teams) | ✗ | ✗ | ✗ |
-| View own team roster | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ |
-| Update kid attendance | ✓ | ✗ | ✓ | ✗ | ✗ | ✗ |
-| Update coach attendance | ✓ | ✗ | ✓ (self) | ✗ | ✗ | ✗ |
-| Update verse/psalm points | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ |
-| View verses & psalms | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Register kids | ✓ | ✗ | ✗ | ✗ | ✓ | ✓ (self) |
-| View kid home address & emergency contact | ✓ | ✓ | ✓ (own team) | ✗ | ✓ (own kids) | ✗ |
-| View kid photo | ✓ | ✓ | ✓ (own team) | ✗ | ✓ (own kids) | ✗ |
-| Upload or replace kid photo | ✓ | ✗ | ✗ | ✗ | ✓ (own kids) | ✗ |
-| Process payments | ✓ | ✗ | ✗ | ✗ | ✓ | ✗ |
-| AI team generation | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
-| View equipment list | ✓ | ✓ | ✗ | ✓ | ✗ | ✗ |
-| Update equipment list | ✓ | ✓ | ✗ | ✓ | ✗ | ✗ |
-| Submit own servant registration | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ |
-| View all servant registrations | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| Feature | Director | Admin | Program | Coaches | Prayer | Parents | Kids |
+|---|---|---|---|---|---|---|---|
+| View season calendar | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ |
+| Update season calendar | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ |
+| View sports standings | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Update sports standings | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ |
+| View spiritual standings | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Update spiritual standings | ✓ | ✓ | ✗ | ✗ | ✓ | ✗ | ✗ |
+| View full roster | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ |
+| Update full roster | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| Manage attendance sessions, teams & coach assignments | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ |
+| Assign registered kids to season teams | ✓ | ✓ | ✓ (team only) | ✗ | ✗ | ✗ | ✗ |
+| Archive and restore attendance | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ |
+| Delete attendance days after confirmation | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ |
+| View full-division attendance award standings | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ |
+| View kid attendance | ✓ | ✓ | ✓ | ✓ (own teams) | ✗ | ✗ | ✗ |
+| View own team roster | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ |
+| Update kid attendance | ✓ | ✓ | ✗ | ✓ | ✗ | ✗ | ✗ |
+| Update coach attendance | ✓ | ✓ | ✗ | ✓ (self) | ✗ | ✗ | ✗ |
+| Update verse/psalm points | ✗ | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ |
+| View verses & psalms | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Register kids | ✓ | ✓ | ✗ | ✗ | ✗ | ✓ | ✓ (self) |
+| View kid home address & emergency contact | ✓ | ✓ | ✓ | ✓ (own team) | ✗ | ✓ (own kids) | ✗ |
+| View kid photo | ✓ | ✓ | ✓ | ✓ (own team) | ✗ | ✓ (own kids) | ✗ |
+| Upload or replace kid photo | ✓ | ✓ | ✗ | ✗ | ✗ | ✓ (own kids) | ✗ |
+| Process payments | ✓ | ✓ | ✗ | ✗ | ✗ | ✓ | ✗ |
+| AI team generation | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| View equipment list | ✓ | ✓ | ✓ | ✗ | ✓ | ✗ | ✗ |
+| Update equipment list | ✓ | ✓ | ✓ | ✗ | ✓ | ✗ | ✗ |
+| Submit own servant registration | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ |
+| View all servant registrations | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| Manage user roles | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ |
 
-A servant registration (the season commitment form, which replaced the Google Form) is submitted by a servant: someone holding Admin, Program Team, Coach or Prayer Team, or someone with no role yet. A Parent or Kid account is not a servant and cannot open, submit or read it (ENG-26); a Coach who is also a Parent can. A servant reads only their own; only Admin reads all, because it holds DOB, home address and emergency contacts. Sub-teams on it are a preference and never grant a role.
+A servant registration (the season commitment form, which replaced the Google Form) is submitted by a servant: someone holding Director, Admin, Program Team, Coach or Prayer Team, or someone with no role yet. A Parent or Kid account is not a servant and cannot open, submit or read it (ENG-26); a Coach who is also a Parent can. A servant reads only their own; only Director reads all, because it holds DOB, home address and emergency contacts. Sub-teams on it are a preference and never grant a role.
 
 **Permissions must be enforced server-side via Supabase Row Level Security — never client-side only.**
 
 ### 1.6 Feature Scope
 
 #### MVP (build first)
-- Role-based app shell with auth for all 6 roles
+- Role-based app shell with auth for all 7 roles
 - Season calendar and daily schedule (view + manage)
 - Attendance tracking — kids and coaches, with notes
 - Sports and spiritual league standings and scoring
@@ -210,7 +212,8 @@ Most state in this app is **server state** — rosters, standings, attendance, c
 ```
 
 - **Auth** happens through Supabase Auth (email/OTP or magic link). JWT includes role claims used by RLS policies.
-- **Roles** live only in `user_roles` and are checked with `has_role('<role>')` (SQL) or `checkRole()` / `getMyRoles()` (server code). There are no `is_staff()` / `is_coach()` helpers or profile flags (removed 2026-10-19, ENG-16). Servant accounts, created with the shared servant signup code, start with no role until an Admin grants one. Parent accounts come from `/join?code=<PARENT_JOIN_CODE>` (ENG-31): the parent gives a name and email and types the 6-digit email code (`signInWithOtp` / `verifyOtp`, never a magic link), and a Server Action (`src/app/(auth)/join/actions.ts`) grants Parent with the service role only after the code is verified. A new parent's account is created on the server with the admin API before the code is sent, because the hosted project keeps "Allow new users to sign up" off so no one can create an account by calling Auth directly. Every step re-checks the join code on the server, and a wrong or missing code shows only a notice. Someone already signed in (a servant who is also a parent) gets one button that adds Parent to their own account, and a Parent goes straight to `/register`. Changing the env var retires old links; an Admin can still remove Parent from any account. Parent is the one role not granted by an Admin; `user_roles` stays Admin-only under RLS. Sessions use Supabase's defaults, so a parent enters a code only on a new device or after signing out. Hosted Auth sends its email through Resend (custom SMTP). Reasoning: `docs/arch_decisions.md` (2026-10-25).
+- **Roles** live only in `user_roles` and are checked with `has_role('<role>')` (SQL) or `checkRole()` / `getMyRoles()` (server code). There are no `is_staff()` / `is_coach()` helpers or profile flags (removed 2026-10-19, ENG-16). Servant accounts, created with the shared servant signup code, start with no role until a Director grants one. Parent accounts come from `/join?code=<PARENT_JOIN_CODE>` (ENG-31): the parent gives a name and email and types the 6-digit email code (`signInWithOtp` / `verifyOtp`, never a magic link), and a Server Action (`src/app/(auth)/join/actions.ts`) grants Parent with the service role only after the code is verified. A new parent's account is created on the server with the admin API before the code is sent, because the hosted project keeps "Allow new users to sign up" off so no one can create an account by calling Auth directly. Every step re-checks the join code on the server, and a wrong or missing code shows only a notice. Someone already signed in (a servant who is also a parent) gets one button that adds Parent to their own account, and a Parent goes straight to `/register`. Changing the env var retires old links; a Director can still remove Parent from any account. Parent is the one role not granted by a Director; `user_roles` management stays Director-only under RLS. Sessions use Supabase's defaults, so a parent enters a code only on a new device or after signing out. Hosted Auth sends its email through Resend (custom SMTP). Reasoning: `docs/arch_decisions.md` (2026-10-25).
+- **Director and Admin:** existing Admin grants migrate to Director. Both roles retain the former operational permissions; only Director can view all servant registrations or manage/read other users’ roles. Admin can still submit/read their own servant registration. `find_parent_account(p_email)` is an authenticated Director/Admin-only lookup used to attach kids without exposing role lists. Apply the enum migration before the permissions migration and deploy the app afterward.
 - **All permission enforcement lives in Postgres RLS policies**, not just the UI. The UI hides/shows based on role for UX only — it is not the security boundary.
 - **Server Actions / API routes** in Next.js are the only layer allowed to call Stripe and Claude APIs — never call these directly from the client.
 - **Edge Functions** handle background/triggered work: sending push notifications, processing scheduled reminders.

@@ -85,7 +85,7 @@ export function buildServantConfirmation(input: ServantConfirmationInput): Serva
   if (r.dates_missing) items.push({ label: 'Dates you will miss', value: r.dates_missing });
 
   const intro = `Hi ${fullName}, we have your servant registration for ${seasonName}.`;
-  const review = 'An Admin will review your registration and confirm your role.';
+  const review = 'A Director will review your registration and confirm your role.';
   const outro = 'Your team choices are preferences. You can change your answers at any time:';
 
   const text = [

@@ -63,7 +63,7 @@ Stripe (payments, v1.0)    Claude API (AI team generation, v1.0)
 
 **Core entities:** `User`, `Kid`, `Registration`, `Team`, `Season`, `Event`, `Attendance_Kid`, `Attendance_Coach`, `Verse`, `SpiritualRecord`, `GameScore`, `Payment`, `Equipment`. Full field list and relationships: `project_spec.md` §2.3.
 
-**Six roles:** Admin/Director, Program Team, Coaches, Prayer Team, Parents, Kids (Ambassadors only). A user can hold multiple roles. Full permission matrix: `project_spec.md` §1.5.
+**Seven roles:** Director, Admin, Program Team, Coaches, Prayer Team, Parents, Kids (Ambassadors only). A user can hold multiple roles. Full permission matrix: `project_spec.md` §1.5.
 
 ---
 
@@ -106,7 +106,7 @@ If a new screen seems to need breaking an anti-pattern above, flag it in the PR 
 These are hard rules, not preferences. If a task conflicts with one of these, stop and ask rather than improvise.
 
 - **RLS is the real permission boundary.** Every table holding user data needs a Row Level Security policy written in the *same* change that creates the table or column — never as a follow-up. UI-level role checks are for UX only.
-- **Check the specific role, never a helper.** Policies, SQL functions and server code call `has_role('<role>')` / `checkRole()` / `getMyRoles()` and name every role they allow. Do not add helpers like `is_staff()` or `is_coach()`, or role flags on `profiles`. Roles are granted only by an Admin; servant signup creates an account with no role. The one exception is Parent, which the parent join link grants server-side after the email code is verified (ENG-27). Never grant any other role that way, and never attach kids to a parent by matching email.
+- **Check the specific role, never a helper.** Policies, SQL functions and server code call `has_role('<role>')` / `checkRole()` / `getMyRoles()` and name every role they allow. Do not add helpers like `is_staff()` or `is_coach()`, or role flags on `profiles`. Roles are granted only by a Director; servant signup creates an account with no role. The one exception is Parent, which the parent join link grants server-side after the email code is verified (ENG-27). Never grant any other role that way, and never attach kids to a parent by matching email.
 - **Permissions must match the Role Permission Matrix exactly** (`project_spec.md` §1.5). If a permission isn't listed there, ask — don't assume or invent one.
 - **Never call Stripe or the Claude API from client components.** Server Actions or API routes only. No secrets (Stripe secret key, Claude API key, Supabase service role key) in client-side code, ever.
 - **Server Actions are preferred** over client-side fetch + API route for mutations, unless a stable REST endpoint is genuinely needed (e.g., a Stripe webhook receiver).
@@ -209,6 +209,9 @@ Every PR that touches the items in the "non-negotiable" list must include or upd
 ---
 
 ## 8. Attendance conventions
+
+- Director retains all former Admin permissions. Admin shares operational permissions, but only Director may view all servant registrations or manage user roles. Both can submit/read their own servant registration. Always name Director alongside Admin in operational role checks.
+
 
 - Attendance UI uses `BoardShell`, `Sheet`, CIS form controls and `AttendanceRow`; attendance mutations go through `src/app/(app)/attendance/actions.ts` with Zod input validation. Team mutations live in `src/app/(app)/teams/actions.ts`.
 - Admin and Program create dated attendance days, rename/delete current teams, manage coach links, and archive/restore attendance. Attendance has no season picker or season-rollover action. Program assigns only `registrations.team_id` through `assign_attendance_team()`; it does not gain general roster write access. Only users holding Coach can be assigned as coaches.

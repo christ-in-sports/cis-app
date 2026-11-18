@@ -30,11 +30,11 @@ describe('has_role()', () => {
   it('has_role reflects an explicit grant', async () => {
     await withTx(pool, async (client) => {
       const userId = await createProfile(client, { email: 'admin-grant@test.local' });
-      await grantRole(client, userId, 'admin');
+      await grantRole(client, userId, 'director');
 
       const result = await asUser(client, userId, async () => {
         const r = await client.query<{ has_admin: boolean; has_coach: boolean }>(
-          `select has_role('admin'::app_role) as has_admin, has_role('coach'::app_role) as has_coach`
+          `select has_role('director'::app_role) as has_admin, has_role('coach'::app_role) as has_coach`
         );
         return r.rows[0];
       });
@@ -50,7 +50,7 @@ describe('has_role()', () => {
 
       const result = await asUser(client, userId, async () => {
         const r = await client.query<{ has_admin: boolean; has_any: boolean }>(
-          `select has_role('admin'::app_role) as has_admin, has_any_role() as has_any`
+          `select has_role('director'::app_role) as has_admin, has_any_role() as has_any`
         );
         return r.rows[0];
       });
@@ -148,7 +148,7 @@ describe('RLS on user_roles', () => {
       const userId = await createProfile(client, { email: 'self-grant-attempt@test.local' });
 
       const attempt = asUser(client, userId, async () => {
-        await client.query(`insert into user_roles (user_id, role) values ($1, 'admin')`, [
+        await client.query(`insert into user_roles (user_id, role) values ($1, 'director')`, [
           userId,
         ]);
       });
@@ -190,7 +190,7 @@ describe('RLS on user_roles', () => {
   it('an admin can read and grant roles for anyone', async () => {
     await withTx(pool, async (client) => {
       const adminId = await createProfile(client, { email: 'admin-manager@test.local' });
-      await grantRole(client, adminId, 'admin');
+      await grantRole(client, adminId, 'director');
       const targetId = await createProfile(client, { email: 'grant-recipient@test.local' });
 
       const rows = await asUser(client, adminId, async () => {
@@ -203,7 +203,7 @@ describe('RLS on user_roles', () => {
 
       expect(rows).toEqual(
         expect.arrayContaining([
-          { user_id: adminId, role: 'admin' },
+          { user_id: adminId, role: 'director' },
           { user_id: targetId, role: 'prayer' },
         ])
       );
@@ -213,7 +213,7 @@ describe('RLS on user_roles', () => {
   it('an anonymous (unauthenticated) request sees no roles at all', async () => {
     await withTx(pool, async (client) => {
       const someoneId = await createProfile(client, { email: 'anon-visibility@test.local' });
-      await grantRole(client, someoneId, 'admin');
+      await grantRole(client, someoneId, 'director');
 
       await client.query('SET LOCAL ROLE anon');
       const r = await client.query('select * from user_roles');
@@ -222,22 +222,22 @@ describe('RLS on user_roles', () => {
   });
 });
 
-// ENG-16 PR 2: guards the Admin role-assignment screen relies on.
+// ENG-16 PR 2: guards the Director role-assignment screen relies on.
 describe('user_roles guards', () => {
-  it('an admin cannot remove their own admin role', async () => {
+  it('an admin cannot remove their own director role', async () => {
     await withTx(pool, async (client) => {
       const adminId = await createProfile(client, { email: 'self-lockout@test.local' });
-      await grantRole(client, adminId, 'admin');
+      await grantRole(client, adminId, 'director');
 
       const attempt = asUser(client, adminId, async () => {
-        await client.query(`delete from user_roles where user_id = $1 and role = 'admin'`, [
+        await client.query(`delete from user_roles where user_id = $1 and role = 'director'`, [
           adminId,
         ]);
       });
 
-      await expect(attempt).rejects.toThrow(/cannot remove your own admin role/i);
+      await expect(attempt).rejects.toThrow(/cannot remove your own director role/i);
       const left = await client.query(
-        `select 1 from user_roles where user_id = $1 and role = 'admin'`,
+        `select 1 from user_roles where user_id = $1 and role = 'director'`,
         [adminId]
       );
       expect(left.rowCount).toBe(1);
@@ -247,7 +247,7 @@ describe('user_roles guards', () => {
   it('an admin can remove their own non-admin roles', async () => {
     await withTx(pool, async (client) => {
       const adminId = await createProfile(client, { email: 'self-coach-removal@test.local' });
-      await grantRole(client, adminId, 'admin');
+      await grantRole(client, adminId, 'director');
       await grantRole(client, adminId, 'coach');
 
       await asUser(client, adminId, async () => {
@@ -257,19 +257,19 @@ describe('user_roles guards', () => {
       });
 
       const left = await client.query(`select role from user_roles where user_id = $1`, [adminId]);
-      expect(left.rows).toEqual([{ role: 'admin' }]);
+      expect(left.rows).toEqual([{ role: 'director' }]);
     });
   });
 
   it('an admin can remove another admin', async () => {
     await withTx(pool, async (client) => {
       const a = await createProfile(client, { email: 'remover@test.local' });
-      await grantRole(client, a, 'admin');
+      await grantRole(client, a, 'director');
       const b = await createProfile(client, { email: 'removed@test.local' });
-      await grantRole(client, b, 'admin');
+      await grantRole(client, b, 'director');
 
       await asUser(client, a, async () => {
-        await client.query(`delete from user_roles where user_id = $1 and role = 'admin'`, [b]);
+        await client.query(`delete from user_roles where user_id = $1 and role = 'director'`, [b]);
       });
 
       const left = await client.query(`select 1 from user_roles where user_id = $1`, [b]);
@@ -280,7 +280,7 @@ describe('user_roles guards', () => {
   it('deleting a profile still cascades its roles (system deletes are not blocked)', async () => {
     await withTx(pool, async (client) => {
       const id = await createProfile(client, { email: 'cascade@test.local' });
-      await grantRole(client, id, 'admin');
+      await grantRole(client, id, 'director');
 
       await client.query('delete from auth.users where id = $1', [id]);
 
@@ -292,7 +292,7 @@ describe('user_roles guards', () => {
   it('stamps granted_by with the caller, ignoring a forged value', async () => {
     await withTx(pool, async (client) => {
       const adminId = await createProfile(client, { email: 'granter@test.local' });
-      await grantRole(client, adminId, 'admin');
+      await grantRole(client, adminId, 'director');
       const forgedId = await createProfile(client, { email: 'forged@test.local' });
       const targetId = await createProfile(client, { email: 'grant-target-2@test.local' });
 
@@ -314,7 +314,7 @@ describe('user_roles guards', () => {
   it('an admin can revoke another user\'s role, a non-admin cannot', async () => {
     await withTx(pool, async (client) => {
       const adminId = await createProfile(client, { email: 'revoker@test.local' });
-      await grantRole(client, adminId, 'admin');
+      await grantRole(client, adminId, 'director');
       const coachId = await createProfile(client, { email: 'revoked-coach@test.local' });
       await grantRole(client, coachId, 'coach');
       const otherId = await createProfile(client, { email: 'not-admin@test.local' });

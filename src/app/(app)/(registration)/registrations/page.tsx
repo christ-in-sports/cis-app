@@ -9,7 +9,7 @@ export default async function RegistrationsPage() {
   const { supabase, userId, roles } = await getMyRoles();
   if (!userId) redirect('/login?redirect=/registrations');
 
-  const isAdmin = roles.has('admin');
+  const isAdmin = (roles.has('director') || roles.has('admin'));
 
   // A roster row is a kid plus their registration for the active season. The
   // season has to be resolved first because registrations are per-season now.

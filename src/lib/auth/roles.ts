@@ -1,7 +1,7 @@
 /**
  * Server-side role check.
  *
- * Generalises `checkAdmin()` to any of the six roles. Like it, this is a UX and
+ * Generalises `checkAdmin()` to any of the seven roles. Like it, this is a UX and
  * defence-in-depth layer, not the security boundary: RLS and the
  * `has_role()` checks inside the SECURITY DEFINER functions are. A bug here
  * produces a worse error message; it does not grant access.
@@ -53,7 +53,7 @@ export async function checkAnyRole(roles: readonly AppRole[]): Promise<RoleCheck
 /**
  * Resolves the caller's identity and whether they hold any role at all. A user
  * with no `user_roles` rows is "roleless": a servant who has signed up and is
- * waiting for an Admin to assign roles. Like the rest of this file it is for UX
+ * waiting for a Director to assign roles. Like the rest of this file it is for UX
  * (who gets sent to the servant form); RLS already returns nothing to them.
  */
 export async function hasAnyRole(): Promise<RoleCheck> {

@@ -43,7 +43,7 @@ describe('replaceKidPhoto -- who may call it', () => {
   it('asks for an Admin or a Parent, and nobody else', async () => {
     await replaceKidPhoto(input);
 
-    expect(checkAnyRole).toHaveBeenCalledWith(['admin', 'parent']);
+    expect(checkAnyRole).toHaveBeenCalledWith(['director', 'admin', 'parent']);
   });
 
   it('tells a signed-out caller, and does nothing', async () => {

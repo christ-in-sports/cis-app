@@ -36,6 +36,13 @@ heading followed by:
 
 ## Decisions
 
+### 2026-11-11 — Enforce the Director/Admin split in RLS and server entry points
+- **Status:** Accepted
+- **Context:** Operational Admin access must preserve existing roster, payment, team, attendance, photo and sports workflows while reserving servant oversight and roles for Directors.
+- **Decision:** Add `director` to `app_role` in a separate migration, then migrate existing Admin grants to Director and explicitly allow both roles on operational policies/functions. Keep all-role reads/writes and all-servant reads Director-only; preserve self-service reads. Protect Directors from deleting their own Director grant. A narrow `find_parent_account(p_email)` RPC preserves parent attachment without exposing role lists.
+- **Consequences / tradeoffs:** Deploy both migrations before the app. Existing Admins keep leadership access; the new Admin starts unassigned and Directors grant it. The existing `/admin/roles` URL remains stable but is Director-only.
+- **Reference:** `project_spec.md` §2.3; product decision dated 2026-11-11.
+
 ### 2026-10-29 — An Admin attaches an imported kid to a parent: two Server Actions under the Admin's own session, no new function or policy
 - **Status:** Accepted
 - **Context:** After `link_my_kids()` was dropped (ENG-29), a kid imported from the Google Form backup has no parent until someone gives them one (ENG-30). The person it is given to can then read the kid's address, emergency contact, photo and payments, so a wrong match is a privacy incident, not a typo.

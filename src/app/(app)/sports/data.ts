@@ -12,7 +12,7 @@ import { checkAnyRole } from '@/lib/auth/roles';
 import { loadSportsData, type SportsData } from '@/lib/competition/read';
 
 /** Admin and Program Team update sports standings (project_spec.md 1.5). */
-export const getAccess = cache(() => checkAnyRole(['admin', 'program']));
+export const getAccess = cache(() => checkAnyRole(['director', 'admin', 'program']));
 
 export const getSportsData = cache(async (): Promise<{ data: SportsData; canScore: boolean }> => {
   const { supabase, userId, hasRole } = await getAccess();

@@ -18,16 +18,20 @@ const labels = (roles: Parameters<typeof registrationNavItems>[0]) =>
 const none = { isParent: false, isAdmin: false };
 
 describe('registrationNavItems', () => {
+  it('gives an Admin roster and import without servants or role management', () => {
+    expect(labels({ ...none, isAdmin: true })).toEqual(['CISers', 'Import']);
+  });
+
   it('gives a parent Register, and no roster, import or roles', () => {
     expect(labels({ ...none, isParent: true })).toEqual(['Register']);
   });
 
-  it('gives an Admin the roster, servants, the import and role assignment', () => {
-    expect(labels({ ...none, isAdmin: true })).toEqual(['CISers', 'Servants', 'Import', 'Roles']);
+  it('gives a Director the roster, servants, the import and role assignment', () => {
+    expect(labels({ ...none, isDirector: true, isAdmin: false })).toEqual(['CISers', 'Servants', 'Import', 'Roles']);
   });
 
-  it('merges the sets for someone who is both a parent and an Admin, in a fixed order', () => {
-    expect(labels({ isParent: true, isAdmin: true })).toEqual(['Register', 'CISers', 'Servants', 'Import', 'Roles']);
+  it('merges the sets for someone who is both a parent and a Director, in a fixed order', () => {
+    expect(labels({ isParent: true, isDirector: true, isAdmin: false })).toEqual(['Register', 'CISers', 'Servants', 'Import', 'Roles']);
   });
 
   it('gives a user with no registration role no tabs', () => {
@@ -36,7 +40,7 @@ describe('registrationNavItems', () => {
 });
 
 describe('RegistrationNav', () => {
-  const all = { isParent: true, isAdmin: true };
+  const all = { isParent: true, isDirector: true, isAdmin: false };
 
   function current() {
     const nav = screen.getByRole('navigation', { name: 'Registration' });

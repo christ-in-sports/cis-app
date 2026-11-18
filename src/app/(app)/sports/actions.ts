@@ -53,13 +53,13 @@ async function run<S extends ZodType, T extends object>(
   input: unknown,
   op: (db: Db, data: S['_output']) => Promise<Outcome<T>>,
 ): Promise<Outcome<T>> {
-  const { supabase, userId, hasRole } = await checkAnyRole(['admin', 'program']);
+  const { supabase, userId, hasRole } = await checkAnyRole(['director', 'admin', 'program']);
 
   if (userId === null) {
     return { ok: false, error: 'You are no longer signed in.' };
   }
   if (!hasRole) {
-    return { ok: false, error: 'Only Admin or Program Team can update sports standings.' };
+    return { ok: false, error: 'Only Director, Admin or Program Team can update sports standings.' };
   }
 
   const parsed = schema.safeParse(input);

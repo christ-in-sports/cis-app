@@ -1,15 +1,15 @@
 'use client';
 
 /**
- * The Admin roles screen: every servant's account, and a tick box per role.
+ * The Director roles screen: every servant's account, and a tick box per role.
  *
  * People with no role come first, because they are the new servants waiting for
  * access. That order is fixed when the page loads: re-sorting as boxes are
- * ticked would move a row out from under the Admin's thumb.
+ * ticked would move a row out from under the Director's thumb.
  *
  * Each tick is saved straight away (a Server Action per change), shown at once and
  * put back, with the reason under that person's row, if the save fails. An
- * Admin's own Admin box is disabled; the database enforces the same rule, so
+ * Director's own Director box is disabled; the database enforces the same rule, so
  * this is only the explanation.
  *
  * The boxes stay disabled until the page has hydrated. Before that the markup is
@@ -112,7 +112,7 @@ export default function RolesClient({
 
   return (
     <>
-      <BoardHeader kicker="Admin" title="Roles" />
+      <BoardHeader kicker="Director" title="Roles" />
       <RegistrationColumn>
         <Sheet className="flex flex-col gap-cis-3 px-cis-4 pb-cis-4 pt-cis-4">
           <p className="m-0 text-cis-sm font-semibold text-cis-ink-muted">
@@ -156,7 +156,7 @@ export default function RolesClient({
                   )}
                   <div className="mt-cis-2 grid grid-cols-2 gap-x-cis-3">
                     {ASSIGNABLE_ROLES.map((role) => {
-                      const own = isYou && role === 'admin';
+                      const own = isYou && role === 'director';
                       return (
                         <TickRow
                           key={role}
@@ -173,9 +173,9 @@ export default function RolesClient({
                     })}
                   </div>
                   {errors[person.id] && <FieldError>{errors[person.id]}</FieldError>}
-                  {isYou && held.includes('admin') && (
+                  {isYou && held.includes('director') && (
                     <p className="m-0 mt-1 text-cis-sm text-cis-ink-muted">
-                      You can&apos;t remove your own Admin role. Another Admin can.
+                      You can&apos;t remove your own Director role. Another Director can.
                     </p>
                   )}
                 </div>

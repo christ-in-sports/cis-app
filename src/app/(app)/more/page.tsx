@@ -22,9 +22,9 @@ export default async function MorePage() {
   if (!userId) redirect('/login?redirect=/more');
   if (roles.size === 0) redirect(SERVANT_REGISTRATION_PATH);
 
-  const isAdmin = roles.has('admin');
+  const isAdmin = (roles.has('director') || roles.has('admin'));
   const manages = isAdmin || roles.has('program');
-  // Servant registration is for servants: Admin, Program, Coach or Prayer. A Parent
+  // Servant registration is for servants: Director, Admin, Program, Coach or Prayer. A Parent
   // or Kid account is not one, and the page and the database refuse them too.
   const isServant = isAdmin || roles.has('program') || roles.has('coach') || roles.has('prayer');
 
@@ -45,9 +45,9 @@ export default async function MorePage() {
         {isAdmin && (
           <MenuSheet heading="Season">
             <MenuRow href="/registrations" title="CISers" icon="roster" />
-            <MenuRow href="/servants" title="Servants" icon="servants" />
+            {roles.has('director') && <MenuRow href="/servants" title="Servants" icon="servants" />}
             <MenuRow href="/admin/imports" title="Roster import" icon="import" />
-            <MenuRow href="/admin/roles" title="Roles" icon="roles" />
+            {roles.has('director') && <MenuRow href="/admin/roles" title="Roles" icon="roles" />}
           </MenuSheet>
         )}
         {manages && (

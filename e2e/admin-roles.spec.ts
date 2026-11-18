@@ -88,7 +88,7 @@ test.beforeEach(async () => {
   adminId = await ensureUser(ADMIN, 'E2E Roles Admin');
   servantId = await ensureUser(SERVANT, SERVANT_NAME);
   kidId = await ensureUser(KID, KID_NAME);
-  await setRoles(adminId, ['admin']);
+  await setRoles(adminId, ['director']);
   await setRoles(servantId, []);
   await setRoles(kidId, ['kid']);
 });
@@ -99,7 +99,7 @@ test.afterAll(async () => {
   if (kidId) await setRoles(kidId, []);
 });
 
-test('an Admin gives a new servant the Coach role, and they can then open Attendance', async ({ page, browser }) => {
+test('a Director gives a new servant the Coach role, and they can then open Attendance', async ({ page, browser }) => {
   // Before: a roleless servant is sent from Attendance to the registration form.
   const servantPage = await signedInPage(browser, SERVANT);
   await servantPage.goto('/attendance');
@@ -156,14 +156,14 @@ test('the screen is for servants: no Kid box, and kid accounts are not listed', 
   await expect(page.getByRole('checkbox', { name: /^Kid for/ })).toHaveCount(0);
 });
 
-test("an Admin can't untick their own Admin box", async ({ page }) => {
+test("a Director can't untick their own Director box", async ({ page }) => {
   await signIn(page, ADMIN);
   await page.goto('/admin/roles');
 
-  const own = page.getByRole('checkbox', { name: 'Admin for E2E Roles Admin' });
+  const own = page.getByRole('checkbox', { name: 'Director for E2E Roles Admin' });
   await expect(own).toBeChecked();
   await expect(own).toBeDisabled();
-  await expect(page.getByText("You can't remove your own Admin role")).toBeVisible();
+  await expect(page.getByText("You can't remove your own Director role. Another Director can.")).toBeVisible();
 });
 
 test('someone who is not an Admin is sent away from the roles screen', async ({ page }) => {
@@ -173,4 +173,13 @@ test('someone who is not an Admin is sent away from the roles screen', async ({ 
   await page.goto('/admin/roles');
 
   await expect(page).not.toHaveURL(/\/admin\/roles/);
+});
+
+
+test('an operational Admin cannot open user-role management', async ({ page }) => {
+  await setRoles(servantId, ['admin']);
+  await signIn(page, SERVANT);
+  await page.goto('/admin/roles');
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole('checkbox', { name: /^Director for/ })).toHaveCount(0);
 });

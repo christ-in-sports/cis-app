@@ -21,7 +21,7 @@
  * parent is created with the admin API first and then sent a code like any
  * existing account. Only someone holding the join code gets this far.
  *
- * `user_roles` stays writable by Admins only. RLS is still what limits a Parent:
+ * `user_roles` stays writable by Directors and Admins only. RLS is still what limits a Parent:
  * they read only the kids linked to their account and write only through
  * `register_kid()`.
  */

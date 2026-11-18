@@ -64,7 +64,7 @@ async function signIn(page: Page, email: string): Promise<void> {
 }
 
 test.beforeEach(async () => {
-  await ensureUser(ADMIN, ['admin']);
+  await ensureUser(ADMIN, ['director']);
   await ensureUser(COACH, ['coach']);
   const servantId = await ensureUser(SERVANT, []);
 
@@ -126,4 +126,24 @@ test('someone who is not an Admin is sent away from the page', async ({ page }) 
   await page.goto('/servants');
   await expect(page).toHaveURL(/\/$/);
   await expect(page.getByText(SERVANT_NAME)).toHaveCount(0);
+});
+
+
+test('an operational Admin has roster access and their own form, but cannot see other servants', async ({ page }) => {
+  await ensureUser(COACH, ['admin']);
+  await signIn(page, COACH);
+  await page.goto('/more');
+  await expect(page.getByRole('link', { name: 'CISers', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Servants', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Roles', exact: true })).toHaveCount(0);
+  await page.goto('/registrations');
+  const nav = page.getByRole('navigation', { name: 'Registration' });
+  await expect(nav.getByRole('link', { name: 'Import', exact: true })).toBeVisible();
+  await expect(nav.getByRole('link', { name: 'Servants', exact: true })).toHaveCount(0);
+  await expect(nav.getByRole('link', { name: 'Roles', exact: true })).toHaveCount(0);
+  await page.goto('/servants');
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByText(SERVANT_NAME)).toHaveCount(0);
+  await page.goto('/servant-registration');
+  await expect(page.getByRole('button', { name: /^(Register|Save changes)$/ })).toBeVisible();
 });

@@ -102,9 +102,9 @@ async function paymentsFor(client: PoolClient, registrationId: string) {
 const UNKNOWN = '00000000-0000-0000-0000-000000000000';
 
 describe('record_payments -- authorisation', () => {
-  it('lets an admin record a payment', async () => {
+  it.each(['director', 'admin'])('lets %s record a payment', async (role) => {
     await withTx(pool, async (client) => {
-      const adminId = await makeUser(client, 'pay-admin@test.local', 'admin');
+      const adminId = await makeUser(client, 'pay-admin@test.local', role);
       const { registrationId } = await createRegistration(client);
 
       const rows = await recordAs(client, adminId, registrationId, 4250, 'venmo');

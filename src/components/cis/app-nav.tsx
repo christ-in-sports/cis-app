@@ -19,7 +19,7 @@ import { SectionNav, type SectionNavItem } from '@/components/cis/section-nav';
 import type { AppRole } from '@/lib/auth/app-roles';
 
 export function appNavItems(roles: ReadonlySet<AppRole>): SectionNavItem[] {
-  const manages = roles.has('admin') || roles.has('program');
+  const manages = roles.has('director') || roles.has('admin') || roles.has('program');
   const coaches = roles.has('coach');
   return [
     { href: '/', label: 'Today', icon: 'today' },

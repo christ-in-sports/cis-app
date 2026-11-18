@@ -93,7 +93,7 @@ export default function TeamsClient({ archived, teams, kids, coaches, links }: {
         <details><summary className="min-h-12 cursor-pointer py-3 font-bold">Assign coaches</summary>
           <fieldset disabled={pending} className="space-y-2">
             <legend className="sr-only">Coaches for {team.name}</legend>
-            {!coaches.length && <p>Ask an Admin to grant the Coach role to your coaches.</p>}
+            {!coaches.length && <p>Ask a Director to grant the Coach role to your coaches.</p>}
             {coaches.map((coach) => {
               const checked = links.some((link) => link.team_id === team.id && link.user_id === coach.id);
               return <TickRow key={coach.id} checked={checked} onChange={(checked) => run(() => assignCoach(team.id, coach.id, checked), 'Coach assignments saved.')} >{coach.display_name}</TickRow>;

@@ -12,5 +12,5 @@ import { getMyRoles } from '@/lib/auth/roles';
 
 export async function ViewerNav() {
   const { roles } = await getMyRoles();
-  return <RegistrationNav isAdmin={roles.has('admin')} isParent={roles.has('parent')} />;
+  return <RegistrationNav isDirector={roles.has('director')} isAdmin={roles.has('admin')} isParent={roles.has('parent')} />;
 }

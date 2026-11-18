@@ -7,7 +7,7 @@ import { createClient } from '@supabase/supabase-js';
  * Use it only where a signed-in user's own session cannot do the job. Today that
  * is granting the Parent role after someone proves they own an email (the parent
  * join link, `docs/arch_decisions.md` 2026-10-25), because `user_roles` is
- * writable by Admins only. Returns null when the environment is not configured.
+ * writable by Directors and Admins only. Returns null when the environment is not configured.
  */
 export function createServiceClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

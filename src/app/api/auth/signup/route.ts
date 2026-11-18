@@ -4,7 +4,7 @@ import { codeMatches } from '@/lib/auth/join-code';
 
 /**
  * Servant signup. One shared code (SERVANT_SIGNUP_CODE, passed around the
- * servants' group chat) creates an account with NO role. An Admin grants roles
+ * servants' group chat) creates an account with NO role. A Director grants roles
  * afterwards; the code never decides what someone can do.
  */
 export async function POST(request: Request) {

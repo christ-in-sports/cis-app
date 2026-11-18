@@ -45,11 +45,12 @@ function signInAs(user: { userId: string | null; isAdmin: boolean }, fx: Fixture
   const profiles = builder({ data: fx.profile ?? null, error: null });
   const roles = builder({ data: fx.role ?? null, error: null });
   const kids = builder({ data: fx.updated ?? [], error: fx.updateError ?? null });
+  const rpc = jest.fn().mockResolvedValue({ data: fx.profile ? [{ ...fx.profile, is_parent: fx.role?.role === 'parent' }] : [], error: null });
   const from = jest.fn((table: string) => ({ profiles: profiles.b, user_roles: roles.b, kids: kids.b })[table]);
-  jest.mocked(checkAdmin).mockResolvedValue({ ...user, supabase: { from } } as unknown as Awaited<
+  jest.mocked(checkAdmin).mockResolvedValue({ ...user, supabase: { from, rpc } } as unknown as Awaited<
     ReturnType<typeof checkAdmin>
   >);
-  return { from, profiles, roles, kids };
+  return { from, rpc, profiles, roles, kids };
 }
 
 const parentProfile = { id: PARENT_ID, display_name: 'Mariam Guirguis', email: 'mariam@example.com' };
@@ -86,12 +87,12 @@ describe.each([
 
 describe('findParentByEmail', () => {
   it('finds a Parent by email, ignoring case and spaces', async () => {
-    const { profiles } = signInAs({ userId: 'admin', isAdmin: true }, { profile: parentProfile, role: { role: 'parent' } });
+    const { rpc } = signInAs({ userId: 'admin', isAdmin: true }, { profile: parentProfile, role: { role: 'parent' } });
 
     const result = await findParentByEmail('  Mariam@Example.COM ');
 
     expect(result).toEqual({ ok: true, parent: { name: 'Mariam Guirguis', email: 'mariam@example.com' } });
-    expect(profiles.calls).toContainEqual(['eq', ['email', 'mariam@example.com']]);
+    expect(rpc).toHaveBeenCalledWith('find_parent_account', { p_email: 'mariam@example.com' });
   });
 
   it('falls back to the email when the account has no name', async () => {
@@ -112,13 +113,13 @@ describe('findParentByEmail', () => {
   });
 
   it('refuses an account that does not hold Parent, so a servant is never matched', async () => {
-    const { roles } = signInAs({ userId: 'admin', isAdmin: true }, { profile: parentProfile, role: null });
+    const { rpc } = signInAs({ userId: 'admin', isAdmin: true }, { profile: parentProfile, role: null });
 
     const result = await findParentByEmail('mariam@example.com');
 
     expect(result.ok).toBe(false);
     expect(result.error).toMatch(/not a Parent/);
-    expect(roles.calls).toContainEqual(['eq', ['role', 'parent']]);
+    expect(rpc).toHaveBeenCalledWith('find_parent_account', { p_email: 'mariam@example.com' });
   });
 
   it('refuses something that is not an email, without a lookup', async () => {

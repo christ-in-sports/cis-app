@@ -43,7 +43,7 @@ export async function commitImportBatch(batchId: string): Promise<CommitResult> 
     return { ok: false, error: 'You are no longer signed in.' };
   }
   if (!isAdmin) {
-    return { ok: false, error: 'CSV import is available to Admins only.' };
+    return { ok: false, error: 'CSV import is available to Directors and Admins only.' };
   }
 
   const { data, error } = await supabase.rpc('import_commit', { p_batch_id: batchId });
@@ -59,7 +59,7 @@ export async function commitImportBatch(batchId: string): Promise<CommitResult> 
       };
     }
     if (error.code === FORBIDDEN) {
-      return { ok: false, error: 'CSV import is available to Admins only.' };
+      return { ok: false, error: 'CSV import is available to Directors and Admins only.' };
     }
 
     console.error('import_commit failed:', error.message);
