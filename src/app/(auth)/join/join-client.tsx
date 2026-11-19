@@ -5,38 +5,59 @@ import { useState } from 'react';
 import { PrimaryButton } from '@/components/cis/button';
 import { EmailCodeForm } from '@/components/cis/email-code-form';
 import { Field, FieldError, TextInput } from '@/components/cis/form';
-import { parentNameSchema } from '@/lib/validation/join';
+import { parentFirstNameSchema, parentLastNameSchema } from '@/lib/validation/join';
 import { joinAsSignedInUser, sendJoinCode, verifyJoinCode } from './actions';
 
 const REGISTER_PATH = '/register';
 
-/** A new or returning parent: name and email, then the emailed code. */
+/** A new or returning parent: first and last name and email, then the emailed code. */
 export default function JoinClient({ code }: { code: string }) {
-  const [name, setName] = useState('');
-  const [nameError, setNameError] = useState<string | undefined>();
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [firstError, setFirstError] = useState<string | undefined>();
+  const [lastError, setLastError] = useState<string | undefined>();
 
   return (
     <EmailCodeForm
       extraFields={
-        <Field label="Your name" error={nameError}>
-          {(props) => (
-            <TextInput
-              {...props}
-              type="text"
-              autoComplete="name"
-              placeholder="First and last name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          )}
-        </Field>
+        // Labelled "Parent" so nobody types their kid's name here: the kid comes next, on the registration form.
+        <div className="flex gap-cis-3">
+          <div className="min-w-0 flex-1">
+            <Field label="Parent first name" error={firstError}>
+              {(props) => (
+                <TextInput
+                  {...props}
+                  type="text"
+                  autoComplete="given-name"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                />
+              )}
+            </Field>
+          </div>
+          <div className="min-w-0 flex-1">
+            <Field label="Parent last name" error={lastError}>
+              {(props) => (
+                <TextInput
+                  {...props}
+                  type="text"
+                  autoComplete="family-name"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                />
+              )}
+            </Field>
+          </div>
+        </div>
       }
       validateExtra={() => {
-        const result = parentNameSchema.safeParse(name);
-        setNameError(result.success ? undefined : result.error.issues[0]?.message);
-        return result.success;
+        const first = parentFirstNameSchema.safeParse(firstName);
+        const last = parentLastNameSchema.safeParse(lastName);
+        setFirstError(first.success ? undefined : first.error.issues[0]?.message);
+        setLastError(last.success ? undefined : last.error.issues[0]?.message);
+        return first.success && last.success;
       }}
-      sendCode={(email) => sendJoinCode({ code, name, email })}
+      sendCode={(email) => sendJoinCode({ code, firstName, lastName, email })}
       verifyCode={(email, token) => verifyJoinCode({ code, email, token })}
       onVerified={() => {
         // A full load, so the new session cookie is what the next page sees.

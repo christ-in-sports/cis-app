@@ -188,14 +188,15 @@ test('a wrong or missing code shows a notice and no way to join', async ({ page 
 
     await expect(page.getByText('This link has changed')).toBeVisible();
     await expect(page.getByText('Use the latest link from the parent group chat.')).toBeVisible();
-    await expect(page.getByLabel('Your name')).toHaveCount(0);
+    await expect(page.getByLabel('Parent first name')).toHaveCount(0);
     await expect(page.getByLabel('Email')).toHaveCount(0);
   }
 });
 
 test('a new parent joins with the link, gets only Parent, and never sees servant screens', async ({ page }) => {
   await page.goto(JOIN_URL);
-  await page.getByLabel('Your name').fill('Mariam Guirguis');
+  await page.getByLabel('Parent first name').fill('Mariam');
+  await page.getByLabel('Parent last name').fill('Guirguis');
   await page.getByLabel('Email').fill(NEW_PARENT);
   await page.getByRole('button', { name: 'Email me a code' }).click();
   await expect(page.getByLabel('6-digit code')).toBeVisible();
@@ -219,7 +220,8 @@ test('a new parent joins with the link, gets only Parent, and never sees servant
 
 test('a wrong emailed code grants nothing', async ({ page }) => {
   await page.goto(JOIN_URL);
-  await page.getByLabel('Your name').fill('Mariam Guirguis');
+  await page.getByLabel('Parent first name').fill('Mariam');
+  await page.getByLabel('Parent last name').fill('Guirguis');
   await page.getByLabel('Email').fill(WRONG_CODE_PARENT);
   await page.getByRole('button', { name: 'Email me a code' }).click();
   const real = await codeSentTo(WRONG_CODE_PARENT);

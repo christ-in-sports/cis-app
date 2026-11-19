@@ -5,17 +5,27 @@ import { emailCodeSchema, emailSchema } from './email-code';
 /** The `code` in the join link. Its real check is `checkParentJoinCode`; this only bounds what is accepted. */
 const joinCodeSchema = z.string().trim().min(1).max(200);
 
-/** What a parent types into the join form. */
-export const parentNameSchema = z
+/** The parent's first and last name, typed separately on the join form. */
+export const parentFirstNameSchema = z
   .string()
   .trim()
-  .min(1, 'Enter your name')
-  .max(100, 'That name is too long');
+  .min(1, 'Enter your first name')
+  .max(50, 'That name is too long');
+
+export const parentLastNameSchema = z
+  .string()
+  .trim()
+  .min(1, 'Enter your last name')
+  .max(50, 'That name is too long');
+
+/** "First Last", as the account's display name: profiles keep one name, like servant registration's full_name. */
+export const parentDisplayName = (firstName: string, lastName: string) => `${firstName.trim()} ${lastName.trim()}`;
 
 /** Ask for a sign-in code as a new or returning parent. */
 export const sendJoinCodeSchema = z.object({
   code: joinCodeSchema,
-  name: parentNameSchema,
+  firstName: parentFirstNameSchema,
+  lastName: parentLastNameSchema,
   email: emailSchema,
 });
 

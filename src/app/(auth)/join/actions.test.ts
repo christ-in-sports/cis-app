@@ -21,7 +21,7 @@ jest.mock('@/lib/supabase/service', () => ({
 
 const originalEnv = process.env;
 const CODE = 'parent-code-123';
-const send = { code: CODE, name: ' Mariam Guirguis ', email: ' Mariam@Example.com ' };
+const send = { code: CODE, firstName: ' Mariam ', lastName: ' Guirguis ', email: ' Mariam@Example.com ' };
 const verify = { code: CODE, email: 'mariam@example.com', token: '123456' };
 
 beforeEach(() => {
@@ -60,7 +60,7 @@ describe('sendJoinCode', () => {
     expect(createUser).toHaveBeenCalledWith({
       email: 'mariam@example.com',
       email_confirm: true,
-      user_metadata: { display_name: 'Mariam Guirguis' },
+      user_metadata: { display_name: 'Mariam Guirguis', first_name: 'Mariam', last_name: 'Guirguis' },
     });
     expect(signInWithOtp).toHaveBeenCalledWith({
       email: 'mariam@example.com',
@@ -112,7 +112,8 @@ describe('sendJoinCode', () => {
   });
 
   it('refuses a missing name or a bad email before creating anything', async () => {
-    expect((await run(() => sendJoinCode({ ...send, name: '  ' }))).error).toMatch(/name/i);
+    expect((await run(() => sendJoinCode({ ...send, firstName: '  ' }))).error).toMatch(/first name/i);
+    expect((await run(() => sendJoinCode({ ...send, lastName: '' }))).error).toMatch(/last name/i);
     expect((await run(() => sendJoinCode({ ...send, email: 'nope' }))).error).toMatch(/email/i);
     expect(createUser).not.toHaveBeenCalled();
     expect(signInWithOtp).not.toHaveBeenCalled();
