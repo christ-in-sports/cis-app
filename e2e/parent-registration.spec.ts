@@ -481,12 +481,12 @@ test('a kid on a team can still have their photo replaced, and the old one is de
   }
 });
 
-test('the waiver links to the program\'s document in a new tab', async ({ page }) => {
+test('the waiver links to the program\'s consent form in a new tab', async ({ page }) => {
   await signIn(page, PARENT_EMAIL);
   await page.goto('/register');
   await page.getByRole('button', { name: 'Add another kid' }).click();
 
   const link = page.getByRole('link', { name: 'Read the liability waiver' });
-  await expect(link).toHaveAttribute('href', /^https:\/\/drive\.google\.com\//);
+  await expect(link).toHaveAttribute('href', /^https:\/\/docs\.google\.com\/forms\//);
   await expect(link).toHaveAttribute('target', '_blank');
 });

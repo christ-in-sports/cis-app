@@ -55,3 +55,6 @@ docs/diagrams/
 .claude/settings.local.json
 .claude/launch.json
 .claude/skills/
+
+# Walkthrough videos for parents: shared directly, not kept in git
+videos/
