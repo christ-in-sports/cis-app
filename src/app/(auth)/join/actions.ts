@@ -4,7 +4,7 @@
  * The parent join link (ENG-31, `docs/arch_decisions.md` 2026-10-25).
  *
  * One link in the parent group chat carries a shared code (`PARENT_JOIN_CODE`).
- * A parent gives their name and email, types the 6-digit code emailed to them,
+ * A parent gives their first and last name and email, types the 6-digit code emailed to them,
  * and ends up holding the Parent role. This is the one place a role is granted
  * without an Admin, so it is deliberately narrow:
  *
@@ -29,7 +29,7 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { checkParentJoinCode } from '@/lib/auth/join-code';
-import { sendJoinCodeSchema, verifyJoinCodeSchema } from '@/lib/validation/join';
+import { parentDisplayName, sendJoinCodeSchema, verifyJoinCodeSchema } from '@/lib/validation/join';
 import { z } from 'zod';
 
 export interface JoinResult {
@@ -86,7 +86,13 @@ export async function sendJoinCode(input: unknown): Promise<JoinResult> {
   const { error: createError } = await service.auth.admin.createUser({
     email: parsed.data.email,
     email_confirm: true,
-    user_metadata: { display_name: parsed.data.name },
+    // One display name for the profile, as everywhere else; the two parts are kept in
+    // the metadata too, in case a screen ever needs them apart.
+    user_metadata: {
+      display_name: parentDisplayName(parsed.data.firstName, parsed.data.lastName),
+      first_name: parsed.data.firstName,
+      last_name: parsed.data.lastName,
+    },
   });
   if (createError && createError.code !== EMAIL_EXISTS) {
     console.error('sendJoinCode createUser failed:', createError.code);

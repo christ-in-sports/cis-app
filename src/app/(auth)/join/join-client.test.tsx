@@ -32,24 +32,37 @@ async function click(name: string) {
 }
 
 describe('JoinClient', () => {
-  it('asks for a name before it asks for a code', async () => {
+  it("asks for the parent's first and last name before it asks for a code", async () => {
     render(<JoinClient code="link-code" />);
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'mariam@example.com' } });
     await click('Email me a code');
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Enter your name');
+    const alerts = screen.getAllByRole('alert').map((a) => a.textContent);
+    expect(alerts).toEqual(expect.arrayContaining([expect.stringContaining('Enter your first name'), expect.stringContaining('Enter your last name')]));
     expect(sendMock).not.toHaveBeenCalled();
   });
 
-  it('sends the name, the email and the link code, then asks for the emailed code', async () => {
+  it('still asks for the last name when only the first is filled in', async () => {
     render(<JoinClient code="link-code" />);
-    fireEvent.change(screen.getByLabelText('Your name'), { target: { value: 'Mariam Guirguis' } });
+    fireEvent.change(screen.getByLabelText('Parent first name'), { target: { value: 'Mariam' } });
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'mariam@example.com' } });
+    await click('Email me a code');
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Enter your last name');
+    expect(sendMock).not.toHaveBeenCalled();
+  });
+
+  it('sends both names, the email and the link code, then asks for the emailed code', async () => {
+    render(<JoinClient code="link-code" />);
+    fireEvent.change(screen.getByLabelText('Parent first name'), { target: { value: 'Mariam' } });
+    fireEvent.change(screen.getByLabelText('Parent last name'), { target: { value: 'Guirguis' } });
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'mariam@example.com' } });
     await click('Email me a code');
 
     expect(sendMock).toHaveBeenCalledWith({
       code: 'link-code',
-      name: 'Mariam Guirguis',
+      firstName: 'Mariam',
+      lastName: 'Guirguis',
       email: 'mariam@example.com',
     });
     expect(screen.getByLabelText('6-digit code')).toBeInTheDocument();
@@ -57,7 +70,8 @@ describe('JoinClient', () => {
 
   it('checks the emailed code against the same link code', async () => {
     render(<JoinClient code="link-code" />);
-    fireEvent.change(screen.getByLabelText('Your name'), { target: { value: 'Mariam' } });
+    fireEvent.change(screen.getByLabelText('Parent first name'), { target: { value: 'Mariam' } });
+    fireEvent.change(screen.getByLabelText('Parent last name'), { target: { value: 'Guirguis' } });
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'mariam@example.com' } });
     await click('Email me a code');
     await act(async () => {

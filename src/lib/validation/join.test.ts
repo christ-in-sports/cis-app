@@ -1,24 +1,39 @@
-import { parentNameSchema, sendJoinCodeSchema, verifyJoinCodeSchema } from './join';
+import {
+  parentDisplayName,
+  parentFirstNameSchema,
+  parentLastNameSchema,
+  sendJoinCodeSchema,
+  verifyJoinCodeSchema,
+} from './join';
 
-describe('parentNameSchema', () => {
+describe('parent first and last name', () => {
   it('trims, and refuses an empty or very long name', () => {
-    expect(parentNameSchema.parse('  Mariam Guirguis ')).toBe('Mariam Guirguis');
-    expect(parentNameSchema.safeParse('   ').success).toBe(false);
-    expect(parentNameSchema.safeParse('x'.repeat(101)).success).toBe(false);
+    expect(parentFirstNameSchema.parse('  Mariam ')).toBe('Mariam');
+    expect(parentLastNameSchema.parse(' Guirguis  ')).toBe('Guirguis');
+    expect(parentFirstNameSchema.safeParse('   ').error?.issues[0]?.message).toBe('Enter your first name');
+    expect(parentLastNameSchema.safeParse('').error?.issues[0]?.message).toBe('Enter your last name');
+    expect(parentFirstNameSchema.safeParse('x'.repeat(51)).success).toBe(false);
+  });
+
+  it('joins them into one display name for the profile', () => {
+    expect(parentDisplayName(' Mariam ', ' Guirguis ')).toBe('Mariam Guirguis');
   });
 });
 
 describe('sendJoinCodeSchema', () => {
-  it('normalises the email and keeps the name', () => {
+  it('normalises the email and keeps both names', () => {
     expect(
-      sendJoinCodeSchema.parse({ code: 'c', name: ' Mariam ', email: ' Mariam@Example.COM ' }),
-    ).toEqual({ code: 'c', name: 'Mariam', email: 'mariam@example.com' });
+      sendJoinCodeSchema.parse({ code: 'c', firstName: ' Mariam ', lastName: 'Guirguis ', email: ' Mariam@Example.COM ' }),
+    ).toEqual({ code: 'c', firstName: 'Mariam', lastName: 'Guirguis', email: 'mariam@example.com' });
   });
 
-  it('needs a code, a name and an email', () => {
-    expect(sendJoinCodeSchema.safeParse({ name: 'M', email: 'm@example.com' }).success).toBe(false);
-    expect(sendJoinCodeSchema.safeParse({ code: 'c', email: 'm@example.com' }).success).toBe(false);
-    expect(sendJoinCodeSchema.safeParse({ code: 'c', name: 'M', email: 'nope' }).success).toBe(false);
+  it('needs a code, a first name, a last name and an email', () => {
+    const ok = { code: 'c', firstName: 'M', lastName: 'G', email: 'm@example.com' };
+    expect(sendJoinCodeSchema.safeParse(ok).success).toBe(true);
+    for (const key of ['code', 'firstName', 'lastName'] as const) {
+      expect(sendJoinCodeSchema.safeParse({ ...ok, [key]: undefined }).success).toBe(false);
+    }
+    expect(sendJoinCodeSchema.safeParse({ ...ok, email: 'nope' }).success).toBe(false);
   });
 });
 
