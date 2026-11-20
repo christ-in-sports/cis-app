@@ -177,7 +177,8 @@ test('parent-only accounts are on the Parents tab, and move to Servants once the
 
   const coachBox = row.getByRole('checkbox', { name: `Coach for ${PARENT_NAME}` });
   await expect(coachBox).toBeEnabled();
-  await coachBox.click();
+  // The real input is visually hidden; the label is what a thumb taps.
+  await row.locator('label').filter({ hasText: 'Coach' }).click();
   await expect(coachBox).toBeChecked();
 
   await page.getByRole('link', { name: /^Servants/ }).click();
