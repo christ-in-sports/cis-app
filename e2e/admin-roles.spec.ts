@@ -165,11 +165,13 @@ test('the screen is for servants: no Kid box, and kid accounts are not listed', 
 test('parent-only accounts are on the Parents tab, and move to Servants once they hold another role', async ({ page }) => {
   await signIn(page, ADMIN);
   await page.goto('/admin/roles');
+  // Not the Registration section's own Servants tab (/servants).
+  const accountTabs = page.getByRole('navigation', { name: 'Accounts' });
 
   await expect(page.getByRole('region', { name: SERVANT_NAME })).toBeVisible();
   await expect(page.getByRole('region', { name: PARENT_NAME })).toHaveCount(0);
 
-  await page.getByRole('link', { name: /^Parents/ }).click();
+  await accountTabs.getByRole('link', { name: /^Parents/ }).click();
   await expect(page).toHaveURL(/\/admin\/roles\?view=parents$/);
   const row = page.getByRole('region', { name: PARENT_NAME });
   await expect(row).toBeVisible();
@@ -181,7 +183,7 @@ test('parent-only accounts are on the Parents tab, and move to Servants once the
   await row.locator('label').filter({ hasText: 'Coach' }).click();
   await expect(coachBox).toBeChecked();
 
-  await page.getByRole('link', { name: /^Servants/ }).click();
+  await accountTabs.getByRole('link', { name: /^Servants/ }).click();
   await expect(page).toHaveURL(/\/admin\/roles$/);
   await expect(page.getByRole('region', { name: PARENT_NAME })).toBeVisible();
 });
