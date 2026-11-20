@@ -1,22 +1,17 @@
 /**
  * `DivisionTabs`, from the design system's component inventory (`DESIGN_SYSTEM.md` §7).
  *
- * Juniors / Ambassadors. The active tab is joined to the sheet below it, like a
- * file tab: its top corners are the one 18px radius in the system (§6) and the
- * sheet under it squares its own (`<Sheet joined>`).
- *
- * Links, not buttons: the division lives in the URL (`?division=`) so a screen
- * can be bookmarked or shared, and the server renders the right data.
+ * Juniors / Ambassadors, as `SheetTabs` joined to the sheet below
+ * (`<Sheet joined>`). The division lives in the URL (`?division=`).
  */
 
-import Link from 'next/link';
-import { cn } from '@/lib/utils';
+import { SheetTabs } from '@/components/cis/sheet-tabs';
 
 export type DivisionKey = 'juniors' | 'ambassadors';
 
-const TABS: { key: DivisionKey; name: string; ages: string }[] = [
-  { key: 'juniors', name: 'Juniors', ages: 'Ages 10–13' },
-  { key: 'ambassadors', name: 'Ambassadors', ages: 'Ages 14–18' },
+const TABS: { key: DivisionKey; name: string; note: string }[] = [
+  { key: 'juniors', name: 'Juniors', note: 'Ages 10–13' },
+  { key: 'ambassadors', name: 'Ambassadors', note: 'Ages 14–18' },
 ];
 
 export function DivisionTabs({
@@ -27,26 +22,10 @@ export function DivisionTabs({
   hrefFor: (division: DivisionKey) => string;
 }) {
   return (
-    <nav aria-label="Division" className="flex gap-2 px-3.5 pt-2.5">
-      {TABS.map((tab) => {
-        const on = tab.key === value;
-        return (
-          <Link
-            key={tab.key}
-            href={hrefFor(tab.key)}
-            aria-current={on ? 'page' : undefined}
-            className={cn(
-              'flex min-h-[60px] flex-1 flex-col items-center justify-center gap-0.5 rounded-t-cis-tab px-2 pb-3 pt-[11px] text-center text-[14px] font-extrabold',
-              on ? 'bg-cis-paper-light text-cis-ink' : 'bg-cis-chrome-tab text-cis-action',
-            )}
-          >
-            {tab.name}
-            <small className={cn('text-cis-xs font-bold', 'text-cis-ink-muted')}>
-              {tab.ages}
-            </small>
-          </Link>
-        );
-      })}
-    </nav>
+    <SheetTabs
+      label="Division"
+      value={value}
+      tabs={TABS.map((tab) => ({ ...tab, href: hrefFor(tab.key) }))}
+    />
   );
 }

@@ -172,4 +172,30 @@ describe('the roles screen', () => {
     const names = screen.getAllByRole('region').map((s) => s.getAttribute('aria-label'));
     expect(names[0]).toBe('Nabil New');
   });
+
+  describe('on the Parents tab', () => {
+    const parent: PersonRoles = { id: 'p', name: 'Mariam Guirguis', email: 'mariam@example.com', roles: ['parent'] };
+
+    it('counts parents and says how to make one a servant', () => {
+      render(<RolesClient view="parents" people={[parent]} currentUserId="me" />);
+      expect(screen.getByText(/1 parent with no other role/)).toBeInTheDocument();
+      expect(screen.queryByText(/no role yet/)).not.toBeInTheDocument();
+    });
+
+    it('lets a Director tick Coach for a parent who also serves', async () => {
+      render(<RolesClient view="parents" people={[parent]} currentUserId="me" />);
+
+      await act(async () => {
+        fireEvent.click(box('Coach', 'Mariam Guirguis'));
+      });
+
+      expect(grantRoleMock).toHaveBeenCalledWith('p', 'coach');
+      expect(box('Coach', 'Mariam Guirguis')).toBeChecked();
+    });
+
+    it('says when no parents have joined', () => {
+      render(<RolesClient view="parents" people={[]} currentUserId="me" />);
+      expect(screen.getByText('No parents have joined yet.')).toBeInTheDocument();
+    });
+  });
 });
