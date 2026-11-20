@@ -1,7 +1,8 @@
 'use client';
 
 /**
- * The Director roles screen: every servant's account, and a tick box per role.
+ * The Director roles screen: one tab's accounts (Servants or Parents, chosen by
+ * the page), and a tick box per role.
  *
  * People with no role come first, because they are the new servants waiting for
  * access. That order is fixed when the page loads: re-sorting as boxes are
@@ -15,9 +16,12 @@
  * The boxes stay disabled until the page has hydrated. Before that the markup is
  * on screen but nothing is listening, so a tap on a box would go nowhere; a faded
  * box says "not ready" instead of silently eating the tap.
+ *
+ * Which tab a person is on is also fixed at load: ticking Coach for a parent
+ * keeps them here until the next visit, then lists them under Servants.
  */
 
-import { useState, useSyncExternalStore } from 'react';
+import { useState, useSyncExternalStore, type ReactNode } from 'react';
 
 import { BoardHeader } from '@/components/cis/board-shell';
 import { FieldError, TextInput, TickRow } from '@/components/cis/form';
@@ -25,6 +29,7 @@ import { RegistrationColumn } from '@/components/cis/registration-frame';
 import { Sheet, SheetRule } from '@/components/cis/sheet';
 import { ASSIGNABLE_ROLES, ROLE_LABELS, type AppRole, type AssignableRole } from '@/lib/auth/app-roles';
 import { grantRole, revokeRole } from './actions';
+import type { RolesView } from './people';
 
 export interface PersonRoles {
   id: string;
@@ -48,9 +53,14 @@ function useHydrated(): boolean {
 }
 
 export default function RolesClient({
+  view = 'servants',
+  tabs,
   people,
   currentUserId,
 }: {
+  view?: RolesView;
+  /** The Servants / Parents tabs, joined to the first sheet. */
+  tabs?: ReactNode;
   people: PersonRoles[];
   currentUserId: string;
 }) {
@@ -114,26 +124,36 @@ export default function RolesClient({
     <>
       <BoardHeader kicker="Director" title="Roles" />
       <RegistrationColumn>
-        <Sheet className="flex flex-col gap-cis-3 px-cis-4 pb-cis-4 pt-cis-4">
-          <p className="m-0 text-cis-sm font-semibold text-cis-ink-muted">
-            {people.length} {people.length === 1 ? 'person' : 'people'} ·{' '}
-            {withoutRole === 0
-              ? 'everyone has a role'
-              : `${withoutRole} ${withoutRole === 1 ? 'has' : 'have'} no role yet`}
-          </p>
-          <TextInput
-            type="search"
-            aria-label="Search people"
-            placeholder="Search name or email…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </Sheet>
+        <div>
+          {tabs}
+          <Sheet joined={Boolean(tabs)} className="flex flex-col gap-cis-3 px-cis-4 pb-cis-4 pt-cis-4">
+            <p className="m-0 text-cis-sm font-semibold text-cis-ink-muted">
+              {view === 'parents'
+                ? `${people.length} ${people.length === 1 ? 'parent' : 'parents'} with no other role. Tick another role for a parent who also serves.`
+                : `${people.length} ${people.length === 1 ? 'person' : 'people'} · ${
+                    withoutRole === 0
+                      ? 'everyone has a role'
+                      : `${withoutRole} ${withoutRole === 1 ? 'has' : 'have'} no role yet`
+                  }`}
+            </p>
+            <TextInput
+              type="search"
+              aria-label="Search people"
+              placeholder="Search name or email…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </Sheet>
+        </div>
 
         <Sheet className="px-cis-4 pb-cis-2 pt-cis-2">
           {shown.length === 0 && (
             <p className="m-0 py-cis-4 text-cis-base text-cis-ink-muted">
-              {q ? 'Nobody matches that search.' : 'No accounts yet.'}
+              {q
+                ? 'Nobody matches that search.'
+                : view === 'parents'
+                  ? 'No parents have joined yet.'
+                  : 'No accounts yet.'}
             </p>
           )}
           {shown.map((person, index) => {

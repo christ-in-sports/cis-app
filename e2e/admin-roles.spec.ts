@@ -79,24 +79,30 @@ async function signedInPage(browser: Browser, email: string): Promise<Page> {
 
 const KID = 'e2e-roles-kid@local.test';
 const KID_NAME = 'E2E Roles Kid';
+const PARENT = 'e2e-roles-parent@local.test';
+const PARENT_NAME = 'E2E Roles Parent';
 
 let adminId: string;
 let servantId: string;
 let kidId: string;
+let parentId: string;
 
 test.beforeEach(async () => {
   adminId = await ensureUser(ADMIN, 'E2E Roles Admin');
   servantId = await ensureUser(SERVANT, SERVANT_NAME);
   kidId = await ensureUser(KID, KID_NAME);
+  parentId = await ensureUser(PARENT, PARENT_NAME);
   await setRoles(adminId, ['director']);
   await setRoles(servantId, []);
   await setRoles(kidId, ['kid']);
+  await setRoles(parentId, ['parent']);
 });
 
 test.afterAll(async () => {
   if (adminId) await setRoles(adminId, []);
   if (servantId) await setRoles(servantId, []);
   if (kidId) await setRoles(kidId, []);
+  if (parentId) await setRoles(parentId, []);
 });
 
 test('a Director gives a new servant the Coach role, and they can then open Attendance', async ({ page, browser }) => {
@@ -154,6 +160,29 @@ test('the screen is for servants: no Kid box, and kid accounts are not listed', 
   await expect(page.getByRole('region', { name: SERVANT_NAME })).toBeVisible();
   await expect(page.getByRole('region', { name: KID_NAME })).toHaveCount(0);
   await expect(page.getByRole('checkbox', { name: /^Kid for/ })).toHaveCount(0);
+});
+
+test('parent-only accounts are on the Parents tab, and move to Servants once they hold another role', async ({ page }) => {
+  await signIn(page, ADMIN);
+  await page.goto('/admin/roles');
+
+  await expect(page.getByRole('region', { name: SERVANT_NAME })).toBeVisible();
+  await expect(page.getByRole('region', { name: PARENT_NAME })).toHaveCount(0);
+
+  await page.getByRole('link', { name: /^Parents/ }).click();
+  await expect(page).toHaveURL(/\/admin\/roles\?view=parents$/);
+  const row = page.getByRole('region', { name: PARENT_NAME });
+  await expect(row).toBeVisible();
+  await expect(page.getByRole('region', { name: SERVANT_NAME })).toHaveCount(0);
+
+  const coachBox = row.getByRole('checkbox', { name: `Coach for ${PARENT_NAME}` });
+  await expect(coachBox).toBeEnabled();
+  await coachBox.click();
+  await expect(coachBox).toBeChecked();
+
+  await page.getByRole('link', { name: /^Servants/ }).click();
+  await expect(page).toHaveURL(/\/admin\/roles$/);
+  await expect(page.getByRole('region', { name: PARENT_NAME })).toBeVisible();
 });
 
 test("a Director can't untick their own Director box", async ({ page }) => {

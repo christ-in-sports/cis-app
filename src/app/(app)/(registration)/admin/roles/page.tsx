@@ -6,23 +6,31 @@
  * only a Director can read everyone's `user_roles` or write them, so a non-Director
  * who reached this page anyway would see only themselves and could change nothing.
  *
- * Servants only: an account holding the `kid` role is not listed. Kids get that
- * role automatically when they register, and are not people a Director assigns
- * roles to.
+ * Two tabs (`?view=`): Servants, the default, and Parents, the accounts whose only
+ * role is Parent. Kid accounts are on neither (`people.ts`).
  */
 
 import { redirect } from 'next/navigation';
 
+import { SheetTabs } from '@/components/cis/sheet-tabs';
 import { APP_ROLES, type AppRole } from '@/lib/auth/app-roles';
 import { checkRole } from '@/lib/auth/roles';
+import { rolesHref, rolesViewFrom, splitByView } from './people';
 import RolesClient, { type PersonRoles } from './roles-client';
 
 export const dynamic = 'force-dynamic';
 
-export default async function RolesPage() {
+const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+export default async function RolesPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const view = rolesViewFrom((await searchParams).view);
   const { supabase, userId, hasRole } = await checkRole('director');
 
-  if (userId === null) redirect('/login?redirect=/admin/roles');
+  if (userId === null) redirect(`/login?redirect=${encodeURIComponent(rolesHref(view))}`);
   if (!hasRole) redirect('/');
 
   const [{ data: profiles }, { data: grants }] = await Promise.all([
@@ -36,14 +44,26 @@ export default async function RolesPage() {
     rolesByUser.set(grant.user_id, [...(rolesByUser.get(grant.user_id) ?? []), grant.role]);
   }
 
-  const people: PersonRoles[] = (profiles ?? [])
-    .filter((p) => !(rolesByUser.get(p.id) ?? []).includes('kid'))
-    .map((p) => ({
+  const lists = splitByView<PersonRoles>(
+    (profiles ?? []).map((p) => ({
       id: p.id,
       name: p.display_name,
       email: p.email,
       roles: rolesByUser.get(p.id) ?? [],
-    }));
+    })),
+  );
 
-  return <RolesClient people={people} currentUserId={userId} />;
+  const tabs = (
+    <SheetTabs
+      label="Accounts"
+      value={view}
+      className="px-0 pt-0"
+      tabs={[
+        { key: 'servants', name: 'Servants', note: count(lists.servants.length, 'account', 'accounts'), href: rolesHref('servants') },
+        { key: 'parents', name: 'Parents', note: count(lists.parents.length, 'account', 'accounts'), href: rolesHref('parents') },
+      ]}
+    />
+  );
+
+  return <RolesClient key={view} view={view} tabs={tabs} people={lists[view]} currentUserId={userId} />;
 }
