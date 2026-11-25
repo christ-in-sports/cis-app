@@ -236,6 +236,7 @@ export function TickRow({
   error,
   disabled,
   centered,
+  topAligned,
   children,
 }: {
   checked: boolean;
@@ -249,6 +250,12 @@ export function TickRow({
    * on it instead, so a taller label does not sit below the box.
    */
   centered?: boolean;
+  /**
+   * A label of several lines, such as a waiver statement. The default nudges a
+   * single line down to the box's middle; this starts the text level with the
+   * top of the box instead, so the box does not sit above the words.
+   */
+  topAligned?: boolean;
   children: ReactNode;
 }) {
   const id = useId();
@@ -296,7 +303,7 @@ export function TickRow({
         <span
           className={cn(
             'text-cis-base font-bold leading-[1.45] text-cis-ink',
-            !centered && 'pt-[10px]',
+            !centered && !topAligned && 'pt-[10px]',
           )}
         >
           {children}
