@@ -220,7 +220,7 @@ export default function RegistrationsClient({
   // unalphabetised roster is unscannable.
   const [rows, setRows] = useState<RosterEntry[]>(() => sortRows(initial));
   const [search, setSearch] = useState('');
-  const [gradeFilter, setGradeFilter] = useState('all');
+  const [divisionFilter, setDivisionFilter] = useState<'all' | Division>('all');
   const [saving, setSaving] = useState(false);
 
   const [editing, setEditing] = useState<RosterEntry | null>(null);
@@ -252,7 +252,7 @@ export default function RegistrationsClient({
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return rows.filter((r) => {
-      if (gradeFilter !== 'all' && String(r.grade) !== gradeFilter) return false;
+      if (divisionFilter !== 'all' && r.division !== divisionFilter) return false;
       if (chase === 'consent' && r.consent_given_at !== null) return false;
       if (chase === 'payment' && r.payments.length > 0) return false;
       if (missingPhotoOnly && r.kid.photo) return false;
@@ -262,7 +262,7 @@ export default function RegistrationsClient({
         r.kid.guardian_phone, r.kid.guardian_email, r.kid.phone,
       ].some((v) => v?.toLowerCase().includes(q));
     });
-  }, [rows, search, gradeFilter, chase, missingPhotoOnly]);
+  }, [rows, search, divisionFilter, chase, missingPhotoOnly]);
 
   /** Every kid needs a photo; these are the ones still without. */
   const missingPhoto = useMemo(() => rows.filter((r) => !r.kid.photo).length, [rows]);
@@ -278,10 +278,12 @@ export default function RegistrationsClient({
     [rows],
   );
 
-  const gradeCounts = useMemo(() => {
-    const m = new Map<number, number>();
-    rows.forEach((r) => m.set(r.grade, (m.get(r.grade) ?? 0) + 1));
-    return m;
+  const divisionCounts = useMemo(() => {
+    const counts: Record<Division, number> = { juniors: 0, ambassadors: 0 };
+    rows.forEach((r) => {
+      counts[r.division] += 1;
+    });
+    return counts;
   }, [rows]);
 
   const openNew = () => {
@@ -680,14 +682,20 @@ export default function RegistrationsClient({
             onChange={(e) => setSearch(e.target.value)}
             className="h-12 rounded-cis-chip border-2 border-cis-ink bg-cis-paper-light text-cis-base text-cis-ink placeholder:text-cis-ink-muted"
           />
+          {/* By division rather than grade: Juniors and Ambassadors are how the
+              program is run (teams, sports, attendance), and grade 7 can be in
+              either, so a grade filter could not answer "who are the Juniors". */}
           <select
-            value={gradeFilter}
-            onChange={(e) => setGradeFilter(e.target.value)}
+            aria-label="Division"
+            value={divisionFilter}
+            onChange={(e) => setDivisionFilter(e.target.value as 'all' | Division)}
             className="h-12 rounded-cis-chip border-2 border-cis-ink bg-cis-paper-light px-3 text-cis-base font-bold text-cis-ink"
           >
-            <option value="all">All grades</option>
-            {REGISTRATION_GRADES.filter((g) => gradeCounts.has(g)).map((g) => (
-              <option key={g} value={String(g)}>Grade {g} ({gradeCounts.get(g)})</option>
+            <option value="all">All divisions</option>
+            {(Object.keys(DIVISION_SHORT) as Division[]).map((d) => (
+              <option key={d} value={d}>
+                {DIVISION_SHORT[d]} ({divisionCounts[d]})
+              </option>
             ))}
           </select>
         </div>

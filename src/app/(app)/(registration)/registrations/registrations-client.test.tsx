@@ -265,6 +265,51 @@ const paid = () =>
     payments: [{ id: 'pay-1', amount_cents: 4000, method: 'venmo', received_at: '2026-10-01T18:00:00Z' }],
   });
 
+describe('filtering by division', () => {
+  const rows = [
+    entry(),
+    entry({
+      registration_id: 'reg-2',
+      grade: 9,
+      division: 'ambassadors',
+      kid: { ...entry().kid, id: 'kid-2', first_name: 'Marina', last_name: 'Hanna' },
+    }),
+    entry({
+      registration_id: 'reg-3',
+      grade: 7,
+      division: 'ambassadors',
+      kid: { ...entry().kid, id: 'kid-3', first_name: 'Peter', last_name: 'Sorial' },
+    }),
+  ];
+
+  it('offers Juniors and Ambassadors with their counts, not grades', () => {
+    renderRoster({ rows });
+    const select = screen.getByRole('combobox', { name: 'Division' });
+    expect(within(select).getAllByRole('option').map((o) => o.textContent)).toEqual([
+      'All divisions',
+      'Juniors (1)',
+      'Ambassadors (2)',
+    ]);
+  });
+
+  it('narrows the roster to the chosen division, including a grade 7 in either', () => {
+    renderRoster({ rows });
+    fireEvent.change(screen.getByRole('combobox', { name: 'Division' }), {
+      target: { value: 'ambassadors' },
+    });
+    expect(screen.queryByText('Mina Guirguis')).not.toBeInTheDocument();
+    expect(screen.getByText('Marina Hanna')).toBeInTheDocument();
+    expect(screen.getByText('Peter Sorial')).toBeInTheDocument();
+    expect(screen.getByText(/3 registered · 2 shown/)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Division' }), {
+      target: { value: 'juniors' },
+    });
+    expect(screen.getByText('Mina Guirguis')).toBeInTheDocument();
+    expect(screen.queryByText('Marina Hanna')).not.toBeInTheDocument();
+  });
+});
+
 describe('payments -- the "haven\'t paid" chase mode', () => {
   const enterPaymentMode = () =>
     fireEvent.click(screen.getByRole('button', { name: /haven't paid/i }));
