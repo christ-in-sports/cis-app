@@ -1043,10 +1043,6 @@ function PaymentSheet({ kidName }: { kidName: string }) {
         {REGISTRATION_FEE_CENTS === null ? 'Pay with Venmo' : `Pay ${formatCents(REGISTRATION_FEE_CENTS)} with Venmo`}
       </a>
       <p className="m-0 text-cis-sm font-semibold leading-[1.4] text-cis-ink-muted">
-        The note will say “{name ? `${name} CIS Registration` : 'CIS Registration'}”.
-        {name ? '' : ' Type your kid’s name above first so we know who it is for.'}
-      </p>
-      <p className="m-0 text-cis-sm font-semibold leading-[1.4] text-cis-ink-muted">
         No Venmo app?{' '}
         <a href={venmoPayUrl(name)} target="_blank" rel="noopener noreferrer" className={externalLink}>
           Pay on the Venmo website
