@@ -398,6 +398,18 @@ describe('paying for registration', () => {
     }
   });
 
+  it('offers the Venmo website in a new tab, for a phone without the app', () => {
+    render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
+    fireEvent.change(field('First name'), { target: { value: 'Marina' } });
+    fireEvent.change(field('Last name'), { target: { value: 'Guirguis' } });
+
+    const web = screen.getByRole('link', { name: 'Pay on the Venmo website' });
+    expect(web).toHaveAttribute('target', '_blank');
+    const url = new URL(web.getAttribute('href')!);
+    expect(url.hostname).toBe('account.venmo.com');
+    expect(url.searchParams.get('note')).toBe('Marina Guirguis CIS Registration');
+  });
+
   it('uses a returning kid\'s name in the Venmo note', () => {
     render(<RegisterClient season={season} kids={[kid()]} email={SIGNED_IN} />);
     fireEvent.click(screen.getByText('Mina Guirguis'));
