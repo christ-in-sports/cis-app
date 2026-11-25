@@ -4,6 +4,8 @@ import {
   PAYMENT_METHOD_IDS,
   formatCents,
   recordPaymentSchema,
+  venmoAppUrl,
+  venmoPayUrl,
 } from './payment';
 
 describe('formatCents', () => {
@@ -66,5 +68,39 @@ describe('recordPaymentSchema', () => {
 describe('PAYMENT_METHODS', () => {
   it('lists one entry per database method, in the order the form shows them', () => {
     expect(PAYMENT_METHODS.map((m) => m.id)).toEqual([...PAYMENT_METHOD_IDS]);
+  });
+});
+
+describe('venmoPayUrl', () => {
+  it('fills in the recipient, the $100 fee and the kid name note', () => {
+    const url = new URL(venmoPayUrl('  Marina   Guirguis ', 10_000));
+    expect(url.origin + url.pathname).toBe('https://account.venmo.com/pay');
+    expect(url.searchParams.get('txn')).toBe('pay');
+    expect(url.searchParams.get('recipients')).toBe('CIS-stantonios');
+    expect(url.searchParams.get('amount')).toBe('100');
+    expect(url.searchParams.get('note')).toBe('Marina Guirguis CIS Registration');
+    // Spaces as %20, never "+".
+    expect(url.search).toContain('note=Marina%20Guirguis%20CIS%20Registration');
+  });
+
+  it('still works before a name is typed, and without a fee', () => {
+    const url = new URL(venmoPayUrl('', null));
+    expect(url.searchParams.get('note')).toBe('CIS Registration');
+    expect(url.searchParams.has('amount')).toBe(false);
+  });
+
+  it('keeps cents when the fee has them, and escapes the name', () => {
+    const url = new URL(venmoPayUrl('Mina & Mark', 4250));
+    expect(url.searchParams.get('amount')).toBe('42.50');
+    expect(url.searchParams.get('note')).toBe('Mina & Mark CIS Registration');
+  });
+});
+
+describe('venmoAppUrl', () => {
+  it('opens the Venmo app with the same fields filled in', () => {
+    const url = venmoAppUrl('Marina Guirguis', 10_000);
+    expect(url).toBe(
+      'venmo://paycharge?txn=pay&recipients=CIS-stantonios&amount=100&note=Marina%20Guirguis%20CIS%20Registration',
+    );
   });
 });

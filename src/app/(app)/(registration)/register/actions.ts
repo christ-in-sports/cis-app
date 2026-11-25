@@ -66,7 +66,7 @@ export async function registerKid(input: unknown): Promise<RegisterKidResult> {
       case FORBIDDEN:
         return { ok: false, error: 'That kid is not on your account.' };
       case WAIVER:
-        return { ok: false, error: 'You must agree to the liability waiver.' };
+        return { ok: false, error: 'Tick all four boxes to agree to the waiver.' };
       case NO_SEASON:
         return { ok: false, error: 'Registration is not open right now.' };
       case ON_TEAM:

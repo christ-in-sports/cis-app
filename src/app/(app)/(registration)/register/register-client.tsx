@@ -50,8 +50,21 @@ import {
 import { PhotoError } from '@/lib/photo/prepare';
 import type { KidPhoto } from '@/lib/photo/types';
 import type { ParentKid } from '@/lib/registration/parent';
-import { WAIVER_TITLE, WAIVER_URL } from '@/lib/registration/waiver';
-import { PAYMENT_METHODS, REGISTRATION_FEE_CENTS, formatCents } from '@/lib/registration/payment';
+import {
+  WAIVER_ACKNOWLEDGMENT,
+  WAIVER_HEADING,
+  WAIVER_PARAGRAPHS,
+  WAIVER_STATEMENTS,
+  WAIVER_TITLE,
+  waiverAgreed,
+} from '@/lib/registration/waiver';
+import {
+  PAYMENT_METHODS,
+  REGISTRATION_FEE_CENTS,
+  formatCents,
+  venmoAppUrl,
+  venmoPayUrl,
+} from '@/lib/registration/payment';
 import { SEASON_SUNDAYS, formatSunday } from '@/lib/registration/sundays';
 import {
   GENDERS,
@@ -87,7 +100,8 @@ interface FormState {
   outside_sports: string;
   /** YYYY-MM-DD, from `SEASON_SUNDAYS`. */
   missed_sundays: string[];
-  consent: boolean;
+  /** Ids of the waiver statements ticked; all four is consent. */
+  waiver: string[];
 }
 
 const emptyForm: FormState = {
@@ -111,7 +125,7 @@ const emptyForm: FormState = {
   plays_outside_league: '',
   outside_sports: '',
   missed_sundays: [],
-  consent: false,
+  waiver: [],
 };
 
 /**
@@ -168,7 +182,7 @@ function returningKidForm(kid: ParentKid): FormState {
     outside_sports: kid.registration?.outside_sports ?? '',
     // Only this season's Sundays can be shown as boxes, so anything else is dropped.
     missed_sundays: (kid.registration?.missed_sundays ?? []).filter((d) => SEASON_SUNDAYS.includes(d)),
-    consent: false,
+    waiver: [],
   };
 }
 
@@ -210,7 +224,7 @@ function buildInput(form: FormState, kidId: string | null, photo: UploadedPhoto 
       kid,
       registration,
       photo_path: photo?.path,
-      consent: form.consent,
+      consent: waiverAgreed(form.waiver),
     };
   }
   return {
@@ -224,7 +238,7 @@ function buildInput(form: FormState, kidId: string | null, photo: UploadedPhoto 
     },
     registration,
     photo_path: photo?.path,
-    consent: form.consent,
+    consent: waiverAgreed(form.waiver),
   };
 }
 
@@ -315,6 +329,8 @@ export default function RegisterClient({
       delete rest[`kid.${key}`];
       delete rest[`registration.${key}`];
       delete rest[key];
+      // The waiver boxes are sent as one `consent`, which is where its error is.
+      if (key === 'waiver') delete rest.consent;
       return rest;
     });
   };
@@ -874,30 +890,56 @@ export default function RegisterClient({
         </Sheet>
 
         {/* -------------------------------------------------------- Payment */}
-        <PaymentSheet />
+        <PaymentSheet
+          kidName={returning ? kidName(kid) : `${form.first_name} ${form.last_name}`}
+        />
 
         {/* --------------------------------------------------------- Waiver */}
         <Sheet className="flex flex-col gap-cis-3 px-cis-5 pb-cis-6 pt-cis-6">
           <SheetHeading>{WAIVER_TITLE}</SheetHeading>
           <SheetRule />
-          {/* The waiver is a document the program hosts, so this links to it
-              rather than reproducing it. New tab, so the half-filled form is
-              still there when the parent comes back. */}
-          <p className="m-0 text-cis-base leading-[1.45]">
-            <a href={WAIVER_URL} target="_blank" rel="noopener noreferrer" className={externalLink}>
-              Read the liability waiver
-            </a>
-            {/* Outside the link: text-decoration propagates into children, so
-                inside it this would be underlined like the link itself. */}
-            <span className="font-semibold text-cis-ink-muted"> (opens in a new tab)</span>
-          </p>
-          <TickRow
-            checked={form.consent}
-            onChange={(v) => set('consent', v)}
-            error={err('consent')}
+          {/* The waiver's own text, read right here above the boxes: the first
+              box agrees to "the release of liability statement above". */}
+          <div className="flex flex-col gap-cis-2 text-cis-base leading-[1.5]">
+            <p className="m-0 font-bold">{WAIVER_HEADING}</p>
+            {WAIVER_PARAGRAPHS.map((paragraph) => (
+              <p key={paragraph.slice(0, 24)} className="m-0">
+                {paragraph}
+              </p>
+            ))}
+          </div>
+          <SectionBreak />
+          {/* Agreeing is ticking all four of the waiver's statements. One error
+              under the group, not four: the unticked boxes are the ones to fix. */}
+          <fieldset
+            className="m-0 flex min-w-0 flex-col border-0 p-0"
+            data-invalid={err('consent') ? true : undefined}
+            aria-describedby={err('consent') ? 'waiver-error' : undefined}
           >
-            I have read and agree to the liability waiver.
-          </TickRow>
+            <legend className="mb-1 p-0 text-cis-base font-bold leading-[1.3] text-cis-ink">
+              Tick each statement to agree
+            </legend>
+            {WAIVER_STATEMENTS.map((statement) => (
+              <TickRow
+                key={statement.id}
+                checked={form.waiver.includes(statement.id)}
+                onChange={(on) =>
+                  set(
+                    'waiver',
+                    on
+                      ? [...form.waiver, statement.id]
+                      : form.waiver.filter((id) => id !== statement.id),
+                  )
+                }
+              >
+                {statement.text}
+              </TickRow>
+            ))}
+            {err('consent') && <FieldError id="waiver-error">{err('consent')}</FieldError>}
+          </fieldset>
+          <p className="m-0 text-cis-sm font-semibold leading-[1.45] text-cis-ink-muted">
+            {WAIVER_ACKNOWLEDGMENT}
+          </p>
 
           {formError && (
             <FieldError>{formError}</FieldError>
@@ -934,7 +976,36 @@ const externalLink =
  * show even by accident. Paper tone, like the other notice sheets: it is
  * something to read, not something to fill in.
  */
-function PaymentSheet() {
+/** iPhone, iPad (which reports itself as a Mac with touch) or Android. */
+function isPhone(): boolean {
+  const ua = navigator.userAgent;
+  return /iPhone|iPad|iPod|Android/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+}
+
+/**
+ * On a phone, tries the Venmo app first. There is no way to ask whether it is
+ * installed, so if the page is still showing a moment later -- the app did not
+ * take over -- the website opens instead. A computer just follows the link.
+ */
+function openVenmo(e: React.MouseEvent<HTMLAnchorElement>, name: string) {
+  if (!isPhone()) return;
+  e.preventDefault();
+  const fallback = window.setTimeout(() => {
+    if (document.visibilityState === 'visible') window.location.href = venmoPayUrl(name);
+  }, 1500);
+  // Leaving for the app hides the page; do not then also open the website.
+  document.addEventListener(
+    'visibilitychange',
+    () => {
+      if (document.visibilityState === 'hidden') window.clearTimeout(fallback);
+    },
+    { once: true },
+  );
+  window.location.href = venmoAppUrl(name);
+}
+
+function PaymentSheet({ kidName }: { kidName: string }) {
+  const name = kidName.trim().replace(/\s+/g, ' ');
   return (
     <Sheet tone="paper" className="flex flex-col gap-cis-3 px-cis-5 pb-cis-6 pt-cis-6">
       <SheetHeading>Paying for registration</SheetHeading>
@@ -968,6 +1039,21 @@ function PaymentSheet() {
           </div>
         ))}
       </dl>
+      {/* Opens Venmo with the amount and a note naming the kid already filled
+          in, so the Admin can match it: the app on a phone, else the website. */}
+      <a
+        href={venmoPayUrl(name)}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => openVenmo(e, name)}
+        className={`${secondaryButtonClasses} w-full`}
+      >
+        {REGISTRATION_FEE_CENTS === null ? 'Pay with Venmo' : `Pay ${formatCents(REGISTRATION_FEE_CENTS)} with Venmo`}
+      </a>
+      <p className="m-0 text-cis-sm font-semibold leading-[1.4] text-cis-ink-muted">
+        The note will say “{name ? `${name} CIS Registration` : 'CIS Registration'}”.
+        {name ? '' : ' Type your kid’s name above first so we know who it is for.'}
+      </p>
     </Sheet>
   );
 }

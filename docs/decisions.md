@@ -28,6 +28,12 @@ issue holds the detail; this file is the index of "what's now different from the
 
 ## Decisions
 
+### 2026-11-24 — Waiver text and its four statements on the form; Venmo pay link
+- **PRD reference:** the waiver/consent step of parent registration (`project_spec.md` §1.4, §2.4) and payment instructions (ENG-9)
+- **What changed:** The form no longer links to the Google Form waiver. It shows the text of the program's "Liability Waiver & Parental Consent" PDF and its four statements as tick boxes; all four are required to register. A "Pay $100 with Venmo" button opens Venmo (the app on a phone, else the website) with @CIS-stantonios, $100 and a note of the kid's first and last name plus "CIS Registration" filled in.
+- **Why:** Parents read the waiver without leaving the form, the agreement matches the church's document, and a prefilled note lets an Admin match each Venmo payment to a kid.
+- **Linear:** none yet
+
 ### 2026-11-17 — Parent form asks about outside leagues and missed Sundays; fee is $100
 - **PRD reference:** parent registration stories and the `Registration` entity (`project_spec.md` §1.4, §2.3); the fee, previously "to be announced"
 - **What changed:** The parent form now asks whether the kid plays in an outside league or club (Yes/No, required), and if Yes, which sports. It also lists every Sunday of the season (Jan 3 to Apr 18, 2027) as tick boxes so a parent can mark the ones the kid may miss; none ticked means every Sunday. Staff who can read the roster see both answers in its kid details. The registration fee is $100 per kid.

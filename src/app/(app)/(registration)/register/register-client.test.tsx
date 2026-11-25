@@ -15,7 +15,7 @@ import RegisterClient from './register-client';
 import { PhotoError, preparePhoto } from '@/lib/photo/prepare';
 import { uploadKidPhoto } from '@/lib/photo/upload';
 import type { ParentKid } from '@/lib/registration/parent';
-import { WAIVER_URL } from '@/lib/registration/waiver';
+import { WAIVER_PARAGRAPHS, WAIVER_STATEMENTS } from '@/lib/registration/waiver';
 
 const refresh = jest.fn();
 jest.mock('next/navigation', () => ({
@@ -83,7 +83,10 @@ const withReg = (patch: Partial<NonNullable<ParentKid['registration']>>) =>
   kid({ registration: { ...kid().registration!, ...patch } });
 
 const field = (label: string) => screen.getByLabelText(label) as HTMLInputElement;
-const waiverBox = () => screen.getByRole('checkbox', { name: /liability waiver/ });
+const waiverBoxes = () =>
+  WAIVER_STATEMENTS.map((s) => screen.getByRole('checkbox', { name: s.text }));
+/** Ticks all four waiver statements, which is what agreeing is. */
+const agreeToWaiver = () => waiverBoxes().forEach((box) => fireEvent.click(box));
 
 /** Chooses a photo file, as a parent would, and waits for the upload to finish. */
 async function choosePhoto(name = 'IMG_1.jpg') {
@@ -208,7 +211,7 @@ describe('a returning kid', () => {
     render(<RegisterClient season={season} kids={[kid()]} email={SIGNED_IN} />);
     fireEvent.click(screen.getByText('Mina Guirguis'));
 
-    expect(waiverBox()).not.toBeChecked();
+    for (const box of waiverBoxes()) expect(box).not.toBeChecked();
     expect(screen.getByRole('button', { name: 'Save changes' })).toBeInTheDocument();
   });
 
@@ -216,7 +219,7 @@ describe('a returning kid', () => {
     registerKid.mockResolvedValue({ ok: true });
     render(<RegisterClient season={season} kids={[kid()]} email={SIGNED_IN} />);
     fireEvent.click(screen.getByText('Mina Guirguis'));
-    fireEvent.click(waiverBox());
+    agreeToWaiver();
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
     await waitFor(() => expect(registerKid).toHaveBeenCalledTimes(1));
@@ -236,7 +239,7 @@ describe('a returning kid', () => {
     fireEvent.click(screen.getByText('Mina Guirguis'));
 
     expect(screen.getByRole('button', { name: 'Replace photo' })).toBeInTheDocument();
-    fireEvent.click(waiverBox());
+    agreeToWaiver();
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
     await waitFor(() => expect(registerKid).toHaveBeenCalledTimes(1));
@@ -249,7 +252,7 @@ describe('a returning kid', () => {
     fireEvent.click(screen.getByText('Mina Guirguis'));
 
     await choosePhoto();
-    fireEvent.click(waiverBox());
+    agreeToWaiver();
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
     await waitFor(() => expect(registerKid).toHaveBeenCalledTimes(1));
@@ -259,7 +262,7 @@ describe('a returning kid', () => {
   it('asks for a photo from a kid who has none, and does not submit without one', async () => {
     render(<RegisterClient season={season} kids={[kid({ photo: null })]} email={SIGNED_IN} />);
     fireEvent.click(screen.getByText('Mina Guirguis'));
-    fireEvent.click(waiverBox());
+    agreeToWaiver();
 
     expect(screen.getByRole('button', { name: 'Add a photo' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
@@ -275,7 +278,7 @@ describe('a returning kid', () => {
     fireEvent.click(screen.getByText('Mina Guirguis'));
 
     await choosePhoto();
-    fireEvent.click(waiverBox());
+    agreeToWaiver();
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
     await waitFor(() => expect(registerKid).toHaveBeenCalledTimes(1));
@@ -340,18 +343,69 @@ describe('a returning kid', () => {
 });
 
 describe('the waiver', () => {
-  it('links to the program\'s waiver document in a new tab', () => {
+  it('shows the waiver text on the form, above its four statements, with no link out', () => {
     render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
 
-    const link = screen.getByRole('link', { name: /Read the liability waiver/ });
-    expect(link).toHaveAttribute('href', WAIVER_URL);
-    expect(link).toHaveAttribute('target', '_blank');
-    // Without noopener the opened page could reach back into this one.
-    expect(link.getAttribute('rel')).toContain('noopener');
+    const heading = screen.getByRole('heading', { name: 'Liability waiver' });
+    const sheet = heading.parentElement as HTMLElement;
+    for (const paragraph of WAIVER_PARAGRAPHS) {
+      expect(within(sheet).getByText(paragraph)).toBeInTheDocument();
+    }
+    expect(waiverBoxes()).toHaveLength(4);
+    // The release reads before the first box that agrees to "the statement above".
+    const release = within(sheet).getByText(WAIVER_PARAGRAPHS[0]);
+    expect(release.compareDocumentPosition(waiverBoxes()[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(within(sheet).queryByRole('link')).not.toBeInTheDocument();
   });
 });
 
 describe('paying for registration', () => {
+  it('links to Venmo with $100 and a note naming the kid being typed', () => {
+    render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
+
+    const venmo = () => screen.getByRole('link', { name: 'Pay $100 with Venmo' });
+    expect(new URL(venmo().getAttribute('href')!).searchParams.get('note')).toBe('CIS Registration');
+
+    fireEvent.change(field('First name'), { target: { value: 'Marina' } });
+    fireEvent.change(field('Last name'), { target: { value: 'Guirguis' } });
+
+    const url = new URL(venmo().getAttribute('href')!);
+    expect(url.hostname).toBe('account.venmo.com');
+    expect(url.searchParams.get('recipients')).toBe('CIS-stantonios');
+    expect(url.searchParams.get('amount')).toBe('100');
+    expect(url.searchParams.get('note')).toBe('Marina Guirguis CIS Registration');
+    expect(venmo()).toHaveAttribute('target', '_blank');
+    expect(screen.getByText(/Marina Guirguis CIS Registration/)).toBeInTheDocument();
+  });
+
+  it('tries the Venmo app on a phone, and just follows the link on a computer', () => {
+    render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
+    const venmo = screen.getByRole('link', { name: 'Pay $100 with Venmo' });
+
+    // A computer: the click is left alone, so the website opens in a new tab.
+    expect(fireEvent.click(venmo)).toBe(true);
+
+    // A phone: the click is taken over to open the app instead.
+    const ua = jest.spyOn(navigator, 'userAgent', 'get').mockReturnValue(
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148',
+    );
+    const error = jest.spyOn(console, 'error').mockImplementation(() => {}); // jsdom cannot navigate
+    try {
+      expect(fireEvent.click(venmo)).toBe(false);
+    } finally {
+      ua.mockRestore();
+      error.mockRestore();
+    }
+  });
+
+  it('uses a returning kid\'s name in the Venmo note', () => {
+    render(<RegisterClient season={season} kids={[kid()]} email={SIGNED_IN} />);
+    fireEvent.click(screen.getByText('Mina Guirguis'));
+
+    const href = screen.getByRole('link', { name: 'Pay $100 with Venmo' }).getAttribute('href')!;
+    expect(new URL(href).searchParams.get('note')).toBe('Mina Guirguis CIS Registration');
+  });
+
   it('lists every way to pay, with the $100 fee, before the waiver', () => {
     render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
 
@@ -454,7 +508,7 @@ describe('submitting a new kid', () => {
         'Last name is required',
         'Choose a grade',
         'Choose a T-shirt size',
-        'You must agree to the liability waiver',
+        'Tick all four boxes to agree to the waiver',
         'Please fix the fields marked above.',
       ]),
     );
@@ -475,7 +529,7 @@ describe('submitting a new kid', () => {
   it('will not submit without a photo, and says so beside the photo', async () => {
     render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
     fillValid();
-    fireEvent.click(waiverBox());
+    agreeToWaiver();
 
     fireEvent.click(screen.getByRole('button', { name: 'Register' }));
 
@@ -515,7 +569,26 @@ describe('submitting a new kid', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Register' }));
 
     expect(registerKid).not.toHaveBeenCalled();
-    expect(screen.getByText('You must agree to the liability waiver')).toBeInTheDocument();
+    expect(screen.getByText('Tick all four boxes to agree to the waiver')).toBeInTheDocument();
+  });
+
+  it('will not submit with only three of the four waiver boxes ticked', async () => {
+    render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
+    await choosePhoto();
+    fillValid();
+    waiverBoxes().slice(0, 3).forEach((box) => fireEvent.click(box));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Register' }));
+
+    expect(registerKid).not.toHaveBeenCalled();
+    expect(screen.getByText('Tick all four boxes to agree to the waiver')).toBeInTheDocument();
+
+    // Ticking the last one clears the error and lets the form go.
+    registerKid.mockResolvedValue({ ok: true, kidId: 'k', registrationId: 'r' });
+    fireEvent.click(waiverBoxes()[3]);
+    expect(screen.queryByText('Tick all four boxes to agree to the waiver')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Register' }));
+    await waitFor(() => expect(registerKid).toHaveBeenCalledWith(expect.objectContaining({ consent: true })));
   });
 
   it('sends a valid registration and shows the done screen', async () => {
@@ -523,7 +596,7 @@ describe('submitting a new kid', () => {
     render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
     await choosePhoto();
     fillValid();
-    fireEvent.click(waiverBox());
+    agreeToWaiver();
 
     fireEvent.click(screen.getByRole('button', { name: 'Register' }));
 
@@ -548,7 +621,7 @@ describe('submitting a new kid', () => {
     render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
     await choosePhoto();
     fillValid();
-    fireEvent.click(waiverBox());
+    agreeToWaiver();
     fireEvent.click(screen.getByRole('button', { name: 'Register' }));
 
     expect(
@@ -565,7 +638,7 @@ describe('submitting a new kid', () => {
     render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
     await choosePhoto();
     fillValid();
-    fireEvent.click(waiverBox());
+    agreeToWaiver();
     fireEvent.click(screen.getByRole('button', { name: 'Register' }));
 
     expect(await screen.findByText(/already added a kid/)).toBeInTheDocument();
@@ -581,7 +654,7 @@ describe('submitting a new kid', () => {
     render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
     await choosePhoto();
     fillValid();
-    fireEvent.click(waiverBox());
+    agreeToWaiver();
     fireEvent.click(screen.getByRole('button', { name: 'Register' }));
 
     const group = screen.getByRole('group', { name: 'Photo' });
