@@ -53,6 +53,48 @@ export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
   paypal: 'PayPal',
 };
 
+/** The Venmo account families pay, without the @. */
+export const VENMO_USERNAME = 'CIS-stantonios';
+
+function venmoQuery(kidName: string, feeCents: number | null): string {
+  const name = kidName.trim().replace(/\s+/g, ' ');
+  const note = name ? `${name} CIS Registration` : 'CIS Registration';
+  const params: Array<[string, string]> = [
+    ['txn', 'pay'],
+    ['recipients', VENMO_USERNAME],
+    ...(feeCents === null
+      ? []
+      : [['amount', (feeCents / 100).toFixed(2).replace(/\.00$/, '')] as [string, string]]),
+    ['note', note],
+  ];
+  // encodeURIComponent, not URLSearchParams: a space must be %20, since some
+  // Venmo screens show a "+" in the note literally.
+  return params.map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
+}
+
+/**
+ * A Venmo payment link with the recipient, the fee and a note filled in, so a
+ * parent only has to confirm. The note is the kid's name and "CIS
+ * Registration", which is how an Admin matches the payment to a kid. With no
+ * fee set, the amount is left for the parent to type.
+ *
+ * This is the website: `account.venmo.com/pay` keeps these fields through
+ * Venmo's sign-in. It does not open the app -- Venmo's iOS app only claims
+ * profile links (`venmo.com/u/...`), which cannot carry an amount or note.
+ */
+export function venmoPayUrl(kidName: string, feeCents: number | null = REGISTRATION_FEE_CENTS): string {
+  return `https://account.venmo.com/pay?${venmoQuery(kidName, feeCents)}`;
+}
+
+/**
+ * The same payment as a link into the Venmo app, with the same fields filled
+ * in. It does nothing where the app is not installed, so the form tries it on
+ * a phone and falls back to `venmoPayUrl`.
+ */
+export function venmoAppUrl(kidName: string, feeCents: number | null = REGISTRATION_FEE_CENTS): string {
+  return `venmo://paycharge?${venmoQuery(kidName, feeCents)}`;
+}
+
 /** `8500` -> `"$85"`, `4250` -> `"$42.50"`. Whole dollars drop the cents. */
 export function formatCents(cents: number): string {
   const dollars = cents / 100;

@@ -23,6 +23,7 @@
 import { z } from 'zod';
 import { defaultDivision, divisionAllowedForGrade, type Division } from '@/lib/attendance';
 import { SEASON_SUNDAYS } from '@/lib/registration/sundays';
+import { WAIVER_ERROR } from '@/lib/registration/waiver';
 import { KID_PHOTO_PATH, kidPhotoPathSchema } from '@/lib/validation/photo';
 
 /** Matches the `gender` CHECK on `kids`. Stored lower-case. */
@@ -183,7 +184,7 @@ const returningKidSchema = parentKidSchema.omit({
  * arrives as `false`, and the message is shown next to it. The database
  * re-checks this; consent itself (timestamp and user) is stamped there.
  */
-const waiverAgreed = z.literal(true, 'You must agree to the liability waiver');
+const waiverAgreed = z.literal(true, WAIVER_ERROR);
 
 /**
  * The photo the browser has already uploaded (`uploadKidPhoto`). A new kid must

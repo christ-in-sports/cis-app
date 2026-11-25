@@ -23,6 +23,8 @@
 import { test, expect, type Page } from '@playwright/test';
 import { Client } from 'pg';
 
+import { WAIVER_PARAGRAPHS, WAIVER_STATEMENTS } from '../src/lib/registration/waiver';
+
 const DB_URL =
   process.env.SUPABASE_DB_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres';
 const AUTH_URL = process.env.SUPABASE_AUTH_URL ?? 'http://127.0.0.1:54321';
@@ -148,6 +150,13 @@ interface StoredRegistration {
   plays_outside_league: boolean | null;
   outside_sports: string | null;
   missed_sundays: string[];
+}
+
+/** Ticks all four waiver statements, by their visible text (the inputs are hidden). */
+async function agreeToWaiver(page: Page): Promise<void> {
+  for (const statement of WAIVER_STATEMENTS) {
+    await page.getByText(statement.text, { exact: true }).click();
+  }
 }
 
 async function registrationFor(firstName: string): Promise<StoredRegistration | undefined> {
@@ -283,7 +292,7 @@ test('a kid already on file with no parent is not registered a second time', asy
   await page.getByRole('group', { name: /outside league or club/ }).getByText('No', { exact: true }).click();
   await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/kid.jpg');
   await expect(page.getByRole('button', { name: 'Replace photo' })).toBeVisible();
-  await page.getByText('I have read and agree to the liability waiver.').click();
+  await agreeToWaiver(page);
   await page.getByRole('button', { name: 'Register', exact: true }).click();
 
   await expect(page.getByText(/already on file/)).toBeVisible();
@@ -337,7 +346,7 @@ test('a parent completes an imported kid, then registers a new one', async ({ pa
 
   // She has no photo yet, and the form will not go without one.
   await page.getByRole('button', { name: 'Save changes' }).click();
-  await expect(page.getByText('You must agree to the liability waiver')).toBeVisible();
+  await expect(page.getByText('Tick all four boxes to agree to the waiver')).toBeVisible();
   await expect(page.getByRole('alert').filter({ hasText: 'Add a photo of your kid' })).toBeVisible();
   expect((await registrationFor('Mina'))?.consent_given_at).toBeNull();
 
@@ -346,7 +355,7 @@ test('a parent completes an imported kid, then registers a new one', async ({ pa
   await expect(page.getByRole('alert').filter({ hasText: 'Add a photo of your kid' })).toHaveCount(0);
 
   await page.getByRole('group', { name: /outside league or club/ }).getByText('No', { exact: true }).click();
-  await page.getByText('I have read and agree to the liability waiver.').click();
+  await agreeToWaiver(page);
   await page.getByRole('button', { name: 'Save changes' }).click();
   await expect(page.getByRole('heading', { name: 'Registration saved' })).toBeVisible();
 
@@ -388,7 +397,7 @@ test('a parent completes an imported kid, then registers a new one', async ({ pa
 
   // Without the waiver, or a photo, nothing is written.
   await page.getByRole('button', { name: 'Register', exact: true }).click();
-  await expect(page.getByText('You must agree to the liability waiver')).toBeVisible();
+  await expect(page.getByText('Tick all four boxes to agree to the waiver')).toBeVisible();
   await expect(page.getByRole('alert').filter({ hasText: 'Add a photo of your kid' })).toBeVisible();
   expect(await registrationFor('Marina')).toBeUndefined();
 
@@ -397,7 +406,7 @@ test('a parent completes an imported kid, then registers a new one', async ({ pa
   await page.locator('input[type="file"]').setInputFiles('e2e/fixtures/IMG_0001.HEIC');
   await expect(page.getByRole('button', { name: 'Replace photo' })).toBeVisible({ timeout: 30_000 });
 
-  await page.getByText('I have read and agree to the liability waiver.').click();
+  await agreeToWaiver(page);
   await page.getByRole('button', { name: 'Register', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Registered', exact: true })).toBeVisible();
   await expect(page.getByText('Marina Guirguis')).toBeVisible();
@@ -481,12 +490,14 @@ test('a kid on a team can still have their photo replaced, and the old one is de
   }
 });
 
-test('the waiver links to the program\'s consent form in a new tab', async ({ page }) => {
+test('the waiver text is on the form, with no link out', async ({ page }) => {
   await signIn(page, PARENT_EMAIL);
   await page.goto('/register');
   await page.getByRole('button', { name: 'Add another kid' }).click();
 
-  const link = page.getByRole('link', { name: 'Read the liability waiver' });
-  await expect(link).toHaveAttribute('href', /^https:\/\/docs\.google\.com\/forms\//);
-  await expect(link).toHaveAttribute('target', '_blank');
+  await expect(page.getByText(WAIVER_PARAGRAPHS[0], { exact: true })).toBeVisible();
+  for (const statement of WAIVER_STATEMENTS) {
+    await expect(page.getByText(statement.text, { exact: true })).toBeVisible();
+  }
+  await expect(page.getByRole('link', { name: /liability waiver/i })).toHaveCount(0);
 });
