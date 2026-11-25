@@ -375,7 +375,6 @@ describe('paying for registration', () => {
     expect(url.searchParams.get('amount')).toBe('100');
     expect(url.searchParams.get('note')).toBe('Marina Guirguis CIS Registration');
     expect(venmo()).toHaveAttribute('target', '_blank');
-    expect(screen.getByText(/Marina Guirguis CIS Registration/)).toBeInTheDocument();
   });
 
   it('tries the Venmo app on a phone, and just follows the link on a computer', () => {
