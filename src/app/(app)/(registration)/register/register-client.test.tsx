@@ -375,7 +375,6 @@ describe('paying for registration', () => {
     expect(url.searchParams.get('amount')).toBe('100');
     expect(url.searchParams.get('note')).toBe('Marina Guirguis CIS Registration');
     expect(venmo()).toHaveAttribute('target', '_blank');
-    expect(screen.getByText(/Marina Guirguis CIS Registration/)).toBeInTheDocument();
   });
 
   it('tries the Venmo app on a phone, and just follows the link on a computer', () => {
@@ -396,6 +395,18 @@ describe('paying for registration', () => {
       ua.mockRestore();
       error.mockRestore();
     }
+  });
+
+  it('offers the Venmo website in a new tab, for a phone without the app', () => {
+    render(<RegisterClient season={season} kids={[]} email={SIGNED_IN} />);
+    fireEvent.change(field('First name'), { target: { value: 'Marina' } });
+    fireEvent.change(field('Last name'), { target: { value: 'Guirguis' } });
+
+    const web = screen.getByRole('link', { name: 'Pay on the Venmo website' });
+    expect(web).toHaveAttribute('target', '_blank');
+    const url = new URL(web.getAttribute('href')!);
+    expect(url.hostname).toBe('account.venmo.com');
+    expect(url.searchParams.get('note')).toBe('Marina Guirguis CIS Registration');
   });
 
   it('uses a returning kid\'s name in the Venmo note', () => {

@@ -922,6 +922,7 @@ export default function RegisterClient({
             {WAIVER_STATEMENTS.map((statement) => (
               <TickRow
                 key={statement.id}
+                topAligned
                 checked={form.waiver.includes(statement.id)}
                 onChange={(on) =>
                   set(
@@ -983,24 +984,15 @@ function isPhone(): boolean {
 }
 
 /**
- * On a phone, tries the Venmo app first. There is no way to ask whether it is
- * installed, so if the page is still showing a moment later -- the app did not
- * take over -- the website opens instead. A computer just follows the link.
+ * On a phone, opens the Venmo app instead of the website. The form page itself
+ * is never navigated away -- the app opens on top of it, and the parent comes
+ * back to the form as they left it. Without the app the phone just says the
+ * link cannot be opened, so the website link sits under the button. A computer
+ * follows the link, which opens the website in a new tab.
  */
 function openVenmo(e: React.MouseEvent<HTMLAnchorElement>, name: string) {
   if (!isPhone()) return;
   e.preventDefault();
-  const fallback = window.setTimeout(() => {
-    if (document.visibilityState === 'visible') window.location.href = venmoPayUrl(name);
-  }, 1500);
-  // Leaving for the app hides the page; do not then also open the website.
-  document.addEventListener(
-    'visibilitychange',
-    () => {
-      if (document.visibilityState === 'hidden') window.clearTimeout(fallback);
-    },
-    { once: true },
-  );
   window.location.href = venmoAppUrl(name);
 }
 
@@ -1051,8 +1043,11 @@ function PaymentSheet({ kidName }: { kidName: string }) {
         {REGISTRATION_FEE_CENTS === null ? 'Pay with Venmo' : `Pay ${formatCents(REGISTRATION_FEE_CENTS)} with Venmo`}
       </a>
       <p className="m-0 text-cis-sm font-semibold leading-[1.4] text-cis-ink-muted">
-        The note will say “{name ? `${name} CIS Registration` : 'CIS Registration'}”.
-        {name ? '' : ' Type your kid’s name above first so we know who it is for.'}
+        No Venmo app?{' '}
+        <a href={venmoPayUrl(name)} target="_blank" rel="noopener noreferrer" className={externalLink}>
+          Pay on the Venmo website
+        </a>{' '}
+        (opens in a new tab)
       </p>
     </Sheet>
   );
